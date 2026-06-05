@@ -788,7 +788,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V1.76</span>
+            <span>V1.77</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -823,6 +823,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月5日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.77</div>
+                        <div class="changelog-desc">状态修复：删除根节点时同步清空输入框、树视图和内部 JSON 状态，避免旧源码残留。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.76</div>
                         <div class="changelog-desc">状态修复：排序后同步源码内容和历史状态，避免再次点击“格式化”时从旧源码还原排序结果。</div>
@@ -3972,9 +3976,11 @@
         function handleDelete(path) {
             if (path.length === 0) {
                 currentObj = null;
-                syncToInput();
+                inputArea.value = '';
+                outputDiv.innerHTML = '';
+                sourceDirty = false;
                 saveState();
-                reRenderTree();
+                switchMode('source');
                 return;
             }
 
