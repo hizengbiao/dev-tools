@@ -788,7 +788,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V1.73</span>
+            <span>V1.74</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -823,6 +823,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月5日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.74</div>
+                        <div class="changelog-desc">安全修复：修复流程不再使用动态函数执行解析，改为安全的 JSON 解析，避免修复非标准内容时执行输入中的脚本。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.73</div>
                         <div class="changelog-desc">修复增强：支持 Java Map 中未加引号的复杂字符串值（如 `ip=::ffff:x.x.x.x`、`port=*`）、数组值（如 `events=[POLLIN]`），并保留字符串里的路径（如 `[/xxx/xxxToken]`）。</div>
@@ -1452,22 +1456,14 @@
 
                 let obj;
                 try {
-                    const fn = new Function("return " + raw);
-                    obj = fn();
+                    obj = parseRepairedJson(raw);
                 } catch (firstErr) {
-                    // Failover: Try wrapping in braces (for bare key:value pairs)
+                    // Try to fix truncated JSON before giving up
                     try {
-                        const fn = new Function("return {" + raw + "}");
-                        obj = fn();
+                        raw = fixTruncatedJson(raw);
+                        obj = parseRepairedJson(raw);
                     } catch (secondErr) {
-                        // Try to fix truncated JSON before giving up
-                        try {
-                            raw = fixTruncatedJson(raw);
-                            const fn = new Function("return " + raw);
-                            obj = fn();
-                        } catch (thirdErr) {
-                            throw firstErr; // Throw validation error from first attempt
-                        }
+                        throw firstErr; // Throw validation error from first attempt
                     }
                 }
 
@@ -1478,6 +1474,19 @@
                 showToast(autoTriggered ? "格式化失败，已自动修复并格式化成功 ✅" : "修复并格式化成功 ✅");
             } catch (e) {
                 showError({ message: "修复失败: " + e.message });
+            }
+        }
+
+        function parseRepairedJson(raw) {
+            try {
+                return JSON.parse(raw);
+            } catch (firstErr) {
+                // Failover: Try wrapping in braces (for bare key:value pairs)
+                try {
+                    return JSON.parse("{" + raw + "}");
+                } catch (secondErr) {
+                    throw firstErr;
+                }
             }
         }
 
@@ -2094,8 +2103,8 @@
                     // It's a key - always quote it
                     result += '"' + token + '"';
                 } else if (isSpecialValue) {
-                    // Special values: convert undefined to null, keep others
-                    if (token === 'undefined') {
+                    // Special values: convert non-JSON values to null.
+                    if (token === 'undefined' || token === 'NaN' || token === 'Infinity' || token === '-Infinity') {
                         result += 'null';
                     } else {
                         result += token;
