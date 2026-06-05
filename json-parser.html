@@ -788,7 +788,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V1.74</span>
+            <span>V1.75</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -823,6 +823,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月5日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.75</div>
+                        <div class="changelog-desc">状态修复：清空输入后点击“格式化”会同步清空内部 JSON 对象状态，避免复制、压缩等操作误用旧数据。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.74</div>
                         <div class="changelog-desc">安全修复：修复流程不再使用动态函数执行解析，改为安全的 JSON 解析，避免修复非标准内容时执行输入中的脚本。</div>
@@ -2446,6 +2450,10 @@
                 // showToast("请输入 JSON");
                 // Allow switch but it's empty
                 outputDiv.innerHTML = '';
+                currentObj = null;
+                sourceDirty = false;
+                errorMsg.style.display = 'none';
+                errorMsg.textContent = '';
                 return true;
             }
             try {
