@@ -1,7 +1,7 @@
 # JSON Parser 功能与场景说明文档
 
 **文件路径**: `d:\projects\vibe-coding\dev-tools\json-parser.html`
-**最新版本**: V1.70
+**最新版本**: V1.73
 
 本文档旨在全面梳理 JSON Parser 的现有功能和业务场景，以便在后续开发中进行回归测试，避免功能退化。
 
@@ -30,6 +30,7 @@
     *   将输入框内的字符串解析为 JSON 对象。
     *   如果当前在 Tree 模式且数据被修改过 (`sourceDirty`)，则重新渲染树。
     *   渲染成功后切换到 Tree 视图。
+    *   **自动修复 (V1.71)**: 如果解析失败，会自动调用“修复”逻辑，尽量直接修复并格式化展示。
 *   **错误处理**: 解析失败时会在顶部显示醒目的红色错误提示框。
 
 ### 2.2 修复 (Fix Logic - 核心)
@@ -145,6 +146,12 @@
     *   **预期**: 提示“JSON 已有效”，结果保持不变，**不**应该变成 `{"msg": {"a":1}}`（双重解析）。
 7.  **Java toString/Map 风格 (V1.70)**: 输入 `FaultPoint{name='biz_error_type_a', additionalInfo={bizInfoKeyA=数据库}, enabled='true', maskable=false'}`，点击修复。
     *   **预期**: 类名前缀被去除，`=` 转为 JSON 键值分隔，嵌套对象和中文值可正常格式化为标准 JSON。
+8.  **格式化失败自动修复 (V1.71)**: 输入 `FaultPoint{name='biz_error_type_a', additionalInfo={bizInfoKeyA=数据库}}`，点击“格式化”。
+    *   **预期**: 不需要再手动点击“修复”，直接自动修复并切换到树状格式化视图。
+9.  **Java toString 列表格式 (V1.72)**: 输入 `[FaultPoint{name='biz_error_type_a', additionalInfo={bizInfoKeyA=数据库}}, FaultPoint{name='biz_error_type_b', additionalInfo={bizInfoKeyB=失败}}]`，点击“修复”或“格式化”。
+    *   **预期**: 两个 `FaultPoint{...}` 都被转换为对象，整体结果为标准 JSON 数组。
+10. **Java Map 复杂值 (V1.73)**: 输入包含 `ip=::ffff:x.x.x.x`、`port=*`、`events=[POLLIN]`、`apis='[/xxx/xxxToken]'` 的 `FaultPoint` 列表，点击“修复”或“格式化”。
+    *   **预期**: `ip`、`port` 被当作字符串值保留，`events` 被转换为数组，字符串里的路径不会被当作 `//` 注释删除，整体结果仍为标准 JSON 数组。
 
 ### 4.2 编辑功能测试
 1.  **字符串编辑**:
@@ -172,6 +179,9 @@
 ---
 
 ## 5. 版本更新记录摘要
+*   **V1.73**: 修复功能支持 Java Map 中未加引号的复杂字符串值、数组值，并保留字符串里的路径内容。
+*   **V1.72**: 修复功能支持 Java toString 风格对象列表转标准 JSON 数组。
+*   **V1.71**: 格式化失败时自动调用修复逻辑。
 *   **V1.70**: 修复功能支持 Java toString/Map 风格内容转标准 JSON。
 *   **V1.69**: 编辑点击默认全选。
 *   **V1.68**: 编辑后保持折叠状态。

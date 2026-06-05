@@ -788,7 +788,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V1.70</span>
+            <span>V1.73</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -821,6 +821,24 @@
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年6月5日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.73</div>
+                        <div class="changelog-desc">修复增强：支持 Java Map 中未加引号的复杂字符串值（如 `ip=::ffff:x.x.x.x`、`port=*`）、数组值（如 `events=[POLLIN]`），并保留字符串里的路径（如 `[/xxx/xxxToken]`）。</div>
+                    </div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.72</div>
+                        <div class="changelog-desc">修复增强：明确支持 Java toString 风格对象列表（如 `[FaultPoint{...}, FaultPoint{...}]`）自动转换为标准 JSON 数组。</div>
+                    </div>
+                </div>
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年5月24日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.71</div>
+                        <div class="changelog-desc">格式化优化：点击“格式化”解析失败时自动调用“修复”逻辑，尽量直接转换并展示可格式化 JSON。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年5月21日</div>
                     <div class="changelog-entry">
@@ -1280,7 +1298,7 @@
             switchMode('source');
         }
 
-        function handleFormat() {
+        function handleFormat(allowAutoFix = true) {
             // If we are in tree mode and have dirty data, re-render from object instead of input
             if (isTreeMode && sourceDirty) {
                 reRenderTree();
@@ -1292,6 +1310,8 @@
             if (parseAndRender()) {
                 switchMode('tree');
                 showToast("格式化成功 ✅");
+            } else if (allowAutoFix) {
+                fixJson({ autoTriggered: true });
             }
         }
 
@@ -1337,7 +1357,8 @@
             }
         }
 
-        function fixJson() {
+        function fixJson(options = {}) {
+            const autoTriggered = options.autoTriggered === true;
             let raw = inputArea.value.trim();
             if (!raw) return;
 
@@ -1346,8 +1367,8 @@
                 const parsed = JSON.parse(raw);
                 inputArea.value = JSON.stringify(parsed, null, 4);
                 saveState();
-                handleFormat();
-                showToast("JSON 已有效，已直接格式化 ✅");
+                handleFormat(false);
+                showToast(autoTriggered ? "格式化成功 ✅" : "JSON 已有效，已直接格式化 ✅");
                 return;
             } catch (e) {
                 // Not valid JSON, continue with fix logic
@@ -1355,7 +1376,7 @@
 
             try {
                 // Remove single-line and multi-line comments
-                raw = raw.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
+                raw = stripCommentsOutsideStrings(raw);
 
                 // 0. Remove trailing comma or period (common copy-paste artifacts)
                 raw = raw.replace(/[,，.。]+\s*$/, "");
@@ -1391,10 +1412,6 @@
                 // 0e. Remove trailing comma or period again after stripping
                 raw = raw.replace(/[,，.。]+\s*$/, "");
 
-                // 0f. Replace Chinese full-width colon with standard colon (AFTER tag removal)
-                // Handle pattern: "key ： value" -> "key" : "value"
-                raw = fixChineseColons(raw);
-
                 // 1. Remove backslash-newline continuations (line continuation)
                 raw = raw.replace(/\\\r?\n/g, "");
 
@@ -1418,9 +1435,14 @@
                 const jsonpMatch = raw.match(/^\s*[a-zA-Z_$][a-zA-Z0-9_$]*\s*\(([\s\S]*)\)\s*;?\s*$/);
                 if (jsonpMatch && jsonpMatch[1]) raw = jsonpMatch[1];
 
-                // 2a. Normalize Java toString / Map style objects:
+                // 2a. Normalize Java toString / Map style objects and lists:
                 // FaultPoint{name='x', info={k=v}} -> {name:'x', info:{k:v}}
+                // [FaultPoint{name='x'}, FaultPoint{name='y'}] -> [{name:'x'}, {name:'y'}]
                 raw = normalizeJavaStyleObject(raw);
+
+                // 2b. Replace Chinese full-width colon with standard colon after Java values are protected
+                // Handle pattern: "key ： value" -> "key" : "value"
+                raw = fixChineseColons(raw);
 
                 // 3. Add missing commas between key-value pairs (when using newlines instead of commas)
                 raw = addMissingCommas(raw);
@@ -1452,8 +1474,8 @@
                 inputArea.value = JSON.stringify(obj, null, 4);
 
                 saveState();
-                handleFormat(); // Go to tree view
-                showToast("修复并格式化成功 ✅");
+                handleFormat(false); // Go to tree view
+                showToast(autoTriggered ? "格式化失败，已自动修复并格式化成功 ✅" : "修复并格式化成功 ✅");
             } catch (e) {
                 showError({ message: "修复失败: " + e.message });
             }
@@ -1462,7 +1484,7 @@
         /**
          * Normalize Java toString / Map style content before the existing JSON repair steps.
          * Keeps this scoped by only changing text that has an unquoted "=" separator
-         * or starts with a ClassName{...} wrapper.
+         * or contains ClassName{...} wrappers.
          */
         function normalizeJavaStyleObject(raw) {
             const trimmed = raw.trim();
@@ -1472,12 +1494,15 @@
 
             let result = stripJavaClassPrefixes(trimmed);
             result = removeDanglingSingleQuotesOutsideStrings(result);
+            result = quoteJavaMapValuesOutsideStrings(result);
             result = replaceEqualsOutsideStrings(result);
             return result;
         }
 
         function looksLikeJavaStyleObject(raw) {
-            return /^\s*[A-Za-z_$][A-Za-z0-9_$]*\s*\{/.test(raw) || hasUnquotedEquals(raw);
+            return /^\s*[A-Za-z_$][A-Za-z0-9_$]*\s*\{/.test(raw) ||
+                /^\s*\[\s*[A-Za-z_$][A-Za-z0-9_$]*\s*\{/.test(raw) ||
+                hasUnquotedEquals(raw);
         }
 
         function hasUnquotedEquals(raw) {
@@ -1511,6 +1536,122 @@
             }
 
             return false;
+        }
+
+        function quoteJavaMapValuesOutsideStrings(raw) {
+            let result = '';
+            let i = 0;
+            let inString = false;
+            let stringChar = '';
+            let escaped = false;
+
+            while (i < raw.length) {
+                const char = raw[i];
+
+                if (inString) {
+                    result += char;
+                    if (escaped) {
+                        escaped = false;
+                    } else if (char === '\\') {
+                        escaped = true;
+                    } else if (char === stringChar) {
+                        inString = false;
+                    }
+                    i++;
+                    continue;
+                }
+
+                if (char === '"' || char === "'") {
+                    inString = true;
+                    stringChar = char;
+                    result += char;
+                    i++;
+                    continue;
+                }
+
+                if (char !== '=') {
+                    result += char;
+                    i++;
+                    continue;
+                }
+
+                result += char;
+                i++;
+
+                const nextIndex = findNextNonWhitespace(raw, i);
+                if (nextIndex !== -1 && /["'{\[]/.test(raw[nextIndex])) {
+                    continue;
+                }
+
+                const valueEnd = findJavaMapValueEnd(raw, i);
+                const valueText = raw.slice(i, valueEnd);
+                result += shouldQuoteJavaMapValue(valueText) ? quoteJavaMapValue(valueText) : valueText;
+                i = valueEnd;
+            }
+
+            return result;
+        }
+
+        function findJavaMapValueEnd(raw, start) {
+            let depth = 0;
+            let inString = false;
+            let stringChar = '';
+            let escaped = false;
+
+            for (let i = start; i < raw.length; i++) {
+                const char = raw[i];
+
+                if (inString) {
+                    if (escaped) {
+                        escaped = false;
+                    } else if (char === '\\') {
+                        escaped = true;
+                    } else if (char === stringChar) {
+                        inString = false;
+                    }
+                    continue;
+                }
+
+                if (char === '"' || char === "'") {
+                    inString = true;
+                    stringChar = char;
+                    continue;
+                }
+
+                if (char === '{' || char === '[') {
+                    depth++;
+                    continue;
+                }
+
+                if (char === '}' || char === ']') {
+                    if (depth === 0) return i;
+                    depth--;
+                    continue;
+                }
+
+                if (char === ',' && depth === 0) {
+                    return i;
+                }
+            }
+
+            return raw.length;
+        }
+
+        function shouldQuoteJavaMapValue(valueText) {
+            const value = valueText.trim();
+            if (!value) return false;
+            if (value.startsWith('"') || value.startsWith("'") || value.startsWith('{') || value.startsWith('[')) {
+                return false;
+            }
+            return !isJsonPrimitive(value);
+        }
+
+        function quoteJavaMapValue(valueText) {
+            const leadingWhitespace = valueText.match(/^\s*/)[0];
+            const trailingWhitespace = valueText.match(/\s*$/)[0];
+            const value = valueText.slice(leadingWhitespace.length, valueText.length - trailingWhitespace.length);
+            const escapedValue = value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            return leadingWhitespace + "'" + escapedValue + "'" + trailingWhitespace;
         }
 
         function stripJavaClassPrefixes(raw) {
@@ -1617,6 +1758,63 @@
                 if (!/\s/.test(raw[i])) return i;
             }
             return -1;
+        }
+
+        function stripCommentsOutsideStrings(raw) {
+            let result = '';
+            let inString = false;
+            let stringChar = '';
+            let escaped = false;
+
+            for (let i = 0; i < raw.length; i++) {
+                const char = raw[i];
+                const nextChar = raw[i + 1];
+
+                if (inString) {
+                    result += char;
+                    if (escaped) {
+                        escaped = false;
+                    } else if (char === '\\') {
+                        escaped = true;
+                    } else if (char === stringChar) {
+                        inString = false;
+                    }
+                    continue;
+                }
+
+                if (char === '"' || char === "'") {
+                    inString = true;
+                    stringChar = char;
+                    result += char;
+                    continue;
+                }
+
+                if (char === '/' && nextChar === '/') {
+                    i += 2;
+                    while (i < raw.length && raw[i] !== '\n' && raw[i] !== '\r') {
+                        i++;
+                    }
+                    if (i < raw.length) {
+                        result += raw[i];
+                    }
+                    continue;
+                }
+
+                if (char === '/' && nextChar === '*') {
+                    i += 2;
+                    while (i < raw.length - 1 && !(raw[i] === '*' && raw[i + 1] === '/')) {
+                        i++;
+                    }
+                    if (i < raw.length - 1) {
+                        i++;
+                    }
+                    continue;
+                }
+
+                result += char;
+            }
+
+            return result;
         }
 
         /**
@@ -2246,6 +2444,7 @@
                 currentObj = parsed;
                 outputDiv.innerHTML = '';
                 errorMsg.style.display = 'none';
+                errorMsg.textContent = '';
 
                 const tree = buildTree(parsed, 0, null, true, []);
                 outputDiv.appendChild(tree);
