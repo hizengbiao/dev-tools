@@ -184,7 +184,6 @@
             padding: 10px 10px 10px 50px;
             /* Left padding for gutter */
             box-sizing: border-box;
-            counter-reset: line;
             position: relative;
             /* Anchor for absolute line numbers */
         }
@@ -228,8 +227,7 @@
         }
 
         .line-num::before {
-            counter-increment: line;
-            content: counter(line);
+            content: attr(data-line);
         }
 
         .json-node:hover>.json-row {
@@ -788,7 +786,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V1.77</span>
+            <span>V1.79</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -823,6 +821,14 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月5日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.79</div>
+                        <div class="changelog-desc">交互修复：折叠树节点后保留格式化 JSON 的真实行号，方便按行号回到源码中定位。</div>
+                    </div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.78</div>
+                        <div class="changelog-desc">交互修复：修复“折叠子树”层级计算和输入校验，按节点路径稳定折叠指定深度及以下的子树。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.77</div>
                         <div class="changelog-desc">状态修复：删除根节点时同步清空输入框、树视图和内部 JSON 状态，避免旧源码残留。</div>
@@ -2739,7 +2745,7 @@
 
 
         // --- Tree Builder (Nested Block Layout) ---
-        function buildTree(data, level, key, isLast, path) {
+        function buildTree(data, level, key, isLast, path, lineState = { value: 1 }) {
             const container = document.createElement('div');
             container.className = 'json-node expanded';
 
@@ -2754,6 +2760,7 @@
 
             const lineNum = document.createElement('span');
             lineNum.className = 'line-num';
+            setJsonLineNumber(lineNum, lineState);
             row.appendChild(lineNum);
 
             // Content Box for Key/Value/Preview
@@ -2962,12 +2969,9 @@
                 btnFold.textContent = '折叠子树';
                 btnFold.onclick = (e) => {
                     e.stopPropagation();
-                    const nStr = prompt("请输入数字N，从当前层级开始将其深度N层以上的子树全部折叠");
-                    if (nStr !== null) {
-                        const n = parseInt(nStr);
-                        if (!isNaN(n)) {
-                            handleFoldSubtree(container, n);
-                        }
+                    const n = requestFoldDepth();
+                    if (n !== null) {
+                        handleFoldSubtree(container, n);
                     }
                 };
                 actions.appendChild(btnFold);
@@ -3003,7 +3007,7 @@
                 const keys = Object.keys(data);
                 keys.forEach((k, i) => {
                     const nextKey = Array.isArray(data) ? null : k;
-                    const childNode = buildTree(data[k], level + 1, nextKey, i === keys.length - 1, [...path, k]);
+                    const childNode = buildTree(data[k], level + 1, nextKey, i === keys.length - 1, [...path, k], lineState);
                     childrenDiv.appendChild(childNode);
                 });
 
@@ -3015,6 +3019,7 @@
 
                 const closeLineNum = document.createElement('span');
                 closeLineNum.className = 'line-num';
+                setJsonLineNumber(closeLineNum, lineState);
                 closeRow.appendChild(closeLineNum);
 
                 const closeContent = document.createElement('div');
@@ -3045,6 +3050,12 @@
 
             container.dataset.path = JSON.stringify(path);
             return container;
+        }
+
+        function setJsonLineNumber(lineNum, lineState) {
+            const line = lineState.value++;
+            lineNum.dataset.line = String(line);
+            lineNum.title = `格式化 JSON 第 ${line} 行`;
         }
 
         /**
@@ -4034,26 +4045,39 @@
             }
         }
 
+        function requestFoldDepth() {
+            const promptFn = (typeof window !== 'undefined' && typeof window.prompt === 'function')
+                ? window.prompt.bind(window)
+                : null;
+            if (!promptFn) {
+                showToast("当前环境不支持弹出输入框，无法折叠子树");
+                return null;
+            }
+
+            const nStr = promptFn("请输入数字 N，从当前层级开始折叠深度 N 层及以下的子树", "1");
+            if (nStr === null) return null;
+
+            const trimmed = nStr.trim();
+            if (!/^\d+$/.test(trimmed)) {
+                showToast("请输入大于等于 0 的整数");
+                return null;
+            }
+
+            return Number(trimmed);
+        }
+
         function handleFoldSubtree(container, N) {
             const allNodes = [container, ...container.querySelectorAll('.json-node')];
             allNodes.forEach(node => {
-                let depth = 0;
-                let cur = node;
-                while (cur && cur !== container) {
-                    if (cur.parentElement && cur.parentElement.closest('.json-node')) {
-                        depth++;
-                        cur = cur.parentElement.closest('.json-node');
-                    } else {
-                        break;
-                    }
-                }
+                const depth = getRelativeNodeDepth(container, node);
+                if (depth < 0) return;
 
-                const icon = node.querySelector('.collapsible-icon');
+                const icon = getOwnCollapsibleIcon(node);
                 if (icon) {
                     // depth is relative to container.
                     // depth 0 is container, depth 1 is child, etc.
-                    // User N=1: child (d=1) expanded, grandchild (d=2) collapsed.
-                    if (depth > N) {
+                    // User N=1: child (d=1) and deeper object nodes are collapsed.
+                    if (depth >= N) {
                         node.classList.remove('expanded');
                         node.classList.add('collapsed');
                     } else {
@@ -4062,6 +4086,55 @@
                     }
                 }
             });
+        }
+
+        function getRelativeNodeDepth(container, node) {
+            const basePath = parseNodePath(container);
+            const nodePath = parseNodePath(node);
+
+            if (basePath && nodePath && isPathPrefix(basePath, nodePath)) {
+                return nodePath.length - basePath.length;
+            }
+
+            return getRelativeNodeDepthFromDom(container, node);
+        }
+
+        function parseNodePath(node) {
+            if (!node || !node.dataset || !node.dataset.path) return null;
+            try {
+                const path = JSON.parse(node.dataset.path);
+                return Array.isArray(path) ? path : null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function isPathPrefix(prefix, path) {
+            if (prefix.length > path.length) return false;
+            for (let i = 0; i < prefix.length; i++) {
+                if (prefix[i] !== path[i]) return false;
+            }
+            return true;
+        }
+
+        function getRelativeNodeDepthFromDom(container, node) {
+            let depth = 0;
+            let cur = node;
+            while (cur && cur !== container) {
+                const parentNode = cur.parentElement ? cur.parentElement.closest('.json-node') : null;
+                if (!parentNode) return -1;
+                depth++;
+                cur = parentNode;
+            }
+            return cur === container ? depth : -1;
+        }
+
+        function getOwnCollapsibleIcon(node) {
+            const row = node && node.children ? node.children[0] : null;
+            if (row && row.classList && row.classList.contains('json-row')) {
+                return row.querySelector('.collapsible-icon');
+            }
+            return node ? node.querySelector('.collapsible-icon') : null;
         }
 
         // Enable bracket matching for the main source editor
