@@ -10,9 +10,9 @@
     ];
 
     // Determine current page
+    const basePath = '/dev-tools/';
     const currentPath = window.location.pathname.split('/').pop() || 'index.html';
     const isNeonTimer = window.location.pathname.includes('neon-timer');
-    const pathPrefix = isNeonTimer ? '../../' : '';
 
     // Create Nav Elements
     const nav = document.createElement('nav');
@@ -23,7 +23,7 @@
 
     // Logo / Home Link
     const logo = document.createElement('a');
-    logo.href = pathPrefix + 'index.html';
+    logo.href = basePath + 'index.html';
     logo.className = 'nav-logo';
     logo.innerHTML = '🛠️ 工具箱首页';
 
@@ -35,7 +35,7 @@
         if (tool.path === 'index.html') return;
 
         const a = document.createElement('a');
-        a.href = pathPrefix + tool.path;
+        a.href = basePath + tool.path;
         a.className = 'nav-link';
         a.textContent = tool.name;
 
