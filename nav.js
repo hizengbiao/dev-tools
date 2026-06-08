@@ -10,8 +10,10 @@
     ];
 
     // Determine current page
-    const basePath = '/dev-tools/';
-    const currentPath = window.location.pathname.split('/').pop() || 'index.html';
+    const navScript = document.currentScript || document.querySelector('script[src$="nav.js"]');
+    const baseUrl = new URL('.', navScript ? navScript.src : window.location.href);
+    const currentUrl = new URL(window.location.href);
+    const currentPath = currentUrl.pathname.split('/').pop() || 'index.html';
     const isNeonTimer = window.location.pathname.includes('neon-timer');
 
     // Create Nav Elements
@@ -23,7 +25,7 @@
 
     // Logo / Home Link
     const logo = document.createElement('a');
-    logo.href = basePath + 'index.html';
+    logo.href = new URL('index.html', baseUrl).href;
     logo.className = 'nav-logo';
     logo.innerHTML = '🛠️ 工具箱首页';
 
@@ -35,7 +37,8 @@
         if (tool.path === 'index.html') return;
 
         const a = document.createElement('a');
-        a.href = basePath + tool.path;
+        const toolUrl = new URL(tool.path, baseUrl);
+        a.href = toolUrl.href;
         a.className = 'nav-link';
         a.textContent = tool.name;
 
