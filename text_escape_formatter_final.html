@@ -1,533 +1,680 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>文本转义转换工具（可读文本与转义字符串互转）</title>
-  <style>
-    :root {
-      --bg: #f5f7fb;
-      --card: #ffffff;
-      --text: #1f2937;
-      --muted: #6b7280;
-      --border: #d9dee8;
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --secondary: #4b5563;
-      --secondary-hover: #374151;
-      --danger: #dc2626;
-      --danger-hover: #b91c1c;
-      --shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
-      --radius: 16px;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文本转义转换工具</title>
+    <link rel="stylesheet" href="nav.css">
+    <script src="nav.js" defer></script>
+    <style>
+        :root {
+            --bg-color: #f4f6f8;
+            --panel-bg: #ffffff;
+            --border-color: #d1d5db;
+            --text-color: #333;
+            --accent-color: #0969da;
+            --accent-hover: #0a58ca;
+            --danger-color: #cf222e;
+            --muted-color: #57606a;
+        }
 
-    * {
-      box-sizing: border-box;
-    }
+        * {
+            box-sizing: border-box;
+        }
 
-    body {
-      margin: 0;
-      min-height: 100vh;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(circle at top left, rgba(37, 99, 235, 0.10), transparent 36%),
-        linear-gradient(135deg, #eef2ff 0%, var(--bg) 42%, #f8fafc 100%);
-    }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
 
-    .page {
-      width: min(1280px, calc(100vw - 40px));
-      margin: 0 auto;
-      padding: 34px 0 28px;
-    }
+        .container {
+            max-width: 1120px;
+            width: 100%;
+        }
 
-    .header {
-      margin-bottom: 22px;
-      text-align: center;
-    }
+        .tool-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
 
-    .header h1 {
-      margin: 0;
-      font-size: 30px;
-      line-height: 1.28;
-      letter-spacing: 0.3px;
-    }
+        h1 {
+            font-size: 24px;
+            margin: 0;
+            font-weight: 600;
+        }
 
-    .header p {
-      margin: 12px auto 0;
-      max-width: 820px;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.8;
-    }
+        .version-info {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 10px;
+            border: 1px solid #d0d7de;
+            border-radius: 999px;
+            background: #f6f8fa;
+            color: #57606a;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            user-select: none;
+        }
 
-    .tool-card {
-      padding: 24px;
-      border: 1px solid rgba(217, 222, 232, 0.82);
-      border-radius: var(--radius);
-      background: rgba(255, 255, 255, 0.92);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(8px);
-    }
+        .version-info:hover {
+            color: #0969da;
+            border-color: #0969da;
+            background: #ddf4ff;
+        }
 
-    .workspace {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 170px minmax(0, 1fr);
-      gap: 18px;
-      align-items: stretch;
-      min-height: 520px;
-    }
+        .converter-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
 
-    .panel {
-      display: flex;
-      min-width: 0;
-      flex-direction: column;
-    }
+        .workspace {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 180px minmax(0, 1fr);
+            gap: 18px;
+            align-items: stretch;
+        }
 
-    .panel-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 10px;
-    }
+        .panel {
+            display: flex;
+            flex-direction: column;
+            min-height: 410px;
+        }
 
-    .panel-title {
-      font-weight: 700;
-      font-size: 15px;
-    }
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
 
-    .stats {
-      color: var(--muted);
-      font-size: 12px;
-      white-space: nowrap;
-    }
+        .panel-header h3 {
+            margin: 0;
+            font-size: 16px;
+            color: #24292f;
+        }
 
-    textarea {
-      width: 100%;
-      height: 100%;
-      min-height: 470px;
-      resize: vertical;
-      padding: 16px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      outline: none;
-      background: #fbfdff;
-      color: #111827;
-      font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
-      font-size: 14px;
-      line-height: 1.6;
-      tab-size: 4;
-      transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
-    }
+        .stats {
+            color: var(--muted-color);
+            font-size: 12px;
+            white-space: nowrap;
+        }
 
-    textarea:focus {
-      border-color: rgba(37, 99, 235, 0.72);
-      background: #ffffff;
-      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
-    }
+        textarea {
+            width: 100%;
+            flex: 1;
+            min-height: 330px;
+            padding: 12px;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: vertical;
+            outline: none;
+            background: #fff;
+        }
 
-    textarea::placeholder {
-      color: #9ca3af;
-    }
+        textarea:focus {
+            border-color: #0969da;
+            box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.3);
+        }
 
-    .actions {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 12px;
-      padding-top: 28px;
-    }
+        textarea::placeholder {
+            color: #8c959f;
+        }
 
-    button {
-      width: 100%;
-      min-height: 42px;
-      padding: 10px 12px;
-      border: 0;
-      border-radius: 10px;
-      color: #ffffff;
-      background: var(--secondary);
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 650;
-      line-height: 1.2;
-      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
-      user-select: none;
-    }
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            justify-content: center;
+        }
 
-    button:hover {
-      background: var(--secondary-hover);
-      box-shadow: 0 8px 18px rgba(31, 41, 55, 0.15);
-      transform: translateY(-1px);
-    }
+        .btn {
+            padding: 9px 14px;
+            font-size: 14px;
+            border-radius: 6px;
+            border: 1px solid rgba(27, 31, 35, 0.15);
+            cursor: pointer;
+            background-color: #fff;
+            color: #24292f;
+            transition: 0.2s;
+            font-weight: 600;
+        }
 
-    button:active {
-      box-shadow: none;
-      transform: translateY(0);
-    }
+        .btn:hover {
+            background-color: #f3f4f6;
+        }
 
-    .primary {
-      background: var(--primary);
-    }
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
 
-    .primary:hover {
-      background: var(--primary-hover);
-    }
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+        }
 
-    .danger {
-      background: var(--danger);
-    }
+        .btn-secondary {
+            background-color: #0ea5a8;
+            color: white;
+            border-color: #0ea5a8;
+        }
 
-    .danger:hover {
-      background: var(--danger-hover);
-    }
+        .btn-secondary:hover {
+            background-color: #0f8f92;
+        }
 
-    .copy-row {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-      margin-top: 12px;
-    }
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+            border-color: var(--danger-color);
+        }
 
-    .notice {
-      display: none;
-      margin-top: 16px;
-      padding: 10px 12px;
-      border-radius: 10px;
-      background: #ecfdf5;
-      color: #047857;
-      font-size: 13px;
-      line-height: 1.5;
-    }
+        .btn-danger:hover {
+            background-color: #a40e26;
+        }
 
-    .notice.error {
-      background: #fef2f2;
-      color: #b91c1c;
-    }
+        .copy-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
 
-    .help {
-      margin-top: 18px;
-      padding: 14px 16px;
-      border: 1px dashed #cbd5e1;
-      border-radius: 12px;
-      background: rgba(248, 250, 252, 0.88);
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.85;
-    }
+        .hint {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #d8dee4;
+            color: var(--muted-color);
+            font-size: 13px;
+            line-height: 1.7;
+        }
 
-    .help strong {
-      color: #374151;
-    }
+        .hint strong {
+            color: #24292f;
+        }
 
-    kbd {
-      display: inline-block;
-      padding: 1px 6px;
-      border: 1px solid #cbd5e1;
-      border-bottom-width: 2px;
-      border-radius: 6px;
-      background: #ffffff;
-      color: #374151;
-      font-family: Consolas, "Courier New", monospace;
-      font-size: 12px;
-      line-height: 1.5;
-    }
+        kbd {
+            padding: 2px 5px;
+            border: 1px solid #d0d7de;
+            border-bottom-width: 2px;
+            border-radius: 4px;
+            background: #f6f8fa;
+            color: #24292f;
+            font-family: inherit;
+            font-size: 12px;
+        }
 
-    @media (max-width: 940px) {
-      .workspace {
-        grid-template-columns: 1fr;
-        min-height: auto;
-      }
+        #toast {
+            visibility: hidden;
+            min-width: 220px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 4px;
+            padding: 10px;
+            position: fixed;
+            z-index: 4000;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s, bottom 0.3s;
+        }
 
-      .actions {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        padding-top: 0;
-      }
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+            bottom: 50px;
+        }
 
-      textarea {
-        min-height: 310px;
-      }
-    }
+        #toast.error {
+            background-color: #cf222e;
+        }
 
-    @media (max-width: 640px) {
-      .page {
-        width: min(100vw - 24px, 1280px);
-        padding: 22px 0;
-      }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 3000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
 
-      .header h1 {
-        font-size: 24px;
-      }
+        .modal-content {
+            background: #fff;
+            width: 90%;
+            max-width: 650px;
+            max-height: 80vh;
+            border-radius: 8px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            animation: modalFadeIn 0.2s ease-out;
+        }
 
-      .tool-card {
-        padding: 16px;
-      }
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
 
-      .actions,
-      .copy-row {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e1e4e8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #24292f;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #57606a;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
+
+        .close-modal:hover {
+            background-color: #f3f4f6;
+            color: #cf222e;
+        }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            color: #24292f;
+        }
+
+        .changelog-date {
+            font-weight: 600;
+            color: #24292f;
+            font-size: 16px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #0969da;
+            display: inline-block;
+        }
+
+        .changelog-entry {
+            margin-bottom: 12px;
+            font-size: 14px;
+            display: flex;
+            gap: 12px;
+            line-height: 1.6;
+        }
+
+        .changelog-version {
+            flex: 0 0 56px;
+            font-weight: 700;
+            color: #0969da;
+            background: #ddf4ff;
+            border-radius: 999px;
+            text-align: center;
+            height: 24px;
+            line-height: 24px;
+            font-size: 12px;
+        }
+
+        .changelog-desc {
+            flex: 1;
+        }
+
+        @media (max-width: 900px) {
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+
+            .actions {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .panel {
+                min-height: auto;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 12px;
+            }
+
+            .tool-title {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .converter-card {
+                padding: 14px;
+            }
+
+            .actions,
+            .copy-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
+
 <body>
-  <main class="page">
-    <header class="header">
-      <h1>文本转义转换工具（可读文本与转义字符串互转）</h1>
-      <p>用于处理日志、异常堆栈、JSON 字符串、SQL 报错、接口返回内容等文本。支持将 <code>\n</code>、<code>\t</code>、<code>\"</code>、<code>\\uXXXX</code> 等转义内容还原为可读文本，也支持把多行文本转换为转义字符串。</p>
-    </header>
+    <div class="container">
+        <div class="tool-title">
+            <h1>文本转义转换</h1>
+            <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
+                <span>V1.00</span>
+                <span>ℹ️</span>
+            </div>
+        </div>
 
-    <section class="tool-card">
-      <div class="workspace">
-        <section class="panel">
-          <div class="panel-head">
-            <div class="panel-title">输入</div>
-            <div class="stats" id="inputStats">0 行 / 0 字符</div>
-          </div>
-          <textarea id="inputText" spellcheck="false" placeholder="请输入转义字符串或普通文本，例如：\njava.lang.RuntimeException: test\n\tat com.example.Demo.main(Demo.java:12)"></textarea>
+        <section class="converter-card">
+            <div class="workspace">
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3>输入区</h3>
+                        <div class="stats" id="inputStats">0 行 / 0 字符</div>
+                    </div>
+                    <textarea id="inputText" spellcheck="false" placeholder="请输入转义字符串或普通文本，例如：\njava.lang.RuntimeException: test\n\tat com.example.Demo.main(Demo.java:12)"></textarea>
+                </section>
+
+                <section class="actions" aria-label="转换操作">
+                    <button class="btn btn-primary" id="decodeBtn" type="button">转为可读文本</button>
+                    <button class="btn btn-primary" id="encodeBtn" type="button">转为转义字符串</button>
+                    <button class="btn btn-secondary" id="swapBtn" type="button">交换输入输出</button>
+                    <div class="copy-row">
+                        <button class="btn" id="copyTextBtn" type="button">复制文本</button>
+                        <button class="btn" id="copyQuotedBtn" type="button">复制带引号</button>
+                    </div>
+                    <button class="btn btn-danger" id="clearBtn" type="button">清空</button>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-header">
+                        <h3>输出区</h3>
+                        <div class="stats" id="outputStats">0 行 / 0 字符</div>
+                    </div>
+                    <textarea id="outputText" spellcheck="false" placeholder="转换结果会显示在这里..."></textarea>
+                </section>
+            </div>
+
+            <div class="hint">
+                <strong>说明：</strong>
+                “转为可读文本”适合把一行转义字符串展开为正常多行内容；“转为转义字符串”适合把多行文本转换成可直接复制到
+                Java、JSON、配置文件或日志字段里的字符串。快捷键：<kbd>Ctrl</kbd> + <kbd>Enter</kbd> 转为可读文本，<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd> 转为转义字符串。
+            </div>
         </section>
+    </div>
 
-        <section class="actions" aria-label="操作按钮">
-          <button class="primary" id="decodeBtn" type="button">转为可读文本</button>
-          <button class="primary" id="encodeBtn" type="button">转为转义字符串</button>
-          <button id="swapBtn" type="button">交换输入输出</button>
-          <button id="copyTextBtn" type="button">复制文本</button>
-          <button id="copyQuotedBtn" type="button">复制为带引号字符串</button>
-          <button class="danger" id="clearBtn" type="button">清空</button>
-        </section>
+    <div id="toast"></div>
 
-        <section class="panel">
-          <div class="panel-head">
-            <div class="panel-title">输出</div>
-            <div class="stats" id="outputStats">0 行 / 0 字符</div>
-          </div>
-          <textarea id="outputText" spellcheck="false" placeholder="转换结果会显示在这里..."></textarea>
-        </section>
-      </div>
+    <div id="changelog-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🚀 版本更新说明</h3>
+                <button class="close-modal" onclick="closeChangelog()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年6月9日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.00</div>
+                        <div class="changelog-desc">版本初始化</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-      <div id="notice" class="notice"></div>
+    <script>
+        const inputText = document.getElementById('inputText');
+        const outputText = document.getElementById('outputText');
+        const inputStats = document.getElementById('inputStats');
+        const outputStats = document.getElementById('outputStats');
+        const toast = document.getElementById('toast');
 
-      <div class="help">
-        <strong>说明：</strong>
-        “转为可读文本”适合把一行转义字符串展开成正常多行内容；“转为转义字符串”适合把多行文本转换成可直接复制到 Java、JSON、配置文件或日志字段里的字符串。快捷键：<kbd>Ctrl</kbd> + <kbd>Enter</kbd> 转为可读文本，<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd> 转为转义字符串。
-      </div>
-    </section>
-  </main>
+        const decodeBtn = document.getElementById('decodeBtn');
+        const encodeBtn = document.getElementById('encodeBtn');
+        const swapBtn = document.getElementById('swapBtn');
+        const copyTextBtn = document.getElementById('copyTextBtn');
+        const copyQuotedBtn = document.getElementById('copyQuotedBtn');
+        const clearBtn = document.getElementById('clearBtn');
 
-  <script>
-    const inputText = document.getElementById('inputText');
-    const outputText = document.getElementById('outputText');
-    const inputStats = document.getElementById('inputStats');
-    const outputStats = document.getElementById('outputStats');
-    const notice = document.getElementById('notice');
+        function getStats(text) {
+            if (!text) {
+                return '0 行 / 0 字符';
+            }
 
-    const decodeBtn = document.getElementById('decodeBtn');
-    const encodeBtn = document.getElementById('encodeBtn');
-    const swapBtn = document.getElementById('swapBtn');
-    const copyTextBtn = document.getElementById('copyTextBtn');
-    const copyQuotedBtn = document.getElementById('copyQuotedBtn');
-    const clearBtn = document.getElementById('clearBtn');
-
-    function getStats(text) {
-      if (!text) {
-        return '0 行 / 0 字符';
-      }
-      const lines = text.split(/\r\n|\r|\n/).length;
-      return `${lines} 行 / ${text.length} 字符`;
-    }
-
-    function refreshStats() {
-      inputStats.textContent = getStats(inputText.value);
-      outputStats.textContent = getStats(outputText.value);
-    }
-
-    function showNotice(message, isError = false) {
-      notice.textContent = message;
-      notice.className = isError ? 'notice error' : 'notice';
-      notice.style.display = 'block';
-      window.clearTimeout(showNotice.timer);
-      showNotice.timer = window.setTimeout(() => {
-        notice.style.display = 'none';
-      }, 2200);
-    }
-
-    function hasWrappedQuote(text) {
-      const trimmed = text.trim();
-      return trimmed.length >= 2 && trimmed.startsWith('"') && trimmed.endsWith('"');
-    }
-
-    function stripWrappedQuote(text) {
-      const trimmed = text.trim();
-      if (hasWrappedQuote(trimmed)) {
-        return trimmed.slice(1, -1);
-      }
-      return text;
-    }
-
-    function decodeUnicodeEscapes(text) {
-      return text.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => {
-        return String.fromCharCode(parseInt(hex, 16));
-      });
-    }
-
-    function decodeCommonEscapes(text) {
-      return text
-        .replace(/\\r\\n/g, '\n')
-        .replace(/\\n/g, '\n')
-        .replace(/\\r/g, '\n')
-        .replace(/\\t/g, '\t')
-        .replace(/\\b/g, '\b')
-        .replace(/\\f/g, '\f')
-        .replace(/\\"/g, '"')
-        .replace(/\\'/g, "'")
-        .replace(/\\\\/g, '\\');
-    }
-
-    function improveStackLikeLineBreaks(text) {
-      return text
-        .replace(/\s+(?=at\s+[\w.$]+\([^\n]*\))/g, '\n')
-        .replace(/\s+(?=Caused by:\s+)/g, '\n')
-        .replace(/\s+(?=Suppressed:\s+)/g, '\n')
-        .replace(/\s+(?=\.\.\.\s+\d+\s+more)/g, '\n')
-        .replace(/\s+(?=[\w.$]+(?:Exception|Error|Throwable):\s+)/g, '\n');
-    }
-
-    function decodeToReadableText(raw) {
-      if (!raw) {
-        return '';
-      }
-
-      const trimmed = raw.trim();
-      const jsonCandidate = hasWrappedQuote(trimmed) ? trimmed : `"${raw.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\r?\n/g, '\\n')}"`;
-
-      if (hasWrappedQuote(trimmed)) {
-        try {
-          return improveStackLikeLineBreaks(JSON.parse(trimmed));
-        } catch (e) {
-          // 使用兼容解码逻辑继续处理。
+            const lines = text.split(/\r\n|\r|\n/).length;
+            return `${lines} 行 / ${text.length} 字符`;
         }
-      }
 
-      let text = stripWrappedQuote(raw);
-      text = decodeUnicodeEscapes(text);
-      text = decodeCommonEscapes(text);
-
-      try {
-        if (text === raw && jsonCandidate) {
-          text = JSON.parse(jsonCandidate);
+        function refreshStats() {
+            inputStats.textContent = getStats(inputText.value);
+            outputStats.textContent = getStats(outputText.value);
         }
-      } catch (e) {
-        // 保留前面的兼容解码结果。
-      }
 
-      return improveStackLikeLineBreaks(text);
-    }
+        function showToast(message, isError = false) {
+            toast.textContent = message;
+            toast.className = isError ? 'show error' : 'show';
+            window.clearTimeout(showToast.timer);
+            showToast.timer = window.setTimeout(() => {
+                toast.className = '';
+            }, 2000);
+        }
 
-    function encodeToEscapedString(raw) {
-      if (!raw) {
-        return '';
-      }
-      return raw
-        .replace(/\\/g, '\\\\')
-        .replace(/\r\n/g, '\\n')
-        .replace(/\r/g, '\\n')
-        .replace(/\n/g, '\\n')
-        .replace(/\t/g, '\\t')
-        .replace(/"/g, '\\"');
-    }
+        function hasWrappedQuote(text) {
+            return (text.startsWith('"') && text.endsWith('"')) || (text.startsWith("'") && text.endsWith("'"));
+        }
 
-    function copyToClipboard(text) {
-      if (!text) {
-        showNotice('没有可复制的内容。', true);
-        return;
-      }
+        function stripWrappedQuote(text) {
+            const trimmed = text.trim();
+            if (trimmed.length >= 2 && hasWrappedQuote(trimmed)) {
+                return trimmed.slice(1, -1);
+            }
 
-      if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(text)
-          .then(() => showNotice('已复制到剪贴板。'))
-          .catch(() => fallbackCopy(text));
-        return;
-      }
+            return text;
+        }
 
-      fallbackCopy(text);
-    }
+        function decodeUnicodeEscapes(text) {
+            return text.replace(/\\u([0-9a-fA-F]{4})/g, (_, code) => {
+                return String.fromCharCode(parseInt(code, 16));
+            });
+        }
 
-    function fallbackCopy(text) {
-      const temp = document.createElement('textarea');
-      temp.value = text;
-      temp.style.position = 'fixed';
-      temp.style.left = '-9999px';
-      temp.style.top = '-9999px';
-      document.body.appendChild(temp);
-      temp.focus();
-      temp.select();
+        function decodeCommonEscapes(text) {
+            const withoutQuotes = stripWrappedQuote(text);
+            const withUnicode = decodeUnicodeEscapes(withoutQuotes);
 
-      try {
-        const ok = document.execCommand('copy');
-        showNotice(ok ? '已复制到剪贴板。' : '复制失败，请手动复制。', !ok);
-      } catch (e) {
-        showNotice('复制失败，请手动复制。', true);
-      } finally {
-        document.body.removeChild(temp);
-      }
-    }
+            return withUnicode
+                .replace(/\\\\/g, '\u0000')
+                .replace(/\\r\\n/g, '\n')
+                .replace(/\\n/g, '\n')
+                .replace(/\\r/g, '\n')
+                .replace(/\\t/g, '\t')
+                .replace(/\\"/g, '"')
+                .replace(/\\'/g, "'")
+                .replace(/\u0000/g, '\\');
+        }
 
-    function decodeAction() {
-      outputText.value = decodeToReadableText(inputText.value);
-      refreshStats();
-      showNotice('已转为可读文本。');
-    }
+        function improveStackLikeLineBreaks(text) {
+            return text
+                .replace(/\s+at\s+([a-zA-Z_$][\w$]*(?:\.[\w$]+)+\()/g, '\n\tat $1')
+                .replace(/\s+Caused by:/g, '\nCaused by:')
+                .replace(/\s+Suppressed:/g, '\nSuppressed:')
+                .replace(/\s+\.\.\.\s+(\d+\s+more)/g, '\n\t... $1');
+        }
 
-    function encodeAction() {
-      outputText.value = encodeToEscapedString(inputText.value);
-      refreshStats();
-      showNotice('已转为转义字符串。');
-    }
+        function decodeToReadableText(raw) {
+            const decoded = decodeCommonEscapes(raw);
+            return improveStackLikeLineBreaks(decoded);
+        }
 
-    decodeBtn.addEventListener('click', decodeAction);
-    encodeBtn.addEventListener('click', encodeAction);
+        function encodeToEscapedString(raw) {
+            return raw
+                .replace(/\\/g, '\\\\')
+                .replace(/\r\n/g, '\\n')
+                .replace(/\r/g, '\\n')
+                .replace(/\n/g, '\\n')
+                .replace(/\t/g, '\\t')
+                .replace(/"/g, '\\"');
+        }
 
-    swapBtn.addEventListener('click', () => {
-      const temp = inputText.value;
-      inputText.value = outputText.value;
-      outputText.value = temp;
-      refreshStats();
-      showNotice('已交换输入输出。');
-    });
+        function copyToClipboard(text) {
+            if (!text) {
+                showToast('没有可复制的内容。', true);
+                return;
+            }
 
-    copyTextBtn.addEventListener('click', () => {
-      copyToClipboard(outputText.value);
-    });
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text)
+                    .then(() => showToast('已复制到剪贴板。'))
+                    .catch(() => fallbackCopy(text));
+                return;
+            }
 
-    copyQuotedBtn.addEventListener('click', () => {
-      copyToClipboard(`"${encodeToEscapedString(outputText.value)}"`);
-    });
+            fallbackCopy(text);
+        }
 
-    clearBtn.addEventListener('click', () => {
-      inputText.value = '';
-      outputText.value = '';
-      refreshStats();
-      inputText.focus();
-      showNotice('已清空。');
-    });
+        function fallbackCopy(text) {
+            const temp = document.createElement('textarea');
+            temp.value = text;
+            temp.style.position = 'fixed';
+            temp.style.left = '-9999px';
+            temp.style.top = '-9999px';
+            document.body.appendChild(temp);
+            temp.focus();
+            temp.select();
 
-    inputText.addEventListener('input', refreshStats);
-    outputText.addEventListener('input', refreshStats);
+            try {
+                const ok = document.execCommand('copy');
+                showToast(ok ? '已复制到剪贴板。' : '复制失败，请手动复制。', !ok);
+            } catch (e) {
+                showToast('复制失败，请手动复制。', true);
+            } finally {
+                document.body.removeChild(temp);
+            }
+        }
 
-    document.addEventListener('keydown', (event) => {
-      if (event.ctrlKey && event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        decodeAction();
-      }
+        function decodeAction() {
+            outputText.value = decodeToReadableText(inputText.value);
+            refreshStats();
+            showToast('已转为可读文本。');
+        }
 
-      if (event.ctrlKey && event.shiftKey && event.key === 'Enter') {
-        event.preventDefault();
-        encodeAction();
-      }
-    });
+        function encodeAction() {
+            outputText.value = encodeToEscapedString(inputText.value);
+            refreshStats();
+            showToast('已转为转义字符串。');
+        }
 
-    refreshStats();
-  </script>
+        function showChangelog() {
+            document.getElementById('changelog-modal').style.display = 'flex';
+        }
+
+        function closeChangelog() {
+            document.getElementById('changelog-modal').style.display = 'none';
+        }
+
+        window.showChangelog = showChangelog;
+        window.closeChangelog = closeChangelog;
+
+        decodeBtn.addEventListener('click', decodeAction);
+        encodeBtn.addEventListener('click', encodeAction);
+
+        swapBtn.addEventListener('click', () => {
+            const temp = inputText.value;
+            inputText.value = outputText.value;
+            outputText.value = temp;
+            refreshStats();
+            showToast('已交换输入输出。');
+        });
+
+        copyTextBtn.addEventListener('click', () => {
+            copyToClipboard(outputText.value);
+        });
+
+        copyQuotedBtn.addEventListener('click', () => {
+            copyToClipboard(`"${encodeToEscapedString(outputText.value)}"`);
+        });
+
+        clearBtn.addEventListener('click', () => {
+            inputText.value = '';
+            outputText.value = '';
+            refreshStats();
+            inputText.focus();
+            showToast('已清空。');
+        });
+
+        inputText.addEventListener('input', refreshStats);
+        outputText.addEventListener('input', refreshStats);
+
+        document.addEventListener('keydown', (event) => {
+            if (event.ctrlKey && event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                decodeAction();
+            }
+
+            if (event.ctrlKey && event.shiftKey && event.key === 'Enter') {
+                event.preventDefault();
+                encodeAction();
+            }
+        });
+
+        window.addEventListener('click', (event) => {
+            const modal = document.getElementById('changelog-modal');
+            if (event.target === modal) {
+                closeChangelog();
+            }
+        });
+
+        refreshStats();
+    </script>
 </body>
+
 </html>
