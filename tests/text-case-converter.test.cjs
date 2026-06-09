@@ -17,9 +17,14 @@ assert.strictEqual(converter.toSentenceCase('CHARACTER_SET_INCOMPATIBLE'), 'Char
 assert.strictEqual(converter.swapText('left', 'right').input, 'right');
 assert.strictEqual(converter.swapText('left', 'right').output, 'left');
 
-assert.match(html, /<div class="quick-actions">[\s\S]*常量变量名/);
-assert.match(html, /<div class="quick-actions">[\s\S]*下划线命名[\s\S]*小驼峰命名[\s\S]*大驼峰命名[\s\S]*短横线命名/);
-assert.match(html, /<div class="quick-actions">[\s\S]*标题格式[\s\S]*句子格式[\s\S]*全部大写[\s\S]*全部小写[\s\S]*清理多余空格/);
+assert.match(html, /<section class="format-section">/);
+assert.match(html, /<h2>命名格式转换<\/h2>/);
+assert.match(html, /选择目标命名格式或文本处理方式，结果会输出到右侧区域/);
+assert.match(html, /\.format-actions/);
+assert.match(html, /\.format-btn/);
+assert.match(html, /<div class="quick-actions format-actions">[\s\S]*常量变量名/);
+assert.match(html, /<div class="quick-actions format-actions">[\s\S]*下划线命名[\s\S]*小驼峰命名[\s\S]*大驼峰命名[\s\S]*短横线命名/);
+assert.match(html, /<div class="quick-actions format-actions">[\s\S]*标题格式[\s\S]*句子格式[\s\S]*全部大写[\s\S]*全部小写[\s\S]*清理多余空格/);
 assert.doesNotMatch(html, />snake_case</);
 assert.doesNotMatch(html, />camelCase</);
 assert.doesNotMatch(html, />PascalCase</);
@@ -29,7 +34,9 @@ assert.doesNotMatch(html, />Sentence case</);
 assert.doesNotMatch(html, />整理空格</);
 assert.doesNotMatch(html, /<div class="actions">[\s\S]*转换大小写[\s\S]*<\/div>/);
 assert.doesNotMatch(html, />转换驼峰</);
-assert.match(html, /<span>V1\.02<\/span>/);
+assert.match(html, /<span>V1\.03<\/span>/);
+assert.match(html, /<div class="changelog-version">V1\.03<\/div>/);
+assert.match(html, /增加命名格式转换功能区说明，并优化下方功能按钮样式/);
 assert.match(html, /<div class="changelog-version">V1\.02<\/div>/);
 assert.match(html, /优化功能区按钮文案，改为更直观的中文描述/);
 assert.match(html, /<div class="changelog-version">V1\.01<\/div>/);

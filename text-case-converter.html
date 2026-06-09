@@ -179,13 +179,58 @@
             background: #eaeef2;
         }
 
-        .quick-actions {
-            margin-top: 18px;
+        .format-section {
+            margin-top: 22px;
             padding-top: 18px;
             border-top: 1px solid #d8dee4;
+        }
+
+        .format-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        .format-header h2 {
+            margin: 0;
+            color: #24292f;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .format-header p {
+            margin: 4px 0 0;
+            color: #57606a;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .format-actions {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 10px;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+        }
+
+        .format-btn {
+            background: linear-gradient(180deg, #ffffff 0%, #f6f8fa 100%);
+            border: 1px solid #c8d7e8;
+            color: #0969da;
+            box-shadow: 0 1px 2px rgba(9, 105, 218, 0.08);
+        }
+
+        .format-btn:hover {
+            background: #eef6ff;
+            border-color: #0969da;
+            color: #0757b8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(9, 105, 218, 0.12);
+        }
+
+        .format-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(9, 105, 218, 0.08);
         }
 
         .hint {
@@ -364,7 +409,7 @@
         <div class="tool-title">
             <h1>文本命名转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.02</span>
+                <span>V1.03</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -393,18 +438,26 @@
                 </div>
             </div>
 
-            <div class="quick-actions">
-                <button class="btn" onclick="convertText('constant')">常量变量名</button>
-                <button class="btn" onclick="convertText('snake')">下划线命名</button>
-                <button class="btn" onclick="convertText('camel')">小驼峰命名</button>
-                <button class="btn" onclick="convertText('pascal')">大驼峰命名</button>
-                <button class="btn" onclick="convertText('kebab')">短横线命名</button>
-                <button class="btn" onclick="convertText('title')">标题格式</button>
-                <button class="btn" onclick="convertText('sentence')">句子格式</button>
-                <button class="btn" onclick="convertText('upper')">全部大写</button>
-                <button class="btn" onclick="convertText('lower')">全部小写</button>
-                <button class="btn" onclick="convertText('trim')">清理多余空格</button>
-            </div>
+            <section class="format-section">
+                <div class="format-header">
+                    <div>
+                        <h2>命名格式转换</h2>
+                        <p>选择目标命名格式或文本处理方式，结果会输出到右侧区域。</p>
+                    </div>
+                </div>
+                <div class="quick-actions format-actions">
+                    <button class="btn format-btn" onclick="convertText('constant')">常量变量名</button>
+                    <button class="btn format-btn" onclick="convertText('snake')">下划线命名</button>
+                    <button class="btn format-btn" onclick="convertText('camel')">小驼峰命名</button>
+                    <button class="btn format-btn" onclick="convertText('pascal')">大驼峰命名</button>
+                    <button class="btn format-btn" onclick="convertText('kebab')">短横线命名</button>
+                    <button class="btn format-btn" onclick="convertText('title')">标题格式</button>
+                    <button class="btn format-btn" onclick="convertText('sentence')">句子格式</button>
+                    <button class="btn format-btn" onclick="convertText('upper')">全部大写</button>
+                    <button class="btn format-btn" onclick="convertText('lower')">全部小写</button>
+                    <button class="btn format-btn" onclick="convertText('trim')">清理多余空格</button>
+                </div>
+            </section>
 
             <p class="hint">支持从普通短语、下划线、短横线、点号、斜杠和驼峰变量名中拆词，再转换为常见代码命名格式。“清理多余空格”会去掉每行首尾空白，并把连续空格压缩为单个空格。</p>
         </div>
@@ -419,6 +472,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月9日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.03</div>
+                        <div class="changelog-desc">增加命名格式转换功能区说明，并优化下方功能按钮样式</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.02</div>
                         <div class="changelog-desc">优化功能区按钮文案，改为更直观的中文描述</div>
