@@ -364,7 +364,7 @@
         <div class="tool-title">
             <h1>文本命名转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.00</span>
+                <span>V1.02</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -380,8 +380,6 @@
                 </div>
 
                 <div class="actions">
-                    <button class="btn btn-primary" onclick="convertText('constant')">转换大小写</button>
-                    <button class="btn btn-secondary" onclick="convertText('snake')">转换蛇峰</button>
                     <button class="btn btn-primary" onclick="swapAreas()">交换</button>
                     <button class="btn btn-danger" onclick="clearAll()">清空</button>
                 </div>
@@ -396,17 +394,19 @@
             </div>
 
             <div class="quick-actions">
-                <button class="btn" onclick="convertText('camel')">camelCase</button>
-                <button class="btn" onclick="convertText('pascal')">PascalCase</button>
-                <button class="btn" onclick="convertText('kebab')">kebab-case</button>
-                <button class="btn" onclick="convertText('title')">Title Case</button>
-                <button class="btn" onclick="convertText('sentence')">Sentence case</button>
+                <button class="btn" onclick="convertText('constant')">常量变量名</button>
+                <button class="btn" onclick="convertText('snake')">下划线命名</button>
+                <button class="btn" onclick="convertText('camel')">小驼峰命名</button>
+                <button class="btn" onclick="convertText('pascal')">大驼峰命名</button>
+                <button class="btn" onclick="convertText('kebab')">短横线命名</button>
+                <button class="btn" onclick="convertText('title')">标题格式</button>
+                <button class="btn" onclick="convertText('sentence')">句子格式</button>
                 <button class="btn" onclick="convertText('upper')">全部大写</button>
                 <button class="btn" onclick="convertText('lower')">全部小写</button>
-                <button class="btn" onclick="convertText('trim')">整理空格</button>
+                <button class="btn" onclick="convertText('trim')">清理多余空格</button>
             </div>
 
-            <p class="hint">支持从普通短语、下划线、短横线、点号、斜杠和驼峰变量名中拆词，再转换为常见代码命名格式。</p>
+            <p class="hint">支持从普通短语、下划线、短横线、点号、斜杠和驼峰变量名中拆词，再转换为常见代码命名格式。“清理多余空格”会去掉每行首尾空白，并把连续空格压缩为单个空格。</p>
         </div>
     </div>
 
@@ -419,6 +419,14 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月9日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.02</div>
+                        <div class="changelog-desc">优化功能区按钮文案，改为更直观的中文描述</div>
+                    </div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.01</div>
+                        <div class="changelog-desc">常量变量名入口移动到快捷功能区，并移除转换驼峰按钮</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.00</div>
                         <div class="changelog-desc">版本初始化</div>
