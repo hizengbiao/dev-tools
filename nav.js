@@ -6,6 +6,7 @@
         { name: '时间戳转换', path: 'timestamp-converter.html', icon: '⏱️' },
         { name: 'URL 编解码', path: 'url-encoder.html', icon: '🔗' },
         { name: 'Base64', path: 'base64-encoder.html', icon: '🔐' },
+        { name: '命名转换', path: 'text-case-converter.html', icon: '🔤' },
         { name: 'Neon Timer', path: 'neon-timer/dist/index.html', icon: '⏲️' }
     ];
 
