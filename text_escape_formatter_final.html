@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>文本转义转换工具（可读文本与转义字符串互转）</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #d9dee8;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --secondary: #4b5563;
+      --secondary-hover: #374151;
+      --danger: #dc2626;
+      --danger-hover: #b91c1c;
+      --shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.10), transparent 36%),
+        linear-gradient(135deg, #eef2ff 0%, var(--bg) 42%, #f8fafc 100%);
+    }
+
+    .page {
+      width: min(1280px, calc(100vw - 40px));
+      margin: 0 auto;
+      padding: 34px 0 28px;
+    }
+
+    .header {
+      margin-bottom: 22px;
+      text-align: center;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.28;
+      letter-spacing: 0.3px;
+    }
+
+    .header p {
+      margin: 12px auto 0;
+      max-width: 820px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .tool-card {
+      padding: 24px;
+      border: 1px solid rgba(217, 222, 232, 0.82);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 170px minmax(0, 1fr);
+      gap: 18px;
+      align-items: stretch;
+      min-height: 520px;
+    }
+
+    .panel {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .panel-title {
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .stats {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    textarea {
+      width: 100%;
+      height: 100%;
+      min-height: 470px;
+      resize: vertical;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      outline: none;
+      background: #fbfdff;
+      color: #111827;
+      font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      tab-size: 4;
+      transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+    }
+
+    textarea:focus {
+      border-color: rgba(37, 99, 235, 0.72);
+      background: #ffffff;
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    }
+
+    textarea::placeholder {
+      color: #9ca3af;
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 12px;
+      padding-top: 28px;
+    }
+
+    button {
+      width: 100%;
+      min-height: 42px;
+      padding: 10px 12px;
+      border: 0;
+      border-radius: 10px;
+      color: #ffffff;
+      background: var(--secondary);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 650;
+      line-height: 1.2;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+      user-select: none;
+    }
+
+    button:hover {
+      background: var(--secondary-hover);
+      box-shadow: 0 8px 18px rgba(31, 41, 55, 0.15);
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      box-shadow: none;
+      transform: translateY(0);
+    }
+
+    .primary {
+      background: var(--primary);
+    }
+
+    .primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .danger {
+      background: var(--danger);
+    }
+
+    .danger:hover {
+      background: var(--danger-hover);
+    }
+
+    .copy-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .notice {
+      display: none;
+      margin-top: 16px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #ecfdf5;
+      color: #047857;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .notice.error {
+      background: #fef2f2;
+      color: #b91c1c;
+    }
+
+    .help {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border: 1px dashed #cbd5e1;
+      border-radius: 12px;
+      background: rgba(248, 250, 252, 0.88);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.85;
+    }
+
+    .help strong {
+      color: #374151;
+    }
+
+    kbd {
+      display: inline-block;
+      padding: 1px 6px;
+      border: 1px solid #cbd5e1;
+      border-bottom-width: 2px;
+      border-radius: 6px;
+      background: #ffffff;
+      color: #374151;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 940px) {
+      .workspace {
+        grid-template-columns: 1fr;
+        min-height: auto;
+      }
+
+      .actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        padding-top: 0;
+      }
+
+      textarea {
+        min-height: 310px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        width: min(100vw - 24px, 1280px);
+        padding: 22px 0;
+      }
+
+      .header h1 {
+        font-size: 24px;
+      }
+
+      .tool-card {
+        padding: 16px;
+      }
+
+      .actions,
+      .copy-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="header">
+      <h1>文本转义转换工具（可读文本与转义字符串互转）</h1>
+      <p>用于处理日志、异常堆栈、JSON 字符串、SQL 报错、接口返回内容等文本。支持将 <code>\n</code>、<code>\t</code>、<code>\"</code>、<code>\\uXXXX</code> 等转义内容还原为可读文本，也支持把多行文本转换为转义字符串。</p>
+    </header>
+
+    <section class="tool-card">
+      <div class="workspace">
+        <section class="panel">
+          <div class="panel-head">
+            <div class="panel-title">输入</div>
+            <div class="stats" id="inputStats">0 行 / 0 字符</div>
+          </div>
+          <textarea id="inputText" spellcheck="false" placeholder="请输入转义字符串或普通文本，例如：\njava.lang.RuntimeException: test\n\tat com.example.Demo.main(Demo.java:12)"></textarea>
+        </section>
+
+        <section class="actions" aria-label="操作按钮">
+          <button class="primary" id="decodeBtn" type="button">转为可读文本</button>
+          <button class="primary" id="encodeBtn" type="button">转为转义字符串</button>
+          <button id="swapBtn" type="button">交换输入输出</button>
+          <button id="copyTextBtn" type="button">复制文本</button>
+          <button id="copyQuotedBtn" type="button">复制为带引号字符串</button>
+          <button class="danger" id="clearBtn" type="button">清空</button>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div class="panel-title">输出</div>
+            <div class="stats" id="outputStats">0 行 / 0 字符</div>
+          </div>
+          <textarea id="outputText" spellcheck="false" placeholder="转换结果会显示在这里..."></textarea>
+        </section>
+      </div>
+
+      <div id="notice" class="notice"></div>
+
+      <div class="help">
+        <strong>说明：</strong>
+        “转为可读文本”适合把一行转义字符串展开成正常多行内容；“转为转义字符串”适合把多行文本转换成可直接复制到 Java、JSON、配置文件或日志字段里的字符串。快捷键：<kbd>Ctrl</kbd> + <kbd>Enter</kbd> 转为可读文本，<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd> 转为转义字符串。
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const inputText = document.getElementById('inputText');
+    const outputText = document.getElementById('outputText');
+    const inputStats = document.getElementById('inputStats');
+    const outputStats = document.getElementById('outputStats');
+    const notice = document.getElementById('notice');
+
+    const decodeBtn = document.getElementById('decodeBtn');
+    const encodeBtn = document.getElementById('encodeBtn');
+    const swapBtn = document.getElementById('swapBtn');
+    const copyTextBtn = document.getElementById('copyTextBtn');
+    const copyQuotedBtn = document.getElementById('copyQuotedBtn');
+    const clearBtn = document.getElementById('clearBtn');
+
+    function getStats(text) {
+      if (!text) {
+        return '0 行 / 0 字符';
+      }
+      const lines = text.split(/\r\n|\r|\n/).length;
+      return `${lines} 行 / ${text.length} 字符`;
+    }
+
+    function refreshStats() {
+      inputStats.textContent = getStats(inputText.value);
+      outputStats.textContent = getStats(outputText.value);
+    }
+
+    function showNotice(message, isError = false) {
+      notice.textContent = message;
+      notice.className = isError ? 'notice error' : 'notice';
+      notice.style.display = 'block';
+      window.clearTimeout(showNotice.timer);
+      showNotice.timer = window.setTimeout(() => {
+        notice.style.display = 'none';
+      }, 2200);
+    }
+
+    function hasWrappedQuote(text) {
+      const trimmed = text.trim();
+      return trimmed.length >= 2 && trimmed.startsWith('"') && trimmed.endsWith('"');
+    }
+
+    function stripWrappedQuote(text) {
+      const trimmed = text.trim();
+      if (hasWrappedQuote(trimmed)) {
+        return trimmed.slice(1, -1);
+      }
+      return text;
+    }
+
+    function decodeUnicodeEscapes(text) {
+      return text.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => {
+        return String.fromCharCode(parseInt(hex, 16));
+      });
+    }
+
+    function decodeCommonEscapes(text) {
+      return text
+        .replace(/\\r\\n/g, '\n')
+        .replace(/\\n/g, '\n')
+        .replace(/\\r/g, '\n')
+        .replace(/\\t/g, '\t')
+        .replace(/\\b/g, '\b')
+        .replace(/\\f/g, '\f')
+        .replace(/\\"/g, '"')
+        .replace(/\\'/g, "'")
+        .replace(/\\\\/g, '\\');
+    }
+
+    function improveStackLikeLineBreaks(text) {
+      return text
+        .replace(/\s+(?=at\s+[\w.$]+\([^\n]*\))/g, '\n')
+        .replace(/\s+(?=Caused by:\s+)/g, '\n')
+        .replace(/\s+(?=Suppressed:\s+)/g, '\n')
+        .replace(/\s+(?=\.\.\.\s+\d+\s+more)/g, '\n')
+        .replace(/\s+(?=[\w.$]+(?:Exception|Error|Throwable):\s+)/g, '\n');
+    }
+
+    function decodeToReadableText(raw) {
+      if (!raw) {
+        return '';
+      }
+
+      const trimmed = raw.trim();
+      const jsonCandidate = hasWrappedQuote(trimmed) ? trimmed : `"${raw.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\r?\n/g, '\\n')}"`;
+
+      if (hasWrappedQuote(trimmed)) {
+        try {
+          return improveStackLikeLineBreaks(JSON.parse(trimmed));
+        } catch (e) {
+          // 使用兼容解码逻辑继续处理。
+        }
+      }
+
+      let text = stripWrappedQuote(raw);
+      text = decodeUnicodeEscapes(text);
+      text = decodeCommonEscapes(text);
+
+      try {
+        if (text === raw && jsonCandidate) {
+          text = JSON.parse(jsonCandidate);
+        }
+      } catch (e) {
+        // 保留前面的兼容解码结果。
+      }
+
+      return improveStackLikeLineBreaks(text);
+    }
+
+    function encodeToEscapedString(raw) {
+      if (!raw) {
+        return '';
+      }
+      return raw
+        .replace(/\\/g, '\\\\')
+        .replace(/\r\n/g, '\\n')
+        .replace(/\r/g, '\\n')
+        .replace(/\n/g, '\\n')
+        .replace(/\t/g, '\\t')
+        .replace(/"/g, '\\"');
+    }
+
+    function copyToClipboard(text) {
+      if (!text) {
+        showNotice('没有可复制的内容。', true);
+        return;
+      }
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text)
+          .then(() => showNotice('已复制到剪贴板。'))
+          .catch(() => fallbackCopy(text));
+        return;
+      }
+
+      fallbackCopy(text);
+    }
+
+    function fallbackCopy(text) {
+      const temp = document.createElement('textarea');
+      temp.value = text;
+      temp.style.position = 'fixed';
+      temp.style.left = '-9999px';
+      temp.style.top = '-9999px';
+      document.body.appendChild(temp);
+      temp.focus();
+      temp.select();
+
+      try {
+        const ok = document.execCommand('copy');
+        showNotice(ok ? '已复制到剪贴板。' : '复制失败，请手动复制。', !ok);
+      } catch (e) {
+        showNotice('复制失败，请手动复制。', true);
+      } finally {
+        document.body.removeChild(temp);
+      }
+    }
+
+    function decodeAction() {
+      outputText.value = decodeToReadableText(inputText.value);
+      refreshStats();
+      showNotice('已转为可读文本。');
+    }
+
+    function encodeAction() {
+      outputText.value = encodeToEscapedString(inputText.value);
+      refreshStats();
+      showNotice('已转为转义字符串。');
+    }
+
+    decodeBtn.addEventListener('click', decodeAction);
+    encodeBtn.addEventListener('click', encodeAction);
+
+    swapBtn.addEventListener('click', () => {
+      const temp = inputText.value;
+      inputText.value = outputText.value;
+      outputText.value = temp;
+      refreshStats();
+      showNotice('已交换输入输出。');
+    });
+
+    copyTextBtn.addEventListener('click', () => {
+      copyToClipboard(outputText.value);
+    });
+
+    copyQuotedBtn.addEventListener('click', () => {
+      copyToClipboard(`"${encodeToEscapedString(outputText.value)}"`);
+    });
+
+    clearBtn.addEventListener('click', () => {
+      inputText.value = '';
+      outputText.value = '';
+      refreshStats();
+      inputText.focus();
+      showNotice('已清空。');
+    });
+
+    inputText.addEventListener('input', refreshStats);
+    outputText.addEventListener('input', refreshStats);
+
+    document.addEventListener('keydown', (event) => {
+      if (event.ctrlKey && event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        decodeAction();
+      }
+
+      if (event.ctrlKey && event.shiftKey && event.key === 'Enter') {
+        event.preventDefault();
+        encodeAction();
+      }
+    });
+
+    refreshStats();
+  </script>
+</body>
+</html>
