@@ -26,7 +26,7 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 14px 18px;
             background-color: var(--bg-color);
             color: var(--text-color);
             display: flex;
@@ -36,7 +36,7 @@
         }
 
         .container {
-            max-width: 1120px;
+            max-width: 1680px;
             width: 100%;
         }
 
@@ -45,7 +45,7 @@
             justify-content: space-between;
             align-items: center;
             gap: 12px;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
 
         h1 {
@@ -80,21 +80,21 @@
             background: var(--panel-bg);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 20px;
+            padding: 16px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
         }
 
         .workspace {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 180px minmax(0, 1fr);
-            gap: 18px;
+            grid-template-columns: minmax(0, 1fr) 150px minmax(0, 1fr);
+            gap: 14px;
             align-items: stretch;
         }
 
         .panel {
             display: flex;
             flex-direction: column;
-            min-height: 410px;
+            min-height: clamp(560px, calc(100vh - 205px), 780px);
         }
 
         .panel-header {
@@ -102,7 +102,7 @@
             justify-content: space-between;
             align-items: center;
             gap: 12px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .panel-header h3 {
@@ -117,10 +117,30 @@
             white-space: nowrap;
         }
 
+        .panel-header-right {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .panel-copy-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn.btn-small {
+            padding: 5px 9px;
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
         textarea {
             width: 100%;
             flex: 1;
-            min-height: 330px;
+            min-height: 520px;
             padding: 12px;
             border: 1px solid #d0d7de;
             border-radius: 6px;
@@ -146,6 +166,7 @@
             flex-direction: column;
             gap: 10px;
             justify-content: center;
+            padding-top: 34px;
         }
 
         .btn {
@@ -194,11 +215,6 @@
             background-color: #a40e26;
         }
 
-        .copy-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
 
         .hint {
             margin-top: 16px;
@@ -374,10 +390,11 @@
             .actions {
                 display: grid;
                 grid-template-columns: repeat(2, minmax(0, 1fr));
+                padding-top: 0;
             }
 
             .panel {
-                min-height: auto;
+                min-height: 430px;
             }
         }
 
@@ -395,9 +412,18 @@
                 padding: 14px;
             }
 
-            .actions,
-            .copy-row {
+            .actions {
                 grid-template-columns: 1fr;
+            }
+
+            .panel-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .panel-header-right {
+                justify-content: space-between;
+                width: 100%;
             }
         }
     </style>
@@ -408,7 +434,7 @@
         <div class="tool-title">
             <h1>文本转义转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.00</span>
+                <span>V1.01</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -418,26 +444,36 @@
                 <section class="panel">
                     <div class="panel-header">
                         <h3>输入区</h3>
-                        <div class="stats" id="inputStats">0 行 / 0 字符</div>
+                        <div class="panel-header-right">
+                            <div class="stats" id="inputStats">0 行 / 0 字符</div>
+                            <div class="panel-copy-actions" aria-label="输入区复制操作">
+                                <button class="btn btn-small" id="copyInputTextBtn" type="button">复制</button>
+                                <button class="btn btn-small" id="copyInputQuotedBtn" type="button">加引号复制</button>
+                            </div>
+                        </div>
                     </div>
-                    <textarea id="inputText" spellcheck="false" placeholder="请输入转义字符串或普通文本，例如：\njava.lang.RuntimeException: test\n\tat com.example.Demo.main(Demo.java:12)"></textarea>
+                    <textarea id="inputText" spellcheck="false" placeholder="请输入转义字符串或普通文本，例如：
+java.lang.RuntimeException: test
+	at com.example.Demo.main(Demo.java:12)"></textarea>
                 </section>
 
                 <section class="actions" aria-label="转换操作">
                     <button class="btn btn-primary" id="decodeBtn" type="button">转为可读文本</button>
                     <button class="btn btn-primary" id="encodeBtn" type="button">转为转义字符串</button>
                     <button class="btn btn-secondary" id="swapBtn" type="button">交换输入输出</button>
-                    <div class="copy-row">
-                        <button class="btn" id="copyTextBtn" type="button">复制文本</button>
-                        <button class="btn" id="copyQuotedBtn" type="button">复制带引号</button>
-                    </div>
                     <button class="btn btn-danger" id="clearBtn" type="button">清空</button>
                 </section>
 
                 <section class="panel">
                     <div class="panel-header">
                         <h3>输出区</h3>
-                        <div class="stats" id="outputStats">0 行 / 0 字符</div>
+                        <div class="panel-header-right">
+                            <div class="stats" id="outputStats">0 行 / 0 字符</div>
+                            <div class="panel-copy-actions" aria-label="输出区复制操作">
+                                <button class="btn btn-small" id="copyOutputTextBtn" type="button">复制</button>
+                                <button class="btn btn-small" id="copyOutputQuotedBtn" type="button">加引号复制</button>
+                            </div>
+                        </div>
                     </div>
                     <textarea id="outputText" spellcheck="false" placeholder="转换结果会显示在这里..."></textarea>
                 </section>
@@ -461,6 +497,13 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date-group">
+                    <div class="changelog-date">2026年6月10日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.01</div>
+                        <div class="changelog-desc">优化页面布局，扩大输入输出区域，并在输入区、输出区右上角分别增加复制与加引号复制操作。</div>
+                    </div>
+                </div>
+                <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月9日</div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.00</div>
@@ -481,8 +524,10 @@
         const decodeBtn = document.getElementById('decodeBtn');
         const encodeBtn = document.getElementById('encodeBtn');
         const swapBtn = document.getElementById('swapBtn');
-        const copyTextBtn = document.getElementById('copyTextBtn');
-        const copyQuotedBtn = document.getElementById('copyQuotedBtn');
+        const copyInputTextBtn = document.getElementById('copyInputTextBtn');
+        const copyInputQuotedBtn = document.getElementById('copyInputQuotedBtn');
+        const copyOutputTextBtn = document.getElementById('copyOutputTextBtn');
+        const copyOutputQuotedBtn = document.getElementById('copyOutputQuotedBtn');
         const clearBtn = document.getElementById('clearBtn');
 
         function getStats(text) {
@@ -565,6 +610,10 @@
                 .replace(/"/g, '\\"');
         }
 
+        function copyAsQuotedText(text) {
+            copyToClipboard(`"${encodeToEscapedString(text)}"`);
+        }
+
         function copyToClipboard(text) {
             if (!text) {
                 showToast('没有可复制的内容。', true);
@@ -635,12 +684,20 @@
             showToast('已交换输入输出。');
         });
 
-        copyTextBtn.addEventListener('click', () => {
+        copyInputTextBtn.addEventListener('click', () => {
+            copyToClipboard(inputText.value);
+        });
+
+        copyInputQuotedBtn.addEventListener('click', () => {
+            copyAsQuotedText(inputText.value);
+        });
+
+        copyOutputTextBtn.addEventListener('click', () => {
             copyToClipboard(outputText.value);
         });
 
-        copyQuotedBtn.addEventListener('click', () => {
-            copyToClipboard(`"${encodeToEscapedString(outputText.value)}"`);
+        copyOutputQuotedBtn.addEventListener('click', () => {
+            copyAsQuotedText(outputText.value);
         });
 
         clearBtn.addEventListener('click', () => {
