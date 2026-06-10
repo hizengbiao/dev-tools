@@ -38,7 +38,7 @@
         }
 
         .container {
-            max-width: 1280px;
+            max-width: 1480px;
             width: 100%;
         }
 
@@ -93,10 +93,21 @@
             align-items: start;
         }
 
+        .workspace.three-column {
+            grid-template-columns: minmax(360px, 1fr) minmax(340px, 0.82fr) minmax(420px, 1fr);
+            align-items: stretch;
+        }
+
         .panel {
             display: flex;
             flex-direction: column;
             gap: 12px;
+        }
+
+        .input-panel,
+        .control-panel,
+        .output-panel {
+            min-height: 100%;
         }
 
         .field {
@@ -136,6 +147,46 @@
         textarea {
             min-height: 220px;
             resize: vertical;
+        }
+
+        .editor-with-lines {
+            display: grid;
+            grid-template-columns: 46px minmax(0, 1fr);
+            min-height: 520px;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            background: #fff;
+            overflow: hidden;
+        }
+
+        .line-numbers {
+            padding: 10px 8px;
+            background: #f6f8fa;
+            border-right: 1px solid #d0d7de;
+            color: #8c959f;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            text-align: right;
+            white-space: pre;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .editor-with-lines textarea {
+            min-height: 520px;
+            border: none;
+            border-radius: 0;
+            resize: vertical;
+        }
+
+        .editor-with-lines textarea:focus {
+            box-shadow: none;
+        }
+
+        .editor-with-lines:focus-within {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.25);
         }
 
         input[type="text"]:focus,
@@ -201,6 +252,32 @@
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
+        }
+
+        .field-help {
+            margin: -2px 0 0;
+            color: var(--muted-color);
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .field-note {
+            display: none;
+            margin: -2px 0 0;
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .field-note.show {
+            display: block;
+        }
+
+        .field-note.warning {
+            border: 1px solid #f0c36d;
+            background: var(--warning-bg);
+            color: #5c3b00;
         }
 
         .btn {
@@ -280,7 +357,13 @@
         }
 
         .highlight-preview {
-            min-height: 220px;
+            min-height: 180px;
+            max-height: 260px;
+        }
+
+        #matchResult,
+        #replaceResult {
+            min-height: 170px;
         }
 
         .match-highlight {
@@ -454,8 +537,12 @@
             flex: 1;
         }
 
-        @media (max-width: 980px) {
+        @media (max-width: 1200px) {
             .workspace {
+                grid-template-columns: 1fr;
+            }
+
+            .workspace.three-column {
                 grid-template-columns: 1fr;
             }
         }
@@ -485,31 +572,38 @@
         <div class="tool-title">
             <h1>正则表达式测试</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.01</span>
+                <span>V1.02</span>
                 <span>ℹ️</span>
             </div>
         </div>
 
         <section class="tool-card">
-            <div class="workspace">
-                <section class="panel">
+            <div class="workspace three-column">
+                <section class="panel input-panel">
                     <div class="field">
                         <div class="field-header">
                             <label for="testText">测试内容</label>
-                            <button class="btn" id="loadSampleBtn" type="button">载入手机号示例</button>
+                            <div class="actions">
+                                <button class="btn btn-danger" id="clearBtn" type="button">清空</button>
+                            </div>
                         </div>
-                        <textarea id="testText" spellcheck="false">13800138000
+                        <div class="editor-with-lines">
+                            <div id="testLineNumbers" class="line-numbers" aria-hidden="true"></div>
+                            <textarea id="testText" spellcheck="false">13800138000
 15912345678
 18600001111
 19999999999
 14712345678</textarea>
+                        </div>
                     </div>
+                </section>
 
+                <section class="panel control-panel">
                     <div class="field">
                         <label for="patternInput">匹配规则</label>
                         <div class="pattern-row">
-                            <input id="patternInput" type="text" value="^1[3-9]\d{9}$" spellcheck="false"
-                                placeholder="输入正则表达式，例如 ^1[3-9]\d{9}$">
+                            <input id="patternInput" type="text" value="^(1[3-9]\d{2})\d{3}(\d{4})$" spellcheck="false"
+                                placeholder="输入正则表达式，例如 ^(1[3-9]\d{2})\d{3}(\d{4})$">
                             <div class="actions">
                                 <button class="btn btn-primary" id="testBtn" type="button">测试匹配</button>
                             </div>
@@ -529,22 +623,18 @@
 
                     <div class="field">
                         <label for="replaceInput">替换文本</label>
+                        <p class="field-help">替换文本是“找到匹配内容后要换成什么”。默认示例会把手机号中间 3 位替换成星号：匹配规则用括号拆出前 4 位和后 4 位，替换文本 <code>$1***$2</code> 会保留这两段。<code>$1</code>、<code>$2</code> 表示第 1、第 2 个括号分组，<code>$&</code> 表示完整匹配，留空则删除匹配内容。</p>
+                        <p id="replaceHint" class="field-note warning" aria-live="polite"></p>
                         <div class="pattern-row">
-                            <input id="replaceInput" type="text" spellcheck="false" placeholder="可使用 $&、$1、$2 等替换引用">
+                            <input id="replaceInput" type="text" value="$1***$2" spellcheck="false"
+                                placeholder="例如：手机号脱敏 $1***$2"
+                                title="替换文本示例：&#10;$1、$2 表示匹配规则里的第 1、第 2 个括号分组。&#10;当前默认规则会把手机号拆成前 4 位和后 4 位，默认替换文本会输出脱敏手机号。&#10;$& 表示完整匹配内容，例如把每个手机号替换为【$&】。&#10;删除匹配内容：替换文本留空即可。">
                             <div class="actions">
                                 <button class="btn btn-primary" id="replaceBtn" type="button">执行替换</button>
                             </div>
                         </div>
                     </div>
 
-                    <div class="actions">
-                        <button class="btn" id="copyMatchBtn" type="button">复制匹配结果</button>
-                        <button class="btn" id="copyReplaceBtn" type="button">复制替换结果</button>
-                        <button class="btn btn-danger" id="clearBtn" type="button">清空</button>
-                    </div>
-                </section>
-
-                <section class="panel">
                     <div class="result-grid">
                         <div class="metric">
                             <strong>匹配数量</strong>
@@ -555,7 +645,9 @@
                             <span id="statusText">待测试</span>
                         </div>
                     </div>
+                </section>
 
+                <section class="panel output-panel">
                     <div class="field">
                         <div class="result-header">
                             <div class="section-title">高亮预览</div>
@@ -566,6 +658,7 @@
                     <div class="field">
                         <div class="result-header">
                             <label for="matchResult">匹配结果</label>
+                            <button class="btn" id="copyMatchBtn" type="button">复制匹配结果</button>
                         </div>
                         <textarea id="matchResult" readonly placeholder="匹配列表、索引和分组详情会显示在这里。"></textarea>
                     </div>
@@ -573,6 +666,7 @@
                     <div class="field">
                         <div class="result-header">
                             <label for="replaceResult">替换结果</label>
+                            <button class="btn" id="copyReplaceBtn" type="button">复制替换结果</button>
                         </div>
                         <textarea id="replaceResult" readonly placeholder="替换后的文本会显示在这里。"></textarea>
                     </div>
@@ -580,9 +674,8 @@
             </div>
 
             <div class="hint">
-                <strong>说明：</strong>
-                常用标志：<code>g</code> 全局查找，<code>i</code> 忽略大小写，<code>m</code> 多行模式，<code>s</code> 让点号匹配换行，
-                <code>u</code> 启用 Unicode 语义。替换文本支持 JavaScript 正则替换引用，例如 <code>$&</code> 表示完整匹配，<code>$1</code> 表示第 1 个捕获组。
+                <strong>正则表达式测试工具说明：</strong>
+                用于在多行文本中快速验证正则表达式、预览匹配高亮、查看每条匹配的索引与行列位置，并按替换文本生成替换结果。左侧输入测试文本，中间配置匹配规则、标志和替换文本，右侧查看匹配与替换输出；当替换文本引用了不存在的括号分组时，页面会给出修正提示。
             </div>
         </section>
     </div>
@@ -597,6 +690,13 @@
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年6月11日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.02</div>
+                        <div class="changelog-desc">优化正则测试布局、测试内容行号、匹配结果行列定位和替换文本示例说明。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月10日</div>
                     <div class="changelog-entry">
@@ -614,10 +714,12 @@
 
     <script>
         const testText = document.getElementById('testText');
+        const testLineNumbers = document.getElementById('testLineNumbers');
         const patternInput = document.getElementById('patternInput');
         const replaceInput = document.getElementById('replaceInput');
         const matchResult = document.getElementById('matchResult');
         const replaceResult = document.getElementById('replaceResult');
+        const replaceHint = document.getElementById('replaceHint');
         const highlightPreview = document.getElementById('highlightPreview');
         const matchCount = document.getElementById('matchCount');
         const statusText = document.getElementById('statusText');
@@ -652,6 +754,105 @@
             const pattern = patternInput.value;
             const flags = getFlags();
             return new RegExp(pattern, flags);
+        }
+
+        function updateLineNumbers() {
+            const lineCount = Math.max(1, testText.value.split('\n').length);
+            testLineNumbers.textContent = Array.from({ length: lineCount }, (_, index) => index + 1).join('\n');
+            syncLineNumberScroll();
+        }
+
+        function syncLineNumberScroll() {
+            testLineNumbers.scrollTop = testText.scrollTop;
+        }
+
+        function getLineColumn(text, index) {
+            const before = text.slice(0, index);
+            const lines = before.split('\n');
+            return {
+                line: lines.length,
+                column: lines[lines.length - 1].length + 1
+            };
+        }
+
+        function getCaptureGroupCount(pattern) {
+            let count = 0;
+            let escaped = false;
+            let inClass = false;
+
+            for (let index = 0; index < pattern.length; index++) {
+                const char = pattern[index];
+
+                if (escaped) {
+                    escaped = false;
+                    continue;
+                }
+
+                if (char === '\\') {
+                    escaped = true;
+                    continue;
+                }
+
+                if (char === '[') {
+                    inClass = true;
+                    continue;
+                }
+
+                if (char === ']') {
+                    inClass = false;
+                    continue;
+                }
+
+                if (char !== '(' || inClass) {
+                    continue;
+                }
+
+                const next = pattern[index + 1];
+                const afterNext = pattern[index + 2];
+                const isNonCapturing = next === '?' && afterNext !== '<';
+
+                if (!isNonCapturing) {
+                    count += 1;
+                }
+            }
+
+            return count;
+        }
+
+        function getMissingReplacementGroups(replacement, pattern) {
+            const captureGroupCount = getCaptureGroupCount(pattern);
+            const missingGroups = new Set();
+            const groupReferenceRegex = /\$(\d{1,2})/g;
+            let match;
+
+            while ((match = groupReferenceRegex.exec(replacement)) !== null) {
+                const previousChar = replacement[match.index - 1];
+                const groupNumber = Number(match[1]);
+
+                if (previousChar === '$' || groupNumber === 0) {
+                    continue;
+                }
+
+                if (groupNumber > captureGroupCount) {
+                    missingGroups.add(`$${groupNumber}`);
+                }
+            }
+
+            return Array.from(missingGroups);
+        }
+
+        function updateReplaceHint() {
+            const missingGroups = getMissingReplacementGroups(replaceInput.value, patternInput.value);
+
+            if (!missingGroups.length) {
+                replaceHint.className = 'field-note warning';
+                replaceHint.innerHTML = '';
+                return [];
+            }
+
+            replaceHint.className = 'field-note warning show';
+            replaceHint.innerHTML = `当前替换文本使用了 ${missingGroups.join('、')}，但匹配规则里没有对应的括号分组，所以会和截图一样原样输出。手机号脱敏可改成：规则 <code>^(1[3-9]\\d{2})\\d{3}(\\d{4})$</code>，替换文本 <code>$1***$2</code>。如果只是想输出字面量 $1，请写 <code>$$1</code>。`;
+            return missingGroups;
         }
 
         function moveFlagTooltip(event) {
@@ -725,10 +926,11 @@
             }
 
             return matches.map((match, index) => {
+                const position = getLineColumn(testText.value, match.index);
                 const lines = [
                     `#${index + 1}`,
                     `匹配内容: ${match.text}`,
-                    `起始位置: ${match.index}`
+                    `起始位置: ${match.index}（第 ${position.line} 行第 ${position.column} 列）`
                 ];
 
                 if (match.groups.length) {
@@ -773,6 +975,14 @@
         function runReplace() {
             try {
                 const regex = buildRegex();
+                const missingGroups = updateReplaceHint();
+
+                if (missingGroups.length) {
+                    replaceResult.value = `无法执行替换：替换文本引用了 ${missingGroups.join('、')}，但匹配规则里没有对应的括号分组。请先在匹配规则里添加括号分组，或把字面量 $ 写成 $$。`;
+                    showToast('替换文本引用了不存在的括号分组。');
+                    return;
+                }
+
                 replaceResult.value = testText.value.replace(regex, replaceInput.value);
                 runMatch();
                 showToast('替换完成。');
@@ -838,16 +1048,20 @@
             matchCount.textContent = '0';
             statusText.textContent = '待测试';
             statusText.className = '';
+            replaceHint.className = 'field-note warning';
+            replaceHint.innerHTML = '';
             highlightPreview.className = 'result-box highlight-preview empty-state';
             highlightPreview.textContent = '匹配内容会高亮显示在这里。';
+            updateLineNumbers();
         });
-        document.getElementById('loadSampleBtn').addEventListener('click', () => {
-            testText.value = '13800138000\n15912345678\n18600001111\n19999999999\n14712345678';
-            patternInput.value = '^1[3-9]\\d{9}$';
-            flagControls.g.checked = true;
-            flagControls.m.checked = true;
+
+        testText.addEventListener('input', () => {
+            updateLineNumbers();
             runMatch();
         });
+        testText.addEventListener('scroll', syncLineNumberScroll);
+        patternInput.addEventListener('input', updateReplaceHint);
+        replaceInput.addEventListener('input', updateReplaceHint);
 
         Object.values(flagControls).forEach((control) => {
             control.addEventListener('change', runMatch);
@@ -872,6 +1086,7 @@
             }
         });
 
+        updateLineNumbers();
         runMatch();
     </script>
 </body>
