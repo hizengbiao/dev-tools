@@ -175,6 +175,28 @@
             margin: 0;
         }
 
+        .flag-tooltip {
+            position: fixed;
+            z-index: 2500;
+            max-width: 280px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            background: #24292f;
+            color: #fff;
+            font-size: 12px;
+            line-height: 1.5;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(-2px);
+            transition: opacity 0.12s ease, transform 0.12s ease;
+        }
+
+        .flag-tooltip.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
         .actions {
             display: flex;
             flex-wrap: wrap;
@@ -219,7 +241,7 @@
 
         .result-grid {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 10px;
         }
 
@@ -463,7 +485,7 @@
         <div class="tool-title">
             <h1>正则表达式测试</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.00</span>
+                <span>V1.01</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -497,11 +519,11 @@
                     <div class="field">
                         <div class="section-title">正则标志</div>
                         <div class="flag-group">
-                            <label class="flag-pill"><input id="flagGlobal" type="checkbox" checked> 全局 g</label>
-                            <label class="flag-pill"><input id="flagIgnoreCase" type="checkbox"> 忽略大小写 i</label>
-                            <label class="flag-pill"><input id="flagMultiline" type="checkbox" checked> 多行 m</label>
-                            <label class="flag-pill"><input id="flagDotAll" type="checkbox"> 点号匹配换行 s</label>
-                            <label class="flag-pill"><input id="flagUnicode" type="checkbox"> Unicode u</label>
+                            <label class="flag-pill" data-tooltip="勾选后会找出文本里的全部匹配结果，而不是只找第一个。"><input id="flagGlobal" type="checkbox" checked> 查找全部</label>
+                            <label class="flag-pill" data-tooltip="勾选后匹配时不区分英文字母大小写。"><input id="flagIgnoreCase" type="checkbox"> 忽略大小写</label>
+                            <label class="flag-pill" data-tooltip="勾选后可以按每一行单独匹配，适合逐行校验手机号、日志等内容。"><input id="flagMultiline" type="checkbox" checked> 逐行匹配</label>
+                            <label class="flag-pill" data-tooltip="勾选后点号可以匹配换行符。"><input id="flagDotAll" type="checkbox"> 点号匹配换行</label>
+                            <label class="flag-pill" data-tooltip="勾选后会按 Unicode 规则识别字符，适合包含中文、表情或特殊字符的文本。"><input id="flagUnicode" type="checkbox"> 识别 Unicode</label>
                         </div>
                     </div>
 
@@ -527,10 +549,6 @@
                         <div class="metric">
                             <strong>匹配数量</strong>
                             <span id="matchCount">0</span>
-                        </div>
-                        <div class="metric">
-                            <strong>当前标志</strong>
-                            <span id="flagSummary">gm</span>
                         </div>
                         <div class="metric">
                             <strong>状态</strong>
@@ -569,6 +587,7 @@
         </section>
     </div>
 
+    <div id="flagTooltip" class="flag-tooltip" role="tooltip"></div>
     <div id="toast"></div>
 
     <div id="changelog-modal" class="modal-overlay">
@@ -580,6 +599,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月10日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.01</div>
+                        <div class="changelog-desc">优化正则标志按钮文案，增加鼠标右上方悬停说明，并移除右侧标志展示。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.00</div>
                         <div class="changelog-desc">版本初始化</div>
@@ -597,8 +620,8 @@
         const replaceResult = document.getElementById('replaceResult');
         const highlightPreview = document.getElementById('highlightPreview');
         const matchCount = document.getElementById('matchCount');
-        const flagSummary = document.getElementById('flagSummary');
         const statusText = document.getElementById('statusText');
+        const flagTooltip = document.getElementById('flagTooltip');
         const toast = document.getElementById('toast');
 
         const flagControls = {
@@ -628,8 +651,29 @@
         function buildRegex() {
             const pattern = patternInput.value;
             const flags = getFlags();
-            flagSummary.textContent = flags || '无';
             return new RegExp(pattern, flags);
+        }
+
+        function moveFlagTooltip(event) {
+            const gapX = 16;
+            const gapY = 14;
+            const nextLeft = Math.min(event.clientX + gapX, window.innerWidth - flagTooltip.offsetWidth - 12);
+            const nextTop = Math.max(event.clientY - flagTooltip.offsetHeight - gapY, 12);
+            flagTooltip.style.left = `${nextLeft}px`;
+            flagTooltip.style.top = `${nextTop}px`;
+        }
+
+        function showFlagTooltip(event) {
+            const content = event.currentTarget.dataset.tooltip;
+            if (!content) return;
+
+            flagTooltip.textContent = content;
+            flagTooltip.classList.add('show');
+            moveFlagTooltip(event);
+        }
+
+        function hideFlagTooltip() {
+            flagTooltip.classList.remove('show');
         }
 
         function collectMatches(regex, text) {
@@ -807,6 +851,12 @@
 
         Object.values(flagControls).forEach((control) => {
             control.addEventListener('change', runMatch);
+        });
+
+        document.querySelectorAll('.flag-pill').forEach((flagPill) => {
+            flagPill.addEventListener('mouseenter', showFlagTooltip);
+            flagPill.addEventListener('mousemove', moveFlagTooltip);
+            flagPill.addEventListener('mouseleave', hideFlagTooltip);
         });
 
         patternInput.addEventListener('keydown', (event) => {
