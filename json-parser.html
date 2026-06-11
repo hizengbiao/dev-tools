@@ -786,7 +786,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V1.79</span>
+            <span>V1.80</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -819,6 +819,13 @@
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年6月11日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.80</div>
+                        <div class="changelog-desc">稳定性修复：格式化非 JSON 的代码字符串拼接或正则片段时快速报错，不再进入 JSON 修复流程导致页面卡住。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月5日</div>
                     <div class="changelog-entry">
@@ -1396,6 +1403,11 @@
                 // Not valid JSON, continue with fix logic
             }
 
+            if (shouldSkipJsonRepair(raw)) {
+                showError({ message: "当前内容不是可格式化的 JSON，已跳过自动修复。" });
+                return;
+            }
+
             try {
                 // Remove single-line and multi-line comments
                 raw = stripCommentsOutsideStrings(raw);
@@ -1493,6 +1505,26 @@
             } catch (e) {
                 showError({ message: "修复失败: " + e.message });
             }
+        }
+
+        function shouldSkipJsonRepair(raw) {
+            const trimmed = raw.trim();
+            if (!trimmed) return false;
+
+            return looksLikeCodeStringConcatenation(trimmed) || looksLikeRegexSnippet(trimmed);
+        }
+
+        function looksLikeCodeStringConcatenation(raw) {
+            return /["']\s*(?:\r?\n\s*)?\+\s*["']/.test(raw) ||
+                /(?:^|\r?\n)\s*\+\s*["']/.test(raw);
+        }
+
+        function looksLikeRegexSnippet(raw) {
+            const hasRegexOperators = /(\[[^\]]*\\[dDsSwW][^\]]*\]|\|[^|\r\n]+|\\[dDsSwWbB])/.test(raw);
+            const hasJsonShape = /^\s*[\[{]/.test(raw) || /["'][^"']+["']\s*:/.test(raw);
+            const hasCodeShape = /^[("']/.test(raw) || /["']\s*(?:\r?\n\s*)?\+\s*["']/.test(raw);
+
+            return hasRegexOperators && hasCodeShape && !hasJsonShape;
         }
 
         function parseRepairedJson(raw) {
