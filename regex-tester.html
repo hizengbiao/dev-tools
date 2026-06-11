@@ -374,6 +374,14 @@
             box-shadow: inset 0 -1px 0 #54aeff;
         }
 
+        .match-group-highlight {
+            background: #fff8c5;
+            color: #7d4e00;
+            border-radius: 3px;
+            padding: 1px 2px;
+            box-shadow: inset 0 -1px 0 #d4a72c;
+        }
+
         .empty-state {
             color: var(--muted-color);
             font-family: inherit;
@@ -572,7 +580,7 @@
         <div class="tool-title">
             <h1>正则表达式测试</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.02</span>
+                <span>V1.03</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -693,6 +701,10 @@
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月11日</div>
                     <div class="changelog-entry">
+                        <div class="changelog-version">V1.03</div>
+                        <div class="changelog-desc">兼容 (?i) 前缀标志，初始化自动生成替换结果，并在高亮预览中标出捕获分组。</div>
+                    </div>
+                    <div class="changelog-entry">
                         <div class="changelog-version">V1.02</div>
                         <div class="changelog-desc">优化正则测试布局、测试内容行号、匹配结果行列定位和替换文本示例说明。</div>
                     </div>
@@ -750,10 +762,35 @@
                 .join('');
         }
 
+        function getRegexWithFlags(source, flags) {
+            const orderedFlags = ['d', 'g', 'i', 'm', 's', 'u', 'v', 'y'];
+            const uniqueFlags = new Set(flags.split(''));
+            return new RegExp(source, orderedFlags.filter((flag) => uniqueFlags.has(flag)).join(''));
+        }
+
+        function parseInlineFlags(pattern, selectedFlags) {
+            const inlineFlagMatch = pattern.match(/^\(\?([gimsu]+)\)/);
+            const flags = new Set(selectedFlags.split(''));
+
+            if (!inlineFlagMatch) {
+                return { source: pattern, flags: selectedFlags };
+            }
+
+            inlineFlagMatch[1].split('').forEach((flag) => flags.add(flag));
+
+            return {
+                source: pattern.slice(inlineFlagMatch[0].length),
+                flags: ['g', 'i', 'm', 's', 'u'].filter((flag) => flags.has(flag)).join('')
+            };
+        }
+
+        function getFlagsForPattern(pattern) {
+            return parseInlineFlags(pattern, getFlags());
+        }
+
         function buildRegex() {
-            const pattern = patternInput.value;
-            const flags = getFlags();
-            return new RegExp(pattern, flags);
+            const parsedPattern = getFlagsForPattern(patternInput.value);
+            return getRegexWithFlags(parsedPattern.source, parsedPattern.flags);
         }
 
         function updateLineNumbers() {
@@ -879,7 +916,14 @@
 
         function collectMatches(regex, text) {
             const flags = regex.flags.includes('g') ? regex.flags : `${regex.flags}g`;
-            const globalRegex = new RegExp(regex.source, flags);
+            let globalRegex;
+
+            try {
+                globalRegex = getRegexWithFlags(regex.source, flags.includes('d') ? flags : `${flags}d`);
+            } catch (error) {
+                globalRegex = getRegexWithFlags(regex.source, flags);
+            }
+
             const matches = [];
             let match;
 
@@ -888,7 +932,8 @@
                     text: match[0],
                     index: match.index,
                     groups: match.slice(1),
-                    namedGroups: match.groups || null
+                    namedGroups: match.groups || null,
+                    indices: match.indices || null
                 });
 
                 if (match[0] === '') {
@@ -897,6 +942,40 @@
             }
 
             return matches;
+        }
+
+        function renderMatchWithGroups(text, match) {
+            if (!match.indices || match.indices.length <= 1) {
+                return `<span class="match-highlight">${escapeHtml(match.text)}</span>`;
+            }
+
+            const matchStart = match.indices[0][0];
+            const matchEnd = match.indices[0][1];
+            const groupRanges = match.indices
+                .slice(1)
+                .filter((range) => range && range[0] >= matchStart && range[1] <= matchEnd && range[1] > range[0])
+                .sort((left, right) => left[0] - right[0]);
+
+            if (!groupRanges.length) {
+                return `<span class="match-highlight">${escapeHtml(match.text)}</span>`;
+            }
+
+            let cursor = matchStart;
+            let html = '<span class="match-highlight">';
+
+            groupRanges.forEach((range) => {
+                if (range[0] < cursor) {
+                    return;
+                }
+
+                html += escapeHtml(text.slice(cursor, range[0]));
+                html += `<span class="match-group-highlight">${escapeHtml(text.slice(range[0], range[1]))}</span>`;
+                cursor = range[1];
+            });
+
+            html += escapeHtml(text.slice(cursor, matchEnd));
+            html += '</span>';
+            return html;
         }
 
         function renderHighlightedText(text, matches) {
@@ -911,7 +990,7 @@
 
             matches.forEach((match) => {
                 html += escapeHtml(text.slice(cursor, match.index));
-                html += `<span class="match-highlight">${escapeHtml(match.text)}</span>`;
+                html += renderMatchWithGroups(text, match);
                 cursor = match.index + match.text.length;
             });
 
@@ -972,20 +1051,24 @@
             }
         }
 
-        function runReplace() {
+        function runReplace(showNotification = true) {
             try {
                 const regex = buildRegex();
                 const missingGroups = updateReplaceHint();
 
                 if (missingGroups.length) {
                     replaceResult.value = `无法执行替换：替换文本引用了 ${missingGroups.join('、')}，但匹配规则里没有对应的括号分组。请先在匹配规则里添加括号分组，或把字面量 $ 写成 $$。`;
-                    showToast('替换文本引用了不存在的括号分组。');
+                    if (showNotification) {
+                        showToast('替换文本引用了不存在的括号分组。');
+                    }
                     return;
                 }
 
                 replaceResult.value = testText.value.replace(regex, replaceInput.value);
                 runMatch();
-                showToast('替换完成。');
+                if (showNotification) {
+                    showToast('替换完成。');
+                }
             } catch (error) {
                 replaceResult.value = '';
                 setError(`正则表达式错误：${error.message}`);
@@ -1087,7 +1170,7 @@
         });
 
         updateLineNumbers();
-        runMatch();
+        runReplace(false);
     </script>
 </body>
 
