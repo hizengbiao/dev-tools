@@ -434,7 +434,7 @@
         <div class="tool-title">
             <h1>文本转义转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.01</span>
+                <span>V1.02</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -460,6 +460,7 @@ java.lang.RuntimeException: test
                 <section class="actions" aria-label="转换操作">
                     <button class="btn btn-primary" id="decodeBtn" type="button">转为可读文本</button>
                     <button class="btn btn-primary" id="encodeBtn" type="button">转为转义字符串</button>
+                    <button class="btn btn-primary" id="mergeStringsBtn" type="button">合并拼接字符串</button>
                     <button class="btn btn-secondary" id="swapBtn" type="button">交换输入输出</button>
                     <button class="btn btn-danger" id="clearBtn" type="button">清空</button>
                 </section>
@@ -482,7 +483,8 @@ java.lang.RuntimeException: test
             <div class="hint">
                 <strong>说明：</strong>
                 “转为可读文本”适合把一行转义字符串展开为正常多行内容；“转为转义字符串”适合把多行文本转换成可直接复制到
-                Java、JSON、配置文件或日志字段里的字符串。快捷键：<kbd>Ctrl</kbd> + <kbd>Enter</kbd> 转为可读文本，<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd> 转为转义字符串。
+                Java、JSON、配置文件或日志字段里的字符串；“合并拼接字符串”适合把代码中多段引号字符串合并成一段，遇到变量或表达式拼接时会保留边界。
+                快捷键：<kbd>Ctrl</kbd> + <kbd>Enter</kbd> 转为可读文本，<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd> 转为转义字符串。
             </div>
         </section>
     </div>
@@ -496,6 +498,13 @@ java.lang.RuntimeException: test
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年6月11日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.02</div>
+                        <div class="changelog-desc">新增拼接字符串合并功能，支持多行字符串字面量合并，并在遇到变量拼接时保留边界。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月10日</div>
                     <div class="changelog-entry">
@@ -523,6 +532,7 @@ java.lang.RuntimeException: test
 
         const decodeBtn = document.getElementById('decodeBtn');
         const encodeBtn = document.getElementById('encodeBtn');
+        const mergeStringsBtn = document.getElementById('mergeStringsBtn');
         const swapBtn = document.getElementById('swapBtn');
         const copyInputTextBtn = document.getElementById('copyInputTextBtn');
         const copyInputQuotedBtn = document.getElementById('copyInputQuotedBtn');
@@ -610,6 +620,143 @@ java.lang.RuntimeException: test
                 .replace(/"/g, '\\"');
         }
 
+        function readQuotedString(raw, start) {
+            const quote = raw[start];
+            let index = start + 1;
+            let escaped = false;
+            let literal = quote;
+
+            while (index < raw.length) {
+                const char = raw[index];
+                literal += char;
+
+                if (escaped) {
+                    escaped = false;
+                } else if (char === '\\') {
+                    escaped = true;
+                } else if (char === quote) {
+                    return { literal, end: index + 1 };
+                }
+
+                index += 1;
+            }
+
+            return null;
+        }
+
+        function tokenizeStringExpression(raw) {
+            const tokens = [];
+            let index = 0;
+
+            while (index < raw.length) {
+                const char = raw[index];
+
+                if (/\s/.test(char)) {
+                    index += 1;
+                    continue;
+                }
+
+                if (char === '+' || char === '＋') {
+                    tokens.push({ type: 'plus', text: '+' });
+                    index += 1;
+                    continue;
+                }
+
+                if (char === '"' || char === "'") {
+                    const token = readQuotedString(raw, index);
+                    if (!token) {
+                        tokens.push({ type: 'other', text: raw.slice(index) });
+                        break;
+                    }
+
+                    tokens.push({
+                        type: 'string',
+                        text: token.literal,
+                        value: decodeCommonEscapes(token.literal)
+                    });
+                    index = token.end;
+                    continue;
+                }
+
+                let end = index + 1;
+                while (end < raw.length && !/\s/.test(raw[end]) && raw[end] !== '+' && raw[end] !== '＋' && raw[end] !== '"' && raw[end] !== "'") {
+                    end += 1;
+                }
+
+                tokens.push({ type: 'other', text: raw.slice(index, end) });
+                index = end;
+            }
+
+            return tokens;
+        }
+
+        function mergeConcatenatedStrings(raw) {
+            const tokens = tokenizeStringExpression(raw);
+            if (tokens.length === 0) {
+                return '';
+            }
+
+            const parts = [];
+            let index = 0;
+
+            while (index < tokens.length) {
+                const token = tokens[index];
+
+                if (token.type !== 'string') {
+                    parts.push(token.text);
+                    index += 1;
+                    continue;
+                }
+
+                let value = token.value;
+                let next = index + 1;
+                while (next + 1 < tokens.length && tokens[next].type === 'plus' && tokens[next + 1].type === 'string') {
+                    value += tokens[next + 1].value;
+                    next += 2;
+                }
+
+                while (next < tokens.length && tokens[next].type === 'string') {
+                    value += tokens[next].value;
+                    next += 1;
+                }
+
+                parts.push(value);
+                index = next;
+            }
+
+            if (parts.length === 1) {
+                return parts[0];
+            }
+
+            const lines = [];
+            let expressionLine = '';
+
+            parts.forEach((part) => {
+                if (part === '+') {
+                    expressionLine = expressionLine ? `${expressionLine} +` : '+';
+                    return;
+                }
+
+                if (expressionLine) {
+                    if (/^[A-Za-z_$][\w$]*(?:[.)\]]*)$/.test(part)) {
+                        expressionLine += ` ${part}`;
+                        return;
+                    }
+
+                    lines.push(expressionLine);
+                    expressionLine = '';
+                }
+
+                lines.push(part);
+            });
+
+            if (expressionLine) {
+                lines.push(expressionLine);
+            }
+
+            return lines.join('\n');
+        }
+
         function copyAsQuotedText(text) {
             copyToClipboard(`"${encodeToEscapedString(text)}"`);
         }
@@ -662,6 +809,12 @@ java.lang.RuntimeException: test
             showToast('已转为转义字符串。');
         }
 
+        function mergeStringsAction() {
+            outputText.value = mergeConcatenatedStrings(inputText.value);
+            refreshStats();
+            showToast('已合并拼接字符串。');
+        }
+
         function showChangelog() {
             document.getElementById('changelog-modal').style.display = 'flex';
         }
@@ -672,9 +825,11 @@ java.lang.RuntimeException: test
 
         window.showChangelog = showChangelog;
         window.closeChangelog = closeChangelog;
+        window.mergeConcatenatedStrings = mergeConcatenatedStrings;
 
         decodeBtn.addEventListener('click', decodeAction);
         encodeBtn.addEventListener('click', encodeAction);
+        mergeStringsBtn.addEventListener('click', mergeStringsAction);
 
         swapBtn.addEventListener('click', () => {
             const temp = inputText.value;
