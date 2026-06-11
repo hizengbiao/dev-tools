@@ -580,7 +580,7 @@
         <div class="tool-title">
             <h1>正则表达式测试</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.03</span>
+                <span>V1.04</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -701,6 +701,10 @@
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月11日</div>
                     <div class="changelog-entry">
+                        <div class="changelog-version">V1.04</div>
+                        <div class="changelog-desc">兼容从配置或代码中复制出来的双反斜杠转义正则，避免 <code>\\s</code> 这类写法截断匹配结果。</div>
+                    </div>
+                    <div class="changelog-entry">
                         <div class="changelog-version">V1.03</div>
                         <div class="changelog-desc">兼容 (?i) 前缀标志，初始化自动生成替换结果，并在高亮预览中标出捕获分组。</div>
                     </div>
@@ -784,8 +788,12 @@
             };
         }
 
+        function normalizeEscapedRegexPattern(pattern) {
+            return pattern.replace(/\\\\(?=[dDsSwWbBtrnvf0()[\]{}.^$|?*+\\/])/g, '\\');
+        }
+
         function getFlagsForPattern(pattern) {
-            return parseInlineFlags(pattern, getFlags());
+            return parseInlineFlags(normalizeEscapedRegexPattern(pattern), getFlags());
         }
 
         function buildRegex() {

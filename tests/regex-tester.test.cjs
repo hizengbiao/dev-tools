@@ -17,8 +17,10 @@ assert.match(page, /<link rel="stylesheet" href="nav\.css">/);
 assert.match(page, /<script src="nav\.js" defer><\/script>/);
 assert.match(page, /<h1>正则表达式测试<\/h1>/);
 assert.match(page, /class="version-info" onclick="showChangelog\(\)"/);
-assert.match(page, /<span>V1\.03<\/span>/);
+assert.match(page, /<span>V1\.04<\/span>/);
 assert.match(page, /<h3>🚀 版本更新说明<\/h3>/);
+assert.match(page, /<div class="changelog-version">V1\.04<\/div>/);
+assert.match(page, /<div class="changelog-desc">兼容从配置或代码中复制出来的双反斜杠转义正则，避免 <code>\\\\s<\/code> 这类写法截断匹配结果。<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.03<\/div>/);
 assert.match(page, /<div class="changelog-desc">兼容 \(\?i\) 前缀标志，初始化自动生成替换结果，并在高亮预览中标出捕获分组。<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.02<\/div>/);
@@ -74,6 +76,9 @@ assert.match(page, /function getLineColumn\(text, index\)/);
 assert.match(page, /function parseInlineFlags\(pattern, selectedFlags\)/);
 assert.match(page, /function getFlagsForPattern\(pattern\)/);
 assert.match(page, /function getRegexWithFlags\(source, flags\)/);
+assert.match(page, /function normalizeEscapedRegexPattern\(pattern\)/);
+assert.match(page, /pattern\.replace\(/);
+assert.match(page, /dDsSwWbBtrnvf0/);
 assert.match(page, /function buildRegex\(\)/);
 assert.match(page, /function runMatch\(\)/);
 assert.match(page, /function runReplace\(showNotification = true\)/);
@@ -93,5 +98,12 @@ assert.match(page, /用于在多行文本中快速验证正则表达式、预览
 assert.doesNotMatch(page, /常用标志/);
 assert.match(page, /function showChangelog\(\)/);
 assert.match(page, /window\.showChangelog = showChangelog/);
+
+const normalizeEscapedRegexPattern = (pattern) => pattern.replace(/\\\\(?=[dDsSwWbBtrnvf0()[\]{}.^$|?*+\\/])/g, '\\');
+const jdbcText = `URL: jdbc:mysql://demo.mysql.dbdns.cn:6446/schema?useUnicode=true&characterEncoding=utf8&useSSL=false&connectTimeout=10000&socketTimeout=600000
+        user: somdbdev`;
+const jdbcPatternCopiedFromConfig = String.raw`(jdbc:mysql://[^,\\s]+|jdbc:postgresql://[^,\\s]+|jdbc:tdsql-mysql://[^,\\s]+|jdbc:postgresql://[^,\\s]+|jdbc:gaussdb://[^,\\s]+|jdbc:opengauss://[^,\\s]+|jdbc:olap://[^,\\s]+|jdbc:oracle:(thin|oci):@[^,\\s]*|jdbc:sqlserver://[^,\\s]+)`;
+const jdbcMatch = new RegExp(normalizeEscapedRegexPattern(jdbcPatternCopiedFromConfig), 'gm').exec(jdbcText);
+assert.equal(jdbcMatch && jdbcMatch[0], 'jdbc:mysql://demo.mysql.dbdns.cn:6446/schema?useUnicode=true&characterEncoding=utf8&useSSL=false&connectTimeout=10000&socketTimeout=600000');
 
 console.log('regex tester integration passed');
