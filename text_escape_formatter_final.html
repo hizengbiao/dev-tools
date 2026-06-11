@@ -137,13 +137,39 @@
             line-height: 1.35;
         }
 
-        textarea {
+        .editor-shell {
             width: 100%;
             flex: 1;
             min-height: 520px;
-            padding: 12px;
             border: 1px solid #d0d7de;
             border-radius: 6px;
+            display: flex;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .line-numbers {
+            flex: 0 0 48px;
+            padding: 12px 8px;
+            border-right: 1px solid #e5e7eb;
+            background: #f6f8fa;
+            color: #8c959f;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            text-align: right;
+            white-space: pre;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        textarea {
+            width: 100%;
+            flex: 1;
+            min-height: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 0;
             font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
             font-size: 14px;
             line-height: 1.6;
@@ -152,7 +178,7 @@
             background: #fff;
         }
 
-        textarea:focus {
+        .editor-shell:focus-within {
             border-color: #0969da;
             box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.3);
         }
@@ -170,6 +196,7 @@
         }
 
         .btn {
+            position: relative;
             padding: 9px 14px;
             font-size: 14px;
             border-radius: 6px;
@@ -183,6 +210,53 @@
 
         .btn:hover {
             background-color: #f3f4f6;
+        }
+
+        .actions .btn[data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: calc(100% + 12px);
+            top: 50%;
+            transform: translateY(-50%);
+            width: 280px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            background: #24292f;
+            color: #fff;
+            font-size: 12px;
+            line-height: 1.6;
+            font-weight: 500;
+            text-align: left;
+            white-space: pre-line;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+            opacity: 0;
+            pointer-events: none;
+            visibility: hidden;
+            z-index: 20;
+            transition: opacity 0.15s ease, visibility 0.15s ease;
+        }
+
+        .actions .btn[data-tooltip]::before {
+            content: "";
+            position: absolute;
+            left: calc(100% + 6px);
+            top: 50%;
+            transform: translateY(-50%);
+            border: 6px solid transparent;
+            border-right-color: #24292f;
+            opacity: 0;
+            pointer-events: none;
+            visibility: hidden;
+            z-index: 21;
+            transition: opacity 0.15s ease, visibility 0.15s ease;
+        }
+
+        .actions .btn[data-tooltip]:hover::after,
+        .actions .btn[data-tooltip]:focus-visible::after,
+        .actions .btn[data-tooltip]:hover::before,
+        .actions .btn[data-tooltip]:focus-visible::before {
+            opacity: 1;
+            visibility: visible;
         }
 
         .btn-primary {
@@ -393,6 +467,23 @@
                 padding-top: 0;
             }
 
+            .actions .btn[data-tooltip]::after {
+                left: 0;
+                top: auto;
+                bottom: calc(100% + 10px);
+                transform: none;
+                width: min(280px, 80vw);
+            }
+
+            .actions .btn[data-tooltip]::before {
+                left: 18px;
+                top: auto;
+                bottom: calc(100% - 2px);
+                transform: none;
+                border-color: transparent;
+                border-top-color: #24292f;
+            }
+
             .panel {
                 min-height: 430px;
             }
@@ -434,7 +525,7 @@
         <div class="tool-title">
             <h1>文本转义转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.02</span>
+                <span>V1.03</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -452,17 +543,25 @@
                             </div>
                         </div>
                     </div>
-                    <textarea id="inputText" spellcheck="false" placeholder="请输入转义字符串或普通文本，例如：
+                    <div class="editor-shell">
+                        <div class="line-numbers" id="inputLineNumbers" aria-hidden="true">1</div>
+                        <textarea id="inputText" spellcheck="false" placeholder="请输入转义字符串或普通文本，例如：
 java.lang.RuntimeException: test
 	at com.example.Demo.main(Demo.java:12)"></textarea>
+                    </div>
                 </section>
 
                 <section class="actions" aria-label="转换操作">
-                    <button class="btn btn-primary" id="decodeBtn" type="button">转为可读文本</button>
-                    <button class="btn btn-primary" id="encodeBtn" type="button">转为转义字符串</button>
-                    <button class="btn btn-primary" id="mergeStringsBtn" type="button">合并拼接字符串</button>
-                    <button class="btn btn-secondary" id="swapBtn" type="button">交换输入输出</button>
-                    <button class="btn btn-danger" id="clearBtn" type="button">清空</button>
+                    <button class="btn btn-primary" id="decodeBtn" type="button"
+                        data-tooltip="把转义内容还原成可读文本。&#10;示例：a\nb 会展开成两行；\t 会变成制表符；\u4e2d 会变成中文。&#10;适合处理日志字段、异常堆栈、JSON 字符串里的转义文本。">转为可读文本</button>
+                    <button class="btn btn-primary" id="encodeBtn" type="button"
+                        data-tooltip="把普通多行文本转换成可复制进代码或配置里的转义字符串。&#10;示例：两行文本会变成 a\nb，双引号会变成 \&quot;。&#10;适合放入 Java、JSON、配置字段或日志模板。">转为转义字符串</button>
+                    <button class="btn btn-primary" id="mergeStringsBtn" type="button"
+                        data-tooltip="合并代码里多段引号字符串。&#10;示例：&quot;jdbc:&quot; + &quot;mysql://host&quot; 会合并为 jdbc:mysql://host。&#10;如果 + 两边有变量或表达式，会保留边界，不跨变量合并。">合并拼接字符串</button>
+                    <button class="btn btn-secondary" id="swapBtn" type="button"
+                        data-tooltip="交换左侧输入区和右侧输出区内容。&#10;适合先转换一次，再把结果作为下一次转换输入。">交换输入输出</button>
+                    <button class="btn btn-danger" id="clearBtn" type="button"
+                        data-tooltip="清空输入区和输出区，并把光标放回输入区。&#10;适合开始处理下一段文本。">清空</button>
                 </section>
 
                 <section class="panel">
@@ -476,7 +575,10 @@ java.lang.RuntimeException: test
                             </div>
                         </div>
                     </div>
-                    <textarea id="outputText" spellcheck="false" placeholder="转换结果会显示在这里..."></textarea>
+                    <div class="editor-shell">
+                        <div class="line-numbers" id="outputLineNumbers" aria-hidden="true">1</div>
+                        <textarea id="outputText" spellcheck="false" placeholder="转换结果会显示在这里..."></textarea>
+                    </div>
                 </section>
             </div>
 
@@ -500,6 +602,10 @@ java.lang.RuntimeException: test
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月11日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.03</div>
+                        <div class="changelog-desc">交互优化：输入区和输出区增加行号显示，并为中间转换按钮补充悬停功能说明与示例。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.02</div>
                         <div class="changelog-desc">新增拼接字符串合并功能，支持多行字符串字面量合并，并在遇到变量拼接时保留边界。</div>
@@ -528,6 +634,8 @@ java.lang.RuntimeException: test
         const outputText = document.getElementById('outputText');
         const inputStats = document.getElementById('inputStats');
         const outputStats = document.getElementById('outputStats');
+        const inputLineNumbers = document.getElementById('inputLineNumbers');
+        const outputLineNumbers = document.getElementById('outputLineNumbers');
         const toast = document.getElementById('toast');
 
         const decodeBtn = document.getElementById('decodeBtn');
@@ -549,9 +657,21 @@ java.lang.RuntimeException: test
             return `${lines} 行 / ${text.length} 字符`;
         }
 
+        function refreshLineNumbers(textarea, lineNumbers) {
+            const lineCount = textarea.value ? textarea.value.split(/\r\n|\r|\n/).length : 1;
+            lineNumbers.textContent = Array.from({ length: lineCount }, (_, index) => index + 1).join('\n');
+            syncLineNumberScroll(textarea, lineNumbers);
+        }
+
+        function syncLineNumberScroll(textarea, lineNumbers) {
+            lineNumbers.scrollTop = textarea.scrollTop;
+        }
+
         function refreshStats() {
             inputStats.textContent = getStats(inputText.value);
             outputStats.textContent = getStats(outputText.value);
+            refreshLineNumbers(inputText, inputLineNumbers);
+            refreshLineNumbers(outputText, outputLineNumbers);
         }
 
         function showToast(message, isError = false) {
@@ -865,6 +985,8 @@ java.lang.RuntimeException: test
 
         inputText.addEventListener('input', refreshStats);
         outputText.addEventListener('input', refreshStats);
+        inputText.addEventListener('scroll', () => syncLineNumberScroll(inputText, inputLineNumbers));
+        outputText.addEventListener('scroll', () => syncLineNumberScroll(outputText, outputLineNumbers));
 
         document.addEventListener('keydown', (event) => {
             if (event.ctrlKey && event.key === 'Enter' && !event.shiftKey) {
