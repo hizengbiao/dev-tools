@@ -17,6 +17,7 @@ Thumbs.db
 dist/
 build/
 .superpowers/
+.worktrees/
 
 # Logs
 *.log
