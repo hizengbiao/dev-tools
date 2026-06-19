@@ -596,15 +596,86 @@
             padding: 16px;
         }
 
+        .railroad-sequence {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
         .railroad-node {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             border: 1px solid #8c959f;
             border-radius: 6px;
             padding: 6px 10px;
             background: #fff;
+            color: #24292f;
+            white-space: nowrap;
+            box-shadow: 0 1px 2px rgba(31, 35, 40, 0.08);
+        }
+
+        .railroad-node small {
+            border-radius: 999px;
+            padding: 1px 6px;
+            background: #ddf4ff;
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+
+        .railroad-group {
+            display: inline-flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 10px;
+            border: 2px solid #54aeff;
+            border-radius: 8px;
+            background: #f6fbff;
+        }
+
+        .railroad-group-title,
+        .railroad-branch-label {
+            color: var(--muted-color);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .railroad-assertion {
+            border-style: dashed;
+            border-color: #8250df;
+            background: #fbfaff;
+        }
+
+        .railroad-branch {
+            display: inline-flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 8px 12px;
+            border-left: 2px solid #8c959f;
+            border-right: 2px solid #8c959f;
+            border-radius: 8px;
+            background: #f6f8fa;
+        }
+
+        .railroad-branch-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .railroad-connection {
             color: var(--muted-color);
+            font-weight: 700;
+        }
+
+        .visualizer-stale-note,
+        .visualizer-empty {
+            margin-bottom: 12px;
+            padding: 9px 11px;
+            border-radius: 6px;
+            background: var(--warning-bg);
+            color: #5c3b00;
+            font-size: 13px;
         }
 
         .syntax-tree {
@@ -613,6 +684,35 @@
             padding: 16px;
             font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
             line-height: 1.7;
+        }
+
+        .syntax-tree ul {
+            margin: 4px 0 4px 18px;
+            padding-left: 18px;
+            border-left: 1px solid #d0d7de;
+        }
+
+        .syntax-tree li {
+            margin: 5px 0;
+        }
+
+        .syntax-tree summary {
+            cursor: pointer;
+        }
+
+        .syntax-tree code,
+        .explanation-table code {
+            border-radius: 4px;
+            padding: 2px 5px;
+            background: #f6f8fa;
+            color: #24292f;
+        }
+
+        .syntax-tree p {
+            margin: 2px 0 4px 20px;
+            color: var(--muted-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            font-size: 13px;
         }
 
         .explanation-table {
@@ -626,6 +726,13 @@
             border: 1px solid #d0d7de;
             text-align: left;
             vertical-align: top;
+        }
+
+        .explanation-table th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: #f6f8fa;
         }
 
         .changelog-date {
@@ -904,6 +1011,9 @@
         const statusText = document.getElementById('statusText');
         const flagTooltip = document.getElementById('flagTooltip');
         const toast = document.getElementById('toast');
+        const railroadView = document.getElementById('railroadView');
+        const treeView = document.getElementById('treeView');
+        const explanationView = document.getElementById('explanationView');
 
         const flagControls = {
             g: document.getElementById('flagGlobal'),
@@ -914,12 +1024,186 @@
         };
 
         function escapeHtml(value) {
-            return value
+            return String(value)
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
+        }
+
+        const visualizerTypeLabels = {
+            expression: '完整表达式',
+            sequence: '顺序匹配',
+            alternation: '分支选择',
+            literal: '普通字符',
+            anchor: '位置锚点',
+            escape: '转义字符',
+            legacyEscape: '兼容转义',
+            characterClass: '字符集合',
+            wildcard: '任意字符',
+            captureGroup: '捕获分组',
+            group: '非捕获分组',
+            assertion: '条件断言',
+            backreference: '分组引用'
+        };
+
+        function getQuantifierDescription(quantifier) {
+            if (!quantifier) return '1 次';
+
+            let range;
+            if (quantifier.min === quantifier.max) {
+                range = `${quantifier.min} 次`;
+            } else if (quantifier.max === Infinity) {
+                range = `至少 ${quantifier.min} 次`;
+            } else {
+                range = `${quantifier.min} 到 ${quantifier.max} 次`;
+            }
+
+            return `${range}，${quantifier.greedy ? '优先多匹配' : '优先少匹配'}`;
+        }
+
+        function getVisualizerGroupLabel(node) {
+            if (node.groupName) return `命名分组 ${node.groupName}`;
+            if (node.groupNumber) return `捕获分组 ${node.groupNumber}`;
+
+            const labels = {
+                nonCapturing: '非捕获分组',
+                positiveLookahead: '正向前瞻',
+                negativeLookahead: '负向前瞻',
+                positiveLookbehind: '正向后瞻',
+                negativeLookbehind: '负向后瞻'
+            };
+            return labels[node.groupKind] || visualizerTypeLabels[node.type] || '分组';
+        }
+
+        function describeVisualizerNode(node) {
+            const descriptions = {
+                'Regular expression': '完整的正则表达式',
+                Sequence: '按从左到右的顺序依次匹配',
+                Alternatives: '匹配任意一个分支',
+                'Literal character': `匹配普通字符 ${node.raw || ''}`,
+                'Start anchor': '匹配一行或文本的开头位置',
+                'End anchor': '匹配一行或文本的结尾位置',
+                'Match a digit': '匹配一个数字',
+                'Match a word character': '匹配一个字母、数字或下划线',
+                'Match whitespace': '匹配一个空白字符',
+                'Match any character except line terminators': '匹配任意单个字符（是否包含换行由标志决定）',
+                'Character class': '匹配字符集合中的一个字符',
+                'Negative character class': '匹配不在字符集合中的一个字符'
+            };
+
+            const base = descriptions[node.description]
+                || (node.type === 'captureGroup' || node.type === 'group' || node.type === 'assertion'
+                    ? getVisualizerGroupLabel(node)
+                    : node.description)
+                || visualizerTypeLabels[node.type]
+                || '正则表达式片段';
+
+            return node.quantifier ? `${base}；重复规则：${getQuantifierDescription(node.quantifier)}` : base;
+        }
+
+        function getVisualizerNodeLabel(node) {
+            if (node.type === 'captureGroup' || node.type === 'group' || node.type === 'assertion') {
+                return getVisualizerGroupLabel(node);
+            }
+            return visualizerTypeLabels[node.type] || node.raw || '节点';
+        }
+
+        function renderRailroadNode(node) {
+            const children = node.children || [];
+
+            if (node.type === 'expression' || node.type === 'sequence') {
+                if (!children.length) {
+                    return '<span class="railroad-node">空匹配</span>';
+                }
+                return `<div class="railroad-sequence">${children.map((child, index) => {
+                    const connection = index ? '<span class="railroad-connection">→</span>' : '';
+                    return `${connection}${renderRailroadNode(child)}`;
+                }).join('')}</div>`;
+            }
+
+            if (node.type === 'alternation') {
+                return `<div class="railroad-branch"><span class="railroad-branch-label">任选一个分支</span>${children.map((child, index) =>
+                    `<div class="railroad-branch-row"><span class="railroad-branch-label">${index + 1}</span>${renderRailroadNode(child)}</div>`
+                ).join('')}</div>`;
+            }
+
+            if (node.type === 'captureGroup' || node.type === 'group' || node.type === 'assertion') {
+                const assertionClass = node.type === 'assertion' ? ' railroad-assertion' : '';
+                const quantifier = node.quantifier ? `<small>${escapeHtml(node.quantifier.raw)}</small>` : '';
+                return `<div class="railroad-group${assertionClass}" data-node-raw="${escapeHtml(node.raw || '')}" title="${escapeHtml(describeVisualizerNode(node))}">
+                    <span class="railroad-group-title">${escapeHtml(getVisualizerGroupLabel(node))}${quantifier}</span>
+                    ${children.length ? children.map(renderRailroadNode).join('') : '<span class="railroad-node">空匹配</span>'}
+                </div>`;
+            }
+
+            const quantifier = node.quantifier ? `<small>${escapeHtml(node.quantifier.raw)}</small>` : '';
+            return `<span class="railroad-node railroad-${escapeHtml(node.type || 'unknown')}" data-node-raw="${escapeHtml(node.raw || '')}" title="${escapeHtml(describeVisualizerNode(node))}">
+                <code>${escapeHtml(node.raw || '空')}</code>${quantifier}
+            </span>`;
+        }
+
+        function renderRailroadView(ast) {
+            railroadView.innerHTML = `<div class="railroad-canvas">${renderRailroadNode(ast)}</div>`;
+        }
+
+        function renderTreeNode(node) {
+            const children = node.children || [];
+            return `<li><details open>
+                <summary><strong>${escapeHtml(getVisualizerNodeLabel(node))}</strong> <code>${escapeHtml(node.raw || '空')}</code></summary>
+                <p>${escapeHtml(describeVisualizerNode(node))}</p>
+                ${children.length ? `<ul>${children.map(renderTreeNode).join('')}</ul>` : ''}
+            </details></li>`;
+        }
+
+        function renderSyntaxTree(ast) {
+            treeView.innerHTML = `<ul class="syntax-tree">${renderTreeNode(ast)}</ul>`;
+        }
+
+        function flattenVisualizerNodes(node, depth = 0, rows = []) {
+            rows.push({ node, depth });
+            (node.children || []).forEach((child) => flattenVisualizerNodes(child, depth + 1, rows));
+            return rows;
+        }
+
+        function getNodeGroupText(node) {
+            if (node.groupName) return node.groupName;
+            if (node.groupNumber) return `第 ${node.groupNumber} 组`;
+            if (node.groupKind) return getVisualizerGroupLabel(node);
+            return '—';
+        }
+
+        function renderExplanationTable(ast) {
+            const rows = flattenVisualizerNodes(ast);
+            if (!rows.length) {
+                explanationView.innerHTML = '<div class="visualizer-empty">当前表达式没有可说明的结构。</div>';
+                return;
+            }
+
+            explanationView.innerHTML = `<table class="explanation-table">
+                <thead><tr><th>片段</th><th>类型</th><th>含义</th><th>重复</th><th>分组</th></tr></thead>
+                <tbody>${rows.map(({ node, depth }) => `<tr>
+                    <td style="padding-left:${12 + depth * 18}px"><code>${escapeHtml(node.raw || '空')}</code></td>
+                    <td>${escapeHtml(getVisualizerNodeLabel(node))}</td>
+                    <td>${escapeHtml(describeVisualizerNode(node))}</td>
+                    <td>${escapeHtml(getQuantifierDescription(node.quantifier))}</td>
+                    <td>${escapeHtml(getNodeGroupText(node))}</td>
+                </tr>`).join('')}</tbody>
+            </table>`;
+        }
+
+        function renderVisualization(result, isStale = false) {
+            renderRailroadView(result.ast);
+            renderSyntaxTree(result.ast);
+            renderExplanationTable(result.ast);
+
+            if (!isStale) return;
+
+            const note = '<div class="visualizer-stale-note">以下为上一次成功解析结果。</div>';
+            railroadView.insertAdjacentHTML('afterbegin', note);
+            treeView.insertAdjacentHTML('afterbegin', note);
+            explanationView.insertAdjacentHTML('afterbegin', note);
         }
 
         function getFlags() {
