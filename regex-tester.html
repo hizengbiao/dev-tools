@@ -573,6 +573,13 @@
             display: block;
         }
 
+        .visualizer-error pre {
+            margin: 8px 0 0;
+            overflow-x: auto;
+            white-space: pre;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        }
+
         .visualizer-views {
             display: flex;
             flex: 1;
@@ -818,7 +825,7 @@
         <div class="tool-title">
             <h1>正则表达式测试</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.04</span>
+                <span>V1.05</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -922,7 +929,7 @@
 
             <div class="hint">
                 <strong>正则表达式测试工具说明：</strong>
-                用于在多行文本中快速验证正则表达式、预览匹配高亮、查看每条匹配的索引与行列位置，并按替换文本生成替换结果。左侧输入测试文本，中间配置匹配规则、标志和替换文本，右侧查看匹配与替换输出；当替换文本引用了不存在的括号分组时，页面会给出修正提示。
+                用于在多行文本中快速验证正则表达式、预览匹配高亮、查看每条匹配的索引与行列位置，并按替换文本生成替换结果。左侧输入测试文本，中间配置匹配规则、标志和替换文本，右侧查看匹配与替换输出；点击“正则可视化”可切换查看匹配路径图、语法树和分段说明，规则有误时会保留上一次成功结果并标出错误位置。
             </div>
         </section>
     </div>
@@ -967,6 +974,13 @@
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年6月19日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.05</div>
+                        <div class="changelog-desc">新增正则表达式可视化，支持匹配路径图、语法树和分段说明三种视图，并提供实时解析与错误定位。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月11日</div>
                     <div class="changelog-entry">
@@ -1014,6 +1028,18 @@
         const railroadView = document.getElementById('railroadView');
         const treeView = document.getElementById('treeView');
         const explanationView = document.getElementById('explanationView');
+        const visualizerModal = document.getElementById('regex-visualizer-modal');
+        const visualizerError = document.getElementById('visualizerError');
+        const visualizerTabs = Array.from(document.querySelectorAll('.visualizer-tab'));
+        const visualizerViews = {
+            railroad: railroadView,
+            tree: treeView,
+            explanation: explanationView
+        };
+        let lastSuccessfulVisualization = null;
+        let visualizerRefreshTimer = null;
+        let activeVisualizerView = 'railroad';
+        let visualizerReturnFocus = null;
 
         const flagControls = {
             g: document.getElementById('flagGlobal'),
@@ -1204,6 +1230,116 @@
             railroadView.insertAdjacentHTML('afterbegin', note);
             treeView.insertAdjacentHTML('afterbegin', note);
             explanationView.insertAdjacentHTML('afterbegin', note);
+        }
+
+        function isVisualizerOpen() {
+            return visualizerModal.style.display === 'flex';
+        }
+
+        function activateVisualizerView(viewName, shouldFocus = false) {
+            if (!visualizerViews[viewName]) return;
+
+            activeVisualizerView = viewName;
+            visualizerTabs.forEach((tab) => {
+                const isActive = tab.dataset.view === viewName;
+                tab.classList.toggle('active', isActive);
+                tab.setAttribute('aria-selected', String(isActive));
+                tab.tabIndex = isActive ? 0 : -1;
+                if (isActive && shouldFocus) tab.focus();
+            });
+
+            Object.entries(visualizerViews).forEach(([name, view]) => {
+                const isActive = name === viewName;
+                view.classList.toggle('active', isActive);
+                view.hidden = !isActive;
+            });
+        }
+
+        function clearVisualizerViews(message) {
+            const emptyState = `<div class="visualizer-empty">${escapeHtml(message)}</div>`;
+            railroadView.innerHTML = emptyState;
+            treeView.innerHTML = emptyState;
+            explanationView.innerHTML = emptyState;
+        }
+
+        function getVisualizerErrorContext(source, index) {
+            const safeIndex = Math.max(0, Math.min(Number(index) || 0, source.length));
+            const start = Math.max(0, safeIndex - 24);
+            const end = Math.min(source.length, safeIndex + 25);
+            const prefix = start ? '…' : '';
+            const suffix = end < source.length ? '…' : '';
+            const excerpt = `${prefix}${source.slice(start, end)}${suffix}`;
+            const pointerOffset = safeIndex - start + prefix.length;
+            return `${excerpt}\n${' '.repeat(pointerOffset)}^`;
+        }
+
+        function showVisualizerError(result) {
+            const error = result.error || {};
+            const source = result.originalSource || patternInput.value;
+            const index = Number.isFinite(error.index) ? error.index : 0;
+            const staleMessage = lastSuccessfulVisualization
+                ? '<div>以下仍显示上一次成功解析结果。</div>'
+                : '';
+
+            visualizerError.classList.add('active');
+            visualizerError.innerHTML = `<strong>解析失败：</strong>${escapeHtml(error.message || '无法解析当前正则表达式')}
+                <div>位置：${index}</div>
+                <pre>${escapeHtml(getVisualizerErrorContext(source, index))}</pre>
+                ${staleMessage}`;
+        }
+
+        function refreshRegexVisualization() {
+            window.clearTimeout(visualizerRefreshTimer);
+            visualizerRefreshTimer = null;
+
+            if (!window.RegexVisualizer) {
+                showVisualizerError({ error: { message: '正则可视化模块未加载', index: 0 } });
+                return;
+            }
+
+            const source = normalizeEscapedRegexPattern(patternInput.value);
+            const result = RegexVisualizer.parseRegexVisualization(source, getFlags());
+
+            if (!result.ok) {
+                showVisualizerError(result);
+                if (lastSuccessfulVisualization) {
+                    renderVisualization(lastSuccessfulVisualization, true);
+                } else {
+                    clearVisualizerViews('修正规则后将在这里显示可视化结果。');
+                }
+                return;
+            }
+
+            lastSuccessfulVisualization = result;
+            visualizerError.classList.remove('active');
+            visualizerError.innerHTML = '';
+            renderVisualization(result);
+        }
+
+        function scheduleVisualizerRefresh() {
+            if (!isVisualizerOpen()) return;
+            window.clearTimeout(visualizerRefreshTimer);
+            visualizerRefreshTimer = setTimeout(refreshRegexVisualization, 250);
+        }
+
+        function openRegexVisualizer() {
+            visualizerReturnFocus = document.activeElement;
+            visualizerModal.style.display = 'flex';
+            visualizerModal.setAttribute('aria-hidden', 'false');
+            activateVisualizerView(activeVisualizerView);
+            refreshRegexVisualization();
+            const activeTab = visualizerTabs.find((tab) => tab.dataset.view === activeVisualizerView);
+            if (activeTab) activeTab.focus();
+        }
+
+        function closeRegexVisualizer() {
+            window.clearTimeout(visualizerRefreshTimer);
+            visualizerRefreshTimer = null;
+            visualizerModal.style.display = 'none';
+            visualizerModal.setAttribute('aria-hidden', 'true');
+            if (visualizerReturnFocus && typeof visualizerReturnFocus.focus === 'function') {
+                visualizerReturnFocus.focus();
+            }
         }
 
         function getFlags() {
@@ -1575,6 +1711,8 @@
 
         document.getElementById('testBtn').addEventListener('click', runMatch);
         document.getElementById('replaceBtn').addEventListener('click', runReplace);
+        document.getElementById('visualizeBtn').addEventListener('click', openRegexVisualizer);
+        document.getElementById('closeVisualizerBtn').addEventListener('click', closeRegexVisualizer);
         document.getElementById('copyMatchBtn').addEventListener('click', () => copyToClipboard(matchResult.value));
         document.getElementById('copyReplaceBtn').addEventListener('click', () => copyToClipboard(replaceResult.value));
         document.getElementById('clearBtn').addEventListener('click', () => {
@@ -1599,10 +1737,28 @@
         });
         testText.addEventListener('scroll', syncLineNumberScroll);
         patternInput.addEventListener('input', updateReplaceHint);
+        patternInput.addEventListener('input', scheduleVisualizerRefresh);
         replaceInput.addEventListener('input', updateReplaceHint);
 
         Object.values(flagControls).forEach((control) => {
             control.addEventListener('change', runMatch);
+            control.addEventListener('change', scheduleVisualizerRefresh);
+        });
+
+        visualizerTabs.forEach((tab, index) => {
+            tab.addEventListener('click', () => activateVisualizerView(tab.dataset.view));
+            tab.addEventListener('keydown', (event) => {
+                const navigationKeys = ['ArrowLeft', 'ArrowRight', 'Home', 'End'];
+                if (!navigationKeys.includes(event.key)) return;
+
+                event.preventDefault();
+                let nextIndex = index;
+                if (event.key === 'ArrowLeft') nextIndex = (index - 1 + visualizerTabs.length) % visualizerTabs.length;
+                if (event.key === 'ArrowRight') nextIndex = (index + 1) % visualizerTabs.length;
+                if (event.key === 'Home') nextIndex = 0;
+                if (event.key === 'End') nextIndex = visualizerTabs.length - 1;
+                activateVisualizerView(visualizerTabs[nextIndex].dataset.view, true);
+            });
         });
 
         document.querySelectorAll('.flag-pill').forEach((flagPill) => {
@@ -1618,9 +1774,18 @@
         });
 
         window.addEventListener('click', (event) => {
-            const modal = document.getElementById('changelog-modal');
-            if (event.target === modal) {
+            const changelogModal = document.getElementById('changelog-modal');
+            if (event.target === changelogModal) {
                 closeChangelog();
+            }
+            if (event.target === visualizerModal) {
+                closeRegexVisualizer();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && isVisualizerOpen()) {
+                closeRegexVisualizer();
             }
         });
 
