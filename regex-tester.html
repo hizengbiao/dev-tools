@@ -533,6 +533,36 @@
             flex-direction: column;
         }
 
+        .visualizer-source {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            align-items: center;
+            gap: 10px;
+            padding: 12px 18px;
+            border-bottom: 1px solid #d8dee4;
+            background: #f6f8fa;
+        }
+
+        .visualizer-source-label {
+            color: var(--muted-color);
+            font-size: 13px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .visualizer-source code {
+            min-width: 0;
+            padding: 7px 9px;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            overflow-x: auto;
+            background: #fff;
+            color: #24292f;
+            white-space: pre;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 13px;
+        }
+
         .visualizer-tabs {
             display: flex;
             flex: 0 0 auto;
@@ -638,6 +668,23 @@
             margin: 0;
             padding: 0;
             list-style: none;
+        }
+
+        .railroad-character-set {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 5px;
+        }
+
+        .railroad-character-negated {
+            border-radius: 4px;
+            padding: 2px 6px;
+            background: #ffebe9;
+            color: var(--danger-color);
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
         }
 
         .railroad-character-items span,
@@ -841,6 +888,16 @@
             stroke: #2da44e;
         }
 
+        .regex-flow-svg .flow-node-negated rect {
+            fill: #fff5f5;
+            stroke: var(--danger-color);
+        }
+
+        .regex-flow-svg .flow-negated-label {
+            fill: var(--danger-color);
+            font-weight: 700;
+        }
+
         .regex-flow-svg .flow-node-anchor rect {
             fill: #8250df;
             stroke: #6639ba;
@@ -942,6 +999,12 @@
 
             .visualizer-tabs {
                 padding-inline: 10px;
+            }
+
+            .visualizer-source {
+                grid-template-columns: 1fr;
+                gap: 6px;
+                padding-inline: 12px;
             }
 
             .visualizer-view {
@@ -1077,11 +1140,15 @@
             </div>
             <div class="modal-body visualizer-body">
                 <div class="visualizer-layout">
+                    <div class="visualizer-source">
+                        <span class="visualizer-source-label">原始正则表达式</span>
+                        <code id="visualizerSource" aria-live="polite"></code>
+                    </div>
                     <div class="visualizer-tabs" role="tablist" aria-label="正则表达式可视化视图">
-                        <button id="railroadTab" role="tab" data-view="railroad" class="visualizer-tab active"
-                            aria-selected="true" aria-controls="railroadView" tabindex="0" type="button">匹配路径图</button>
-                        <button id="flowDiagramTab" role="tab" data-view="flowDiagram" class="visualizer-tab"
-                            aria-selected="false" aria-controls="flowDiagramView" tabindex="-1" type="button">正则流程图</button>
+                        <button id="flowDiagramTab" role="tab" data-view="flowDiagram" class="visualizer-tab active"
+                            aria-selected="true" aria-controls="flowDiagramView" tabindex="0" type="button">正则流程图</button>
+                        <button id="railroadTab" role="tab" data-view="railroad" class="visualizer-tab"
+                            aria-selected="false" aria-controls="railroadView" tabindex="-1" type="button">匹配路径图</button>
                         <button id="treeTab" role="tab" data-view="tree" class="visualizer-tab"
                             aria-selected="false" aria-controls="treeView" tabindex="-1" type="button">语法树</button>
                         <button id="explanationTab" role="tab" data-view="explanation" class="visualizer-tab"
@@ -1089,10 +1156,10 @@
                     </div>
                     <div id="visualizerError" class="visualizer-error" role="alert" aria-live="polite"></div>
                     <div class="visualizer-views">
-                        <div id="railroadView" class="visualizer-view active" role="tabpanel"
-                            aria-labelledby="railroadTab"></div>
-                        <div id="flowDiagramView" class="visualizer-view" role="tabpanel"
-                            aria-labelledby="flowDiagramTab" hidden></div>
+                        <div id="flowDiagramView" class="visualizer-view active" role="tabpanel"
+                            aria-labelledby="flowDiagramTab"></div>
+                        <div id="railroadView" class="visualizer-view" role="tabpanel"
+                            aria-labelledby="railroadTab" hidden></div>
                         <div id="treeView" class="visualizer-view" role="tabpanel" aria-labelledby="treeTab" hidden></div>
                         <div id="explanationView" class="visualizer-view" role="tabpanel"
                             aria-labelledby="explanationTab" hidden></div>
@@ -1176,6 +1243,7 @@
         const explanationView = document.getElementById('explanationView');
         const visualizerModal = document.getElementById('regex-visualizer-modal');
         const visualizerError = document.getElementById('visualizerError');
+        const visualizerSource = document.getElementById('visualizerSource');
         const visualizerTabs = Array.from(document.querySelectorAll('.visualizer-tab'));
         const visualizerViews = {
             railroad: railroadView,
@@ -1185,7 +1253,7 @@
         };
         let lastSuccessfulVisualization = null;
         let visualizerRefreshTimer = null;
-        let activeVisualizerView = 'railroad';
+        let activeVisualizerView = 'flowDiagram';
         let visualizerReturnFocus = null;
 
         const flagControls = {
@@ -1329,9 +1397,12 @@
 
             const quantifier = node.quantifier ? `<small>${escapeHtml(node.quantifier.raw)}</small>` : '';
             const content = node.characterItems && node.characterItems.length
-                ? `<span class="railroad-character-items">${node.characterItems.map((item) =>
-                    `<span>${escapeHtml(item)}</span>`
-                ).join('')}</span>`
+                ? `<span class="railroad-character-set">
+                    ${node.negated ? '<span class="railroad-character-negated">排除</span>' : ''}
+                    <span class="railroad-character-items">${node.characterItems.map((item) =>
+                        `<span>${escapeHtml(item)}</span>`
+                    ).join('')}</span>
+                </span>`
                 : `<code>${escapeHtml(getNodeDisplayText(node))}</code>`;
             return `<span class="railroad-node railroad-${escapeHtml(node.type || 'unknown')}" data-node-raw="${escapeHtml(node.raw || '')}" title="${escapeHtml(getNodeTitle(node))}">
                 ${content}${quantifier}
@@ -1427,9 +1498,10 @@
             const lineHeight = 18;
             const firstOffset = -((lines.length - 1) * lineHeight) / 2;
             const textLines = lines.map((line, index) =>
-                `<tspan x="${node.x + node.width / 2}" dy="${index ? lineHeight : firstOffset}">${escapeHtml(line)}</tspan>`
+                `<tspan${node.negated && index === 0 ? ' class="flow-negated-label"' : ''} x="${node.x + node.width / 2}" dy="${index ? lineHeight : firstOffset}">${escapeHtml(line)}</tspan>`
             ).join('');
-            return `<g class="flow-node flow-node-${escapeHtml(node.kind)}" data-node-raw="${escapeHtml(node.raw || '')}">
+            const negatedClass = node.negated ? ' flow-node-negated' : '';
+            return `<g class="flow-node flow-node-${escapeHtml(node.kind)}${negatedClass}" data-node-raw="${escapeHtml(node.raw || '')}">
                 <title>${escapeHtml(title)}</title>
                 <rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="6"></rect>
                 <text x="${node.x + node.width / 2}" y="${node.y + node.height / 2}">${textLines}</text>
@@ -1545,6 +1617,7 @@
         function refreshRegexVisualization() {
             window.clearTimeout(visualizerRefreshTimer);
             visualizerRefreshTimer = null;
+            visualizerSource.textContent = patternInput.value || '（空）';
 
             if (!window.RegexVisualizer) {
                 showVisualizerError({ error: { message: '正则可视化模块未加载', index: 0 } });

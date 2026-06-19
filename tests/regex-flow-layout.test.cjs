@@ -136,4 +136,10 @@ const multiLineNode = multiLineClass.nodes.find((node) => node.kind === 'charact
 assert.deepEqual(multiLineNode.lines, ['a-z', 'A-Z', '0-9', '-']);
 assert.ok(multiLineNode.height > 40);
 
+const negatedClass = layoutRegexFlow(displayAst('[^\\s]*'));
+const negatedClassNode = negatedClass.nodes.find((node) => node.kind === 'character');
+assert.equal(negatedClassNode.negated, true);
+assert.deepEqual(negatedClassNode.lines, ['排除', '空白字符']);
+assert.equal(negatedClassNode.label, '排除以下字符');
+
 console.log('regex flow layout passed');

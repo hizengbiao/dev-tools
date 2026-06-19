@@ -184,7 +184,7 @@
   function layoutLeaf(node, options) {
     var label = getNodeLabel(node);
     var lines = node.characterItems && node.characterItems.length
-      ? node.characterItems.slice()
+      ? (node.negated ? ['排除'].concat(node.characterItems) : node.characterItems.slice())
       : [label];
     var lineHeight = 22;
     var width = lines.reduce(function (max, line) {
@@ -198,6 +198,7 @@
       raw: node.raw || '',
       label: label,
       lines: lines,
+      negated: Boolean(node.negated),
       description: node.description || '',
       x: 0,
       y: 0,
