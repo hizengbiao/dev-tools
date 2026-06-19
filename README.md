@@ -13,6 +13,7 @@
 | [时间戳转换](timestamp-converter.html) | Unix 时间戳与日期在线互转，支持动态时钟。 |
 | [URL 编解码](url-encoder.html) | 快速 URL Encode/Decode。 |
 | [Base64 编解码](base64-encoder.html) | 支持文本和文件的 Base64 互相转换。 |
+| [文本智能拆分](text-splitter.html) | 按指定长度智能拆分长文本，优先保留自然语义边界并支持逐段复制。 |
 | [Neon Timer](neon-timer/dist/index.html) | 炫酷霓虹风格的倒计时与秒表应用。 |
 
 ## 📖 开发指南 (Development Guide)

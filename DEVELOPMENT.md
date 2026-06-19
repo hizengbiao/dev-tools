@@ -18,6 +18,7 @@
 | **时间戳转换** | `timestamp-converter.html` | 时间戳与日期互转，支持动态时钟。 | Vanilla JS |
 | **URL 编解码** | `url-encoder.html` | URL Encode/Decode。 | Vanilla JS |
 | **Base64 编解码** | `base64-encoder.html` | 文本与文件的 Base64 转换。 | Vanilla JS |
+| **文本智能拆分** | `text-splitter.html` | 按指定长度智能拆分文本，优先保留自然边界并支持逐段复制。 | Vanilla JS |
 | **Neon Timer** | `neon-timer/dist/` | 霓虹风格倒计时/秒表 (独立 App)。 | React + Vite |
 
 **公共组件：**

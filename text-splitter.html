@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文本智能拆分</title>
+    <link rel="stylesheet" href="nav.css">
+    <script src="nav.js" defer></script>
+    <script src="text-splitter.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f6f8;
+            --panel-bg: #ffffff;
+            --border-color: #d0d7de;
+            --text-color: #24292f;
+            --muted-color: #57606a;
+            --accent-color: #0969da;
+            --accent-hover: #0757b5;
+            --danger-color: #cf222e;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 14px 18px 24px;
+            min-height: 100vh;
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        }
+
+        button,
+        input,
+        textarea {
+            font: inherit;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1500px;
+            margin: 0 auto;
+        }
+
+        .tool-title,
+        .panel-header,
+        .toolbar,
+        .result-header,
+        .result-meta {
+            display: flex;
+            align-items: center;
+        }
+
+        .tool-title {
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .version-info {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 999px;
+            background: #f6f8fa;
+            color: var(--muted-color);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .version-info:hover {
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+            background: #ddf4ff;
+        }
+
+        .tool-card {
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--panel-bg);
+            box-shadow: 0 1px 3px rgba(27, 31, 36, 0.06);
+        }
+
+        .toolbar {
+            justify-content: space-between;
+            gap: 16px;
+            padding-bottom: 14px;
+            margin-bottom: 14px;
+            border-bottom: 1px solid #eaeef2;
+            flex-wrap: wrap;
+        }
+
+        .limit-control,
+        .toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .limit-control label {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .limit-control input {
+            width: 116px;
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            outline: none;
+        }
+
+        .limit-control input:focus,
+        textarea:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
+        }
+
+        .hint {
+            color: var(--muted-color);
+            font-size: 13px;
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: minmax(360px, 0.9fr) minmax(440px, 1.1fr);
+            gap: 16px;
+            align-items: stretch;
+        }
+
+        .panel {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            justify-content: space-between;
+            gap: 12px;
+            min-height: 34px;
+            margin-bottom: 8px;
+        }
+
+        .panel-header h2,
+        .result-header h3 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .stats {
+            color: var(--muted-color);
+            font-size: 12px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 570px;
+            padding: 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-color);
+            background: #fff;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: vertical;
+            outline: none;
+        }
+
+        .result-list {
+            min-height: 570px;
+            max-height: calc(100vh - 230px);
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: #f6f8fa;
+            overflow: auto;
+        }
+
+        .empty-state {
+            min-height: 540px;
+            display: grid;
+            place-items: center;
+            color: #8c959f;
+            text-align: center;
+            line-height: 1.7;
+        }
+
+        .result-item {
+            border: 1px solid var(--border-color);
+            border-radius: 7px;
+            background: #fff;
+            overflow: hidden;
+        }
+
+        .result-item + .result-item {
+            margin-top: 10px;
+        }
+
+        .result-header {
+            justify-content: space-between;
+            gap: 12px;
+            padding: 8px 10px;
+            border-bottom: 1px solid #eaeef2;
+            background: #f6f8fa;
+        }
+
+        .result-meta {
+            gap: 10px;
+        }
+
+        .segment-number {
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+
+        .segment-length {
+            color: var(--muted-color);
+            font-size: 12px;
+        }
+
+        .segment-content {
+            margin: 0;
+            padding: 12px;
+            min-height: 72px;
+            max-height: 240px;
+            overflow: auto;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .btn {
+            padding: 8px 13px;
+            border: 1px solid rgba(27, 31, 36, 0.15);
+            border-radius: 6px;
+            background: #fff;
+            color: var(--text-color);
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        .btn:hover {
+            background: #f3f4f6;
+            border-color: #afb8c1;
+        }
+
+        .btn-primary {
+            border-color: var(--accent-color);
+            background: var(--accent-color);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-danger {
+            border-color: var(--danger-color);
+            color: var(--danger-color);
+        }
+
+        .btn-small {
+            padding: 5px 9px;
+            font-size: 12px;
+        }
+
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.55;
+        }
+
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: 28px;
+            z-index: 1200;
+            padding: 9px 16px;
+            border-radius: 6px;
+            background: #24292f;
+            color: #fff;
+            font-size: 13px;
+            transform: translate(-50%, 20px);
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.2s;
+        }
+
+        .toast.show {
+            transform: translate(-50%, 0);
+            opacity: 1;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1300;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(27, 31, 36, 0.45);
+        }
+
+        .modal-content {
+            width: min(560px, 100%);
+            border-radius: 8px;
+            background: #fff;
+            box-shadow: 0 16px 40px rgba(27, 31, 36, 0.25);
+            overflow: hidden;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid #eaeef2;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .close-modal {
+            border: 0;
+            background: transparent;
+            color: var(--muted-color);
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .changelog-date {
+            display: inline-block;
+            padding-bottom: 6px;
+            border-bottom: 2px solid var(--accent-color);
+            font-weight: 700;
+        }
+
+        .changelog-entry {
+            display: grid;
+            grid-template-columns: 64px 1fr;
+            gap: 10px;
+            margin-top: 12px;
+            line-height: 1.6;
+            color: var(--muted-color);
+        }
+
+        .changelog-version {
+            align-self: start;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: #ddf4ff;
+            color: var(--accent-color);
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        @media (max-width: 900px) {
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+
+            textarea,
+            .result-list {
+                min-height: 400px;
+            }
+
+            .result-list {
+                max-height: none;
+            }
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+
+            .toolbar,
+            .limit-control {
+                align-items: stretch;
+            }
+
+            .limit-control {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+
+            .hint {
+                flex-basis: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="container">
+        <div class="tool-title">
+            <h1>文本智能拆分</h1>
+            <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
+                <span>V1.00</span>
+                <span>ℹ️</span>
+            </div>
+        </div>
+
+        <section class="tool-card">
+            <div class="toolbar">
+                <div class="limit-control">
+                    <label for="maxLength">每段最大长度</label>
+                    <input id="maxLength" type="number" min="1" step="1" value="2950">
+                    <span class="hint">优先在靠近上限的换行、标点或单词空格处拆分</span>
+                </div>
+                <div class="toolbar-actions">
+                    <button class="btn btn-primary" id="splitBtn" type="button">开始拆分</button>
+                    <button class="btn btn-danger" id="clearBtn" type="button">清空</button>
+                </div>
+            </div>
+
+            <div class="workspace">
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2>输入文本</h2>
+                        <span class="stats" id="inputStats">0 个字符</span>
+                    </div>
+                    <textarea id="inputText" placeholder="粘贴需要拆分的文本。文本中的换行、空格和标点会被原样保留。"></textarea>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2>拆分结果</h2>
+                        <div>
+                            <span class="stats" id="resultStats">0 段</span>
+                            <button class="btn btn-small" id="copyAllBtn" type="button" disabled>复制全部分段</button>
+                        </div>
+                    </div>
+                    <div class="result-list" id="resultList">
+                        <div class="empty-state">输入文本并设置长度后点击“开始拆分”<br>每一段都可单独快速复制</div>
+                    </div>
+                </section>
+            </div>
+        </section>
+    </main>
+
+    <div id="changelog-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🚀 版本更新说明</h3>
+                <button class="close-modal" type="button" onclick="closeChangelog()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="changelog-date">2026年6月20日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.00</div>
+                    <div>版本初始化：支持按指定长度智能拆分文本，优先保留自然语义边界，并支持逐段快速复制。</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const inputText = document.getElementById('inputText');
+        const maxLength = document.getElementById('maxLength');
+        const resultList = document.getElementById('resultList');
+        const inputStats = document.getElementById('inputStats');
+        const resultStats = document.getElementById('resultStats');
+        const copyAllBtn = document.getElementById('copyAllBtn');
+        let currentSegments = [];
+        let toastTimer;
+
+        function escapeHtml(value) {
+            return value
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+        }
+
+        async function copyText(value, successMessage) {
+            try {
+                await navigator.clipboard.writeText(value);
+            } catch (error) {
+                const helper = document.createElement('textarea');
+                helper.value = value;
+                helper.style.position = 'fixed';
+                helper.style.opacity = '0';
+                document.body.appendChild(helper);
+                helper.select();
+                document.execCommand('copy');
+                helper.remove();
+            }
+            showToast(successMessage);
+        }
+
+        function updateInputStats() {
+            inputStats.textContent = `${TextSplitter.countCharacters(inputText.value)} 个字符`;
+        }
+
+        function renderResults(segments) {
+            currentSegments = segments;
+            resultStats.textContent = `${segments.length} 段`;
+            copyAllBtn.disabled = segments.length === 0;
+
+            if (!segments.length) {
+                resultList.innerHTML = '<div class="empty-state">暂无可拆分的文本</div>';
+                return;
+            }
+
+            resultList.innerHTML = segments.map((segment, index) => `
+                <article class="result-item">
+                    <div class="result-header">
+                        <div class="result-meta">
+                            <span class="segment-number">第 ${index + 1} 段</span>
+                            <span class="segment-length">${TextSplitter.countCharacters(segment)} 个字符</span>
+                        </div>
+                        <button class="btn btn-small copy-segment-btn" type="button" data-index="${index}">复制本段</button>
+                    </div>
+                    <pre class="segment-content">${escapeHtml(segment)}</pre>
+                </article>
+            `).join('');
+        }
+
+        function runSplit() {
+            const limit = Number(maxLength.value);
+
+            if (!Number.isInteger(limit) || limit <= 0) {
+                showToast('请输入大于 0 的整数长度');
+                maxLength.focus();
+                return;
+            }
+
+            if (!inputText.value) {
+                renderResults([]);
+                showToast('请先输入需要拆分的文本');
+                inputText.focus();
+                return;
+            }
+
+            const segments = TextSplitter.splitText(inputText.value, limit);
+            renderResults(segments);
+            showToast(`已拆分为 ${segments.length} 段`);
+        }
+
+        function clearAll() {
+            inputText.value = '';
+            renderResults([]);
+            updateInputStats();
+            inputText.focus();
+        }
+
+        function showChangelog() {
+            document.getElementById('changelog-modal').style.display = 'flex';
+        }
+
+        function closeChangelog() {
+            document.getElementById('changelog-modal').style.display = 'none';
+        }
+
+        document.getElementById('splitBtn').addEventListener('click', runSplit);
+        document.getElementById('clearBtn').addEventListener('click', clearAll);
+        inputText.addEventListener('input', updateInputStats);
+        inputText.addEventListener('keydown', (event) => {
+            if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+                runSplit();
+            }
+        });
+        resultList.addEventListener('click', (event) => {
+            const button = event.target.closest('.copy-segment-btn');
+            if (!button) {
+                return;
+            }
+            const index = Number(button.dataset.index);
+            copyText(currentSegments[index], `第 ${index + 1} 段已复制`);
+        });
+        copyAllBtn.addEventListener('click', () => {
+            copyText(currentSegments.join('\n\n'), '全部分段已复制');
+        });
+        window.addEventListener('click', (event) => {
+            const modal = document.getElementById('changelog-modal');
+            if (event.target === modal) {
+                closeChangelog();
+            }
+        });
+
+        window.showChangelog = showChangelog;
+        window.closeChangelog = closeChangelog;
+        updateInputStats();
+    </script>
+</body>
+
+</html>

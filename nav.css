@@ -32,9 +32,11 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 20px;
 }
 
 .nav-logo {
+    flex: 0 0 auto;
     font-weight: 700;
     font-size: 1.1rem;
     text-decoration: none;
@@ -46,7 +48,14 @@ body {
 
 .nav-links {
     display: flex;
-    gap: 20px;
+    gap: 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    white-space: nowrap;
+}
+
+.nav-links::-webkit-scrollbar {
+    display: none;
 }
 
 .nav-link {

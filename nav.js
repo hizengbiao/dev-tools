@@ -8,6 +8,7 @@
         { name: 'Base64', path: 'base64-encoder.html', icon: '🔐' },
         { name: '命名转换', path: 'text-case-converter.html', icon: '🔤' },
         { name: '文本转义', path: 'text_escape_formatter_final.html', icon: '↔️' },
+        { name: '文本拆分', path: 'text-splitter.html', icon: '✂️' },
         { name: '正则测试', path: 'regex-tester.html', icon: '🔎' },
         { name: 'Neon Timer', path: 'neon-timer/dist/index.html', icon: '⏲️' }
     ];
