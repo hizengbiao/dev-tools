@@ -64,11 +64,38 @@ assert.match(page, /<label class="flag-pill" data-tooltip="[^"]+"><input id="fla
 assert.doesNotMatch(page, /<label class="flag-pill" title=/);
 assert.doesNotMatch(page, /当前标志/);
 assert.match(page, /id="testBtn"[^>]*>测试匹配<\/button>/);
+assert.match(page, /id="visualizeBtn"[^>]*>正则可视化<\/button>/);
 assert.match(page, /id="replaceBtn"[^>]*>执行替换<\/button>/);
 assert.match(page, /id="copyMatchBtn"[^>]*>复制匹配结果<\/button>/);
 assert.match(page, /id="copyReplaceBtn"[^>]*>复制替换结果<\/button>/);
 assert.doesNotMatch(page, /id="loadSampleBtn"/);
 assert.doesNotMatch(page, /载入手机号示例/);
+
+const visualizerScriptIndex = page.indexOf('<script src="regex-visualizer.js"></script>');
+const inlineScriptIndex = page.indexOf('<script>');
+assert.notEqual(visualizerScriptIndex, -1);
+assert.ok(visualizerScriptIndex < inlineScriptIndex);
+
+assert.match(page, /id="regex-visualizer-modal"[^>]*class="modal-overlay"[^>]*role="dialog"[^>]*aria-modal="true"[^>]*aria-labelledby="visualizerTitle"[^>]*aria-hidden="true"/);
+assert.match(page, /class="modal-content visualizer-dialog"/);
+assert.match(page, /id="visualizerTitle"[^>]*>正则表达式可视化<\/h3>/);
+assert.match(page, /id="closeVisualizerBtn"/);
+assert.match(page, /id="railroadTab"[^>]*role="tab"[^>]*data-view="railroad"[^>]*class="visualizer-tab active"[^>]*aria-selected="true"[^>]*aria-controls="railroadView"[^>]*tabindex="0"[^>]*>匹配路径图<\/button>/);
+assert.match(page, /id="treeTab"[^>]*role="tab"[^>]*data-view="tree"[^>]*class="visualizer-tab"[^>]*aria-selected="false"[^>]*aria-controls="treeView"[^>]*tabindex="-1"[^>]*>语法树<\/button>/);
+assert.match(page, /id="explanationTab"[^>]*role="tab"[^>]*data-view="explanation"[^>]*class="visualizer-tab"[^>]*aria-selected="false"[^>]*aria-controls="explanationView"[^>]*tabindex="-1"[^>]*>分段说明<\/button>/);
+assert.match(page, /id="visualizerError"[^>]*aria-live="polite"/);
+assert.match(page, /id="railroadView"[^>]*class="visualizer-view active"[^>]*role="tabpanel"[^>]*aria-labelledby="railroadTab"(?![^>]*\shidden(?:\s|>|=))/);
+assert.match(page, /id="treeView"[^>]*class="visualizer-view"[^>]*role="tabpanel"[^>]*aria-labelledby="treeTab"[^>]*hidden/);
+assert.match(page, /id="explanationView"[^>]*class="visualizer-view"[^>]*role="tabpanel"[^>]*aria-labelledby="explanationTab"[^>]*hidden/);
+
+assert.match(page, /\.visualizer-dialog\s*\{[\s\S]*?width:\s*min\(1400px,\s*calc\(100vw - 48px\)\)[\s\S]*?max-height:\s*calc\(100vh - 48px\)/);
+assert.match(page, /\.visualizer-body\s*\{[\s\S]*?overflow:\s*auto/);
+assert.match(page, /\.visualizer-view\s*\{[\s\S]*?overflow:\s*auto/);
+assert.match(page, /\.visualizer-tabs\s*\{[\s\S]*?overflow-x:\s*auto/);
+assert.match(page, /\.railroad-/);
+assert.match(page, /\.syntax-tree/);
+assert.match(page, /\.explanation-table/);
+assert.match(page, /@media \(max-width: 640px\)[\s\S]*?\.visualizer-dialog\s*\{[\s\S]*?width:\s*calc\(100vw - 16px\)[\s\S]*?max-height:\s*calc\(100vh - 16px\)/);
 
 assert.match(page, /function updateLineNumbers\(\)/);
 assert.match(page, /function syncLineNumberScroll\(\)/);
