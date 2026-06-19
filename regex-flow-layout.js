@@ -111,15 +111,31 @@
     };
   }
 
-  function curvePath(x1, y1, x2, y2, bend, kind) {
-    var controlX = Math.max(12, Math.abs(x2 - x1) / 2);
-    var direction = x2 >= x1 ? 1 : -1;
+  function branchPath(x1, y1, x2, y2, kind) {
+    var middleX = (x1 + x2) / 2;
     return {
       id: nextId('path'),
       kind: kind,
       d: 'M' + x1 + ',' + y1
-        + ' C' + (x1 + controlX * direction) + ',' + (y1 + bend)
-        + ' ' + (x2 - controlX * direction) + ',' + (y2 + bend)
+        + ' C' + middleX + ',' + y1
+        + ' ' + middleX + ',' + y2
+        + ' ' + x2 + ',' + y2,
+    };
+  }
+
+  function detourPath(x1, y1, x2, y2, trackY, kind) {
+    var direction = x2 >= x1 ? 1 : -1;
+    var corner = 16 * direction;
+    return {
+      id: nextId('path'),
+      kind: kind,
+      d: 'M' + x1 + ',' + y1
+        + ' C' + x1 + ',' + trackY
+        + ' ' + (x1 + corner) + ',' + trackY
+        + ' ' + (x1 + corner) + ',' + trackY
+        + ' L' + (x2 - corner) + ',' + trackY
+        + ' C' + (x2 - corner) + ',' + trackY
+        + ' ' + x2 + ',' + trackY
         + ' ' + x2 + ',' + y2,
     };
   }
@@ -140,6 +156,10 @@
   }
 
   function getNodeLabel(node) {
+    var raw = node.raw || '';
+    if (node.quantifier && node.quantifier.raw && raw.endsWith(node.quantifier.raw)) {
+      raw = raw.slice(0, -node.quantifier.raw.length);
+    }
     var escapeLabels = {
       '\\d': '数字',
       '\\D': '非数字',
@@ -153,11 +173,11 @@
       '^': '行首',
       '$': '行尾',
     };
-    if (escapeLabels[node.raw]) return escapeLabels[node.raw];
+    if (escapeLabels[raw]) return escapeLabels[raw];
     if (node.type === 'characterClass') {
-      return node.raw.replace(/^\[\^?/, '').replace(/\]$/, '');
+      return raw.replace(/^\[\^?/, '').replace(/\]$/, '');
     }
-    return node.raw || '空';
+    return raw || '空';
   }
 
   function layoutLeaf(node, options) {
@@ -187,9 +207,13 @@
     }
 
     var fragments = children.map(layoutNode);
-    var height = fragments.reduce(function (max, fragment) {
-      return Math.max(max, fragment.height);
-    }, options.nodeHeight);
+    var spaceAbove = fragments.reduce(function (max, fragment) {
+      return Math.max(max, fragment.entry.y);
+    }, options.nodeHeight / 2);
+    var spaceBelow = fragments.reduce(function (max, fragment) {
+      return Math.max(max, fragment.height - fragment.entry.y);
+    }, options.nodeHeight / 2);
+    var height = spaceAbove + spaceBelow;
     var width = fragments.reduce(function (sum, fragment, index) {
       return sum + fragment.width + (index ? options.nodeGap : 0);
     }, 0);
@@ -201,7 +225,7 @@
       var translated = translateFragment(
         fragment,
         cursorX,
-        (height - fragment.height) / 2
+        spaceAbove - fragment.entry.y
       );
       appendFragment(result, translated);
       if (index && previousExit) {
@@ -241,20 +265,18 @@
     branches.forEach(function (branch) {
       var translated = translateFragment(branch, lead, cursorY);
       appendFragment(result, translated);
-      result.paths.push(curvePath(
+      result.paths.push(branchPath(
         0,
         centerY,
         translated.entry.x,
         translated.entry.y,
-        translated.entry.y - centerY,
         'branch'
       ));
-      result.paths.push(curvePath(
+      result.paths.push(branchPath(
         translated.exit.x,
         translated.exit.y,
         width,
         centerY,
-        translated.exit.y - centerY,
         'branch'
       ));
       cursorY += branch.height + options.branchGap;
@@ -335,22 +357,24 @@
     result.exit = translated.exit;
 
     if (hasBypass) {
-      result.paths.push(curvePath(
+      var bypassY = 10;
+      result.paths.push(detourPath(
         translated.entry.x,
         translated.entry.y,
         translated.exit.x,
         translated.exit.y,
-        -30,
+        bypassY,
         'bypass'
       ));
     }
     if (hasRepeat) {
-      result.paths.push(curvePath(
+      var repeatY = result.height - 22;
+      result.paths.push(detourPath(
         translated.exit.x,
         translated.exit.y,
         translated.entry.x,
         translated.entry.y,
-        34,
+        repeatY,
         'repeat'
       ));
     }
@@ -401,7 +425,7 @@
       var contentOffsetX = options.canvasPadding + endpointSize + endpointGap;
       var contentOffsetY = options.canvasPadding;
       var translated = translateFragment(content, contentOffsetX, contentOffsetY);
-      var centerY = contentOffsetY + content.height / 2;
+      var centerY = contentOffsetY + content.entry.y;
       var endX = contentOffsetX + content.width + endpointGap;
       var width = endX + endpointSize + options.canvasPadding;
       var height = content.height + options.canvasPadding * 2;

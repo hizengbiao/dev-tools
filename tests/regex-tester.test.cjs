@@ -17,9 +17,15 @@ assert.match(page, /<link rel="stylesheet" href="nav\.css">/);
 assert.match(page, /<script src="nav\.js" defer><\/script>/);
 assert.match(page, /<h1>正则表达式测试<\/h1>/);
 assert.match(page, /class="version-info" onclick="showChangelog\(\)"/);
-assert.match(page, /<span>V1\.05<\/span>/);
+assert.match(page, /<span>V1\.06<\/span>/);
 assert.match(page, /<h3>🚀 版本更新说明<\/h3>/);
+assert.match(page, /<div class="changelog-version">V1\.06<\/div>/);
+assert.match(page, /新增 Regulex 风格的正则流程图，通过连线、分支、循环和分组框展示正则匹配结构。/);
 assert.match(page, /<div class="changelog-date">2026年6月19日<\/div>/);
+assert.equal(
+  (page.match(/<div class="changelog-date">2026年6月19日<\/div>/g) || []).length,
+  1,
+);
 assert.match(page, /<div class="changelog-version">V1\.05<\/div>/);
 assert.match(page, /新增正则表达式可视化，支持匹配路径图、语法树和分段说明三种视图，并提供实时解析与错误定位。/);
 assert.match(page, /<div class="changelog-version">V1\.04<\/div>/);
@@ -75,18 +81,25 @@ assert.doesNotMatch(page, /id="loadSampleBtn"/);
 assert.doesNotMatch(page, /载入手机号示例/);
 
 const visualizerScriptIndex = page.indexOf('<script src="regex-visualizer.js"></script>');
+const flowLayoutScriptIndex = page.indexOf('<script src="regex-flow-layout.js"></script>');
 const inlineScriptIndex = page.indexOf('<script>');
 assert.notEqual(visualizerScriptIndex, -1);
+assert.notEqual(flowLayoutScriptIndex, -1);
 assert.ok(visualizerScriptIndex < inlineScriptIndex);
+assert.ok(visualizerScriptIndex < flowLayoutScriptIndex);
+assert.ok(flowLayoutScriptIndex < inlineScriptIndex);
 
 assert.match(page, /id="regex-visualizer-modal"[^>]*class="modal-overlay"[^>]*role="dialog"[^>]*aria-modal="true"[^>]*aria-labelledby="visualizerTitle"[^>]*aria-hidden="true"/);
 assert.match(page, /class="modal-content visualizer-dialog"/);
 assert.match(page, /id="visualizerTitle"[^>]*>正则表达式可视化<\/h3>/);
 assert.match(page, /id="closeVisualizerBtn"/);
+assert.match(page, /id="flowDiagramTab"[^>]*role="tab"[^>]*data-view="flowDiagram"[^>]*aria-controls="flowDiagramView"[^>]*tabindex="-1"/);
+assert.match(page, /id="flowDiagramTab"[^>]*>正则流程图<\/button>/);
 assert.match(page, /id="railroadTab"[^>]*role="tab"[^>]*data-view="railroad"[^>]*class="visualizer-tab active"[^>]*aria-selected="true"[^>]*aria-controls="railroadView"[^>]*tabindex="0"[^>]*>匹配路径图<\/button>/);
 assert.match(page, /id="treeTab"[^>]*role="tab"[^>]*data-view="tree"[^>]*class="visualizer-tab"[^>]*aria-selected="false"[^>]*aria-controls="treeView"[^>]*tabindex="-1"[^>]*>语法树<\/button>/);
 assert.match(page, /id="explanationTab"[^>]*role="tab"[^>]*data-view="explanation"[^>]*class="visualizer-tab"[^>]*aria-selected="false"[^>]*aria-controls="explanationView"[^>]*tabindex="-1"[^>]*>分段说明<\/button>/);
 assert.match(page, /id="visualizerError"[^>]*aria-live="polite"/);
+assert.match(page, /id="flowDiagramView"[^>]*class="visualizer-view"[^>]*role="tabpanel"[^>]*aria-labelledby="flowDiagramTab"[^>]*hidden/);
 assert.match(page, /id="railroadView"[^>]*class="visualizer-view active"[^>]*role="tabpanel"[^>]*aria-labelledby="railroadTab"(?![^>]*\shidden(?:\s|>|=))/);
 assert.match(page, /id="treeView"[^>]*class="visualizer-view"[^>]*role="tabpanel"[^>]*aria-labelledby="treeTab"[^>]*hidden/);
 assert.match(page, /id="explanationView"[^>]*class="visualizer-view"[^>]*role="tabpanel"[^>]*aria-labelledby="explanationTab"[^>]*hidden/);
@@ -128,7 +141,13 @@ assert.match(page, /function flattenVisualizerNodes\(node,/);
 assert.match(page, /function renderExplanationTable\(ast\)/);
 assert.match(page, /<th>片段<\/th><th>类型<\/th><th>含义<\/th><th>重复<\/th><th>分组<\/th>/);
 assert.match(page, /function renderVisualization\(result, isStale = false\)/);
+assert.match(page, /function renderFlowDiagramView\(ast\)/);
+assert.match(page, /RegexFlowLayout\.layoutRegexFlow\(ast\)/);
+assert.match(page, /function renderFlowSvg\(layout\)/);
+assert.match(page, /<svg class="regex-flow-svg"/);
+assert.match(page, /escapeHtml\(node\.raw/);
 assert.match(page, /renderRailroadView\(result\.ast\)/);
+assert.match(page, /renderFlowDiagramView\(result\.ast\)/);
 assert.match(page, /renderSyntaxTree\(result\.ast\)/);
 assert.match(page, /renderExplanationTable\(result\.ast\)/);
 assert.match(page, /以下为上一次成功解析结果/);

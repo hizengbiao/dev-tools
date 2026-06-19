@@ -742,6 +742,106 @@
             background: #f6f8fa;
         }
 
+        .regex-flow-svg {
+            display: block;
+            max-width: none;
+            overflow: visible;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        }
+
+        .regex-flow-svg .flow-path {
+            fill: none;
+            stroke: #8c959f;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .regex-flow-svg .flow-path-branch {
+            stroke: #57606a;
+        }
+
+        .regex-flow-svg .flow-path-repeat {
+            stroke: #cf222e;
+        }
+
+        .regex-flow-svg .flow-path-bypass {
+            stroke: #bf8700;
+            stroke-dasharray: 5 4;
+        }
+
+        .regex-flow-svg .flow-group {
+            fill: rgba(221, 244, 255, 0.18);
+            stroke: #8c959f;
+            stroke-width: 1.5;
+            stroke-dasharray: 5 4;
+        }
+
+        .regex-flow-svg .flow-group-assertion {
+            fill: rgba(251, 250, 255, 0.45);
+            stroke: #8250df;
+        }
+
+        .regex-flow-svg .flow-group-title {
+            fill: #57606a;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .regex-flow-svg .flow-node rect {
+            stroke-width: 1.5;
+        }
+
+        .regex-flow-svg .flow-node text {
+            font-size: 13px;
+            font-weight: 600;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+
+        .regex-flow-svg .flow-node-literal rect,
+        .regex-flow-svg .flow-node-escape rect {
+            fill: #ddf4ff;
+            stroke: #54aeff;
+        }
+
+        .regex-flow-svg .flow-node-character rect {
+            fill: #dafbe1;
+            stroke: #2da44e;
+        }
+
+        .regex-flow-svg .flow-node-anchor rect {
+            fill: #8250df;
+            stroke: #6639ba;
+        }
+
+        .regex-flow-svg .flow-node-anchor text {
+            fill: #fff;
+        }
+
+        .regex-flow-svg .flow-node-reference rect {
+            fill: #fff8c5;
+            stroke: #bf8700;
+        }
+
+        .regex-flow-svg .flow-endpoint-start {
+            fill: #2da44e;
+            stroke: #1a7f37;
+            stroke-width: 2;
+        }
+
+        .regex-flow-svg .flow-endpoint-end {
+            fill: #57606a;
+            stroke: #24292f;
+            stroke-width: 2;
+        }
+
+        .regex-flow-svg .flow-quantifier-label {
+            fill: #57606a;
+            font-size: 12px;
+            text-anchor: middle;
+        }
+
         .changelog-date {
             font-weight: 600;
             color: #24292f;
@@ -825,7 +925,7 @@
         <div class="tool-title">
             <h1>正则表达式测试</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.05</span>
+                <span>V1.06</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -929,7 +1029,7 @@
 
             <div class="hint">
                 <strong>正则表达式测试工具说明：</strong>
-                用于在多行文本中快速验证正则表达式、预览匹配高亮、查看每条匹配的索引与行列位置，并按替换文本生成替换结果。左侧输入测试文本，中间配置匹配规则、标志和替换文本，右侧查看匹配与替换输出；点击“正则可视化”可切换查看匹配路径图、语法树和分段说明，规则有误时会保留上一次成功结果并标出错误位置。
+                用于在多行文本中快速验证正则表达式、预览匹配高亮、查看每条匹配的索引与行列位置，并按替换文本生成替换结果。左侧输入测试文本，中间配置匹配规则、标志和替换文本，右侧查看匹配与替换输出；点击“正则可视化”可切换查看匹配路径图、正则流程图、语法树和分段说明，规则有误时会保留上一次成功结果并标出错误位置。
             </div>
         </section>
     </div>
@@ -949,6 +1049,8 @@
                     <div class="visualizer-tabs" role="tablist" aria-label="正则表达式可视化视图">
                         <button id="railroadTab" role="tab" data-view="railroad" class="visualizer-tab active"
                             aria-selected="true" aria-controls="railroadView" tabindex="0" type="button">匹配路径图</button>
+                        <button id="flowDiagramTab" role="tab" data-view="flowDiagram" class="visualizer-tab"
+                            aria-selected="false" aria-controls="flowDiagramView" tabindex="-1" type="button">正则流程图</button>
                         <button id="treeTab" role="tab" data-view="tree" class="visualizer-tab"
                             aria-selected="false" aria-controls="treeView" tabindex="-1" type="button">语法树</button>
                         <button id="explanationTab" role="tab" data-view="explanation" class="visualizer-tab"
@@ -958,6 +1060,8 @@
                     <div class="visualizer-views">
                         <div id="railroadView" class="visualizer-view active" role="tabpanel"
                             aria-labelledby="railroadTab"></div>
+                        <div id="flowDiagramView" class="visualizer-view" role="tabpanel"
+                            aria-labelledby="flowDiagramTab" hidden></div>
                         <div id="treeView" class="visualizer-view" role="tabpanel" aria-labelledby="treeTab" hidden></div>
                         <div id="explanationView" class="visualizer-view" role="tabpanel"
                             aria-labelledby="explanationTab" hidden></div>
@@ -976,6 +1080,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月19日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.06</div>
+                        <div class="changelog-desc">新增 Regulex 风格的正则流程图，通过连线、分支、循环和分组框展示正则匹配结构。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.05</div>
                         <div class="changelog-desc">新增正则表达式可视化，支持匹配路径图、语法树和分段说明三种视图，并提供实时解析与错误定位。</div>
@@ -1012,6 +1120,7 @@
     </div>
 
     <script src="regex-visualizer.js"></script>
+    <script src="regex-flow-layout.js"></script>
     <script>
         const testText = document.getElementById('testText');
         const testLineNumbers = document.getElementById('testLineNumbers');
@@ -1026,6 +1135,7 @@
         const flagTooltip = document.getElementById('flagTooltip');
         const toast = document.getElementById('toast');
         const railroadView = document.getElementById('railroadView');
+        const flowDiagramView = document.getElementById('flowDiagramView');
         const treeView = document.getElementById('treeView');
         const explanationView = document.getElementById('explanationView');
         const visualizerModal = document.getElementById('regex-visualizer-modal');
@@ -1033,6 +1143,7 @@
         const visualizerTabs = Array.from(document.querySelectorAll('.visualizer-tab'));
         const visualizerViews = {
             railroad: railroadView,
+            flowDiagram: flowDiagramView,
             tree: treeView,
             explanation: explanationView
         };
@@ -1219,8 +1330,73 @@
             </table>`;
         }
 
+        function renderFlowGroup(group) {
+            const groupClass = group.kind === 'assertion'
+                ? 'flow-group flow-group-assertion'
+                : 'flow-group flow-group-capture';
+            return `<g>
+                <rect class="${groupClass}" x="${group.x}" y="${group.y}" width="${group.width}" height="${group.height}" rx="8"></rect>
+                <text class="flow-group-title" x="${group.x + group.width / 2}" y="${group.y + 16}" text-anchor="middle">${escapeHtml(group.title)}</text>
+            </g>`;
+        }
+
+        function renderFlowPath(path) {
+            return `<path class="flow-path flow-path-${escapeHtml(path.kind)}" d="${escapeHtml(path.d)}"></path>`;
+        }
+
+        function renderFlowNode(node) {
+            const title = `${node.raw ? `原始片段：${node.raw}\n` : ''}${node.description || node.label || ''}`;
+            if (node.kind === 'start' || node.kind === 'end') {
+                const endpointClass = node.kind === 'start' ? 'flow-endpoint-start' : 'flow-endpoint-end';
+                return `<g class="flow-node flow-node-${node.kind}" data-node-raw="${escapeHtml(node.raw || '')}">
+                    <title>${escapeHtml(title)}</title>
+                    <circle class="${endpointClass}" cx="${node.x + node.width / 2}" cy="${node.y + node.height / 2}" r="${node.width / 2}"></circle>
+                </g>`;
+            }
+
+            return `<g class="flow-node flow-node-${escapeHtml(node.kind)}" data-node-raw="${escapeHtml(node.raw || '')}">
+                <title>${escapeHtml(title)}</title>
+                <rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="6"></rect>
+                <text x="${node.x + node.width / 2}" y="${node.y + node.height / 2}">${escapeHtml(node.label)}</text>
+            </g>`;
+        }
+
+        function renderFlowLabel(label) {
+            return `<text class="flow-quantifier-label" x="${label.x}" y="${label.y}">${escapeHtml(label.text)}</text>`;
+        }
+
+        function renderFlowSvg(layout) {
+            const orderedGroups = [...layout.groups].sort(
+                (left, right) => (right.width * right.height) - (left.width * left.height)
+            );
+            return `<svg class="regex-flow-svg" xmlns="http://www.w3.org/2000/svg"
+                width="${layout.width}" height="${layout.height}" viewBox="0 0 ${layout.width} ${layout.height}"
+                role="img" aria-label="正则表达式流程图">
+                ${orderedGroups.map(renderFlowGroup).join('')}
+                ${layout.paths.map(renderFlowPath).join('')}
+                ${layout.nodes.map(renderFlowNode).join('')}
+                ${layout.labels.map(renderFlowLabel).join('')}
+            </svg>`;
+        }
+
+        function renderFlowDiagramView(ast) {
+            if (!window.RegexFlowLayout) {
+                flowDiagramView.innerHTML = '<div class="visualizer-empty">正则流程图模块未加载。</div>';
+                return;
+            }
+
+            const layout = RegexFlowLayout.layoutRegexFlow(ast);
+            if (!layout.ok) {
+                flowDiagramView.innerHTML = `<div class="visualizer-empty">${escapeHtml(layout.error.message)}</div>`;
+                return;
+            }
+
+            flowDiagramView.innerHTML = renderFlowSvg(layout);
+        }
+
         function renderVisualization(result, isStale = false) {
             renderRailroadView(result.ast);
+            renderFlowDiagramView(result.ast);
             renderSyntaxTree(result.ast);
             renderExplanationTable(result.ast);
 
@@ -1228,6 +1404,7 @@
 
             const note = '<div class="visualizer-stale-note">以下为上一次成功解析结果。</div>';
             railroadView.insertAdjacentHTML('afterbegin', note);
+            flowDiagramView.insertAdjacentHTML('afterbegin', note);
             treeView.insertAdjacentHTML('afterbegin', note);
             explanationView.insertAdjacentHTML('afterbegin', note);
         }
@@ -1258,6 +1435,7 @@
         function clearVisualizerViews(message) {
             const emptyState = `<div class="visualizer-empty">${escapeHtml(message)}</div>`;
             railroadView.innerHTML = emptyState;
+            flowDiagramView.innerHTML = emptyState;
             treeView.innerHTML = emptyState;
             explanationView.innerHTML = emptyState;
         }
