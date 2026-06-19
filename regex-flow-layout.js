@@ -145,7 +145,7 @@
   }
 
   function getNodeKind(node) {
-    if (node.type === 'literal') return 'literal';
+    if (node.type === 'literal' || node.type === 'literalRun') return 'literal';
     if (node.type === 'anchor') return 'anchor';
     if (node.type === 'characterClass' || node.type === 'escape' || node.type === 'wildcard') {
       return 'character';
@@ -156,6 +156,7 @@
   }
 
   function getNodeLabel(node) {
+    if (node.displayText) return node.displayText;
     var raw = node.raw || '';
     if (node.quantifier && node.quantifier.raw && raw.endsWith(node.quantifier.raw)) {
       raw = raw.slice(0, -node.quantifier.raw.length);
@@ -182,14 +183,21 @@
 
   function layoutLeaf(node, options) {
     var label = getNodeLabel(node);
-    var width = estimateTextWidth(label);
-    var height = options.nodeHeight;
+    var lines = node.characterItems && node.characterItems.length
+      ? node.characterItems.slice()
+      : [label];
+    var lineHeight = 22;
+    var width = lines.reduce(function (max, line) {
+      return Math.max(max, estimateTextWidth(line));
+    }, 28);
+    var height = Math.max(options.nodeHeight, lines.length * lineHeight + 16);
     var fragment = emptyFragment(width, height);
     fragment.nodes.push({
       id: nextId('node'),
       kind: getNodeKind(node),
       raw: node.raw || '',
       label: label,
+      lines: lines,
       description: node.description || '',
       x: 0,
       y: 0,

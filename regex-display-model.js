@@ -295,7 +295,11 @@
     } else if (node.type === 'escape' || node.type === 'legacyEscape') {
       normalized.displayText = getEscapeDisplay(node).text;
     } else if (node.type === 'characterClass') {
-      var characterClass = parseCharacterClassItems(node.raw || '');
+      var characterRaw = node.raw || '';
+      if (node.quantifier && node.quantifier.raw && characterRaw.endsWith(node.quantifier.raw)) {
+        characterRaw = characterRaw.slice(0, -node.quantifier.raw.length);
+      }
+      var characterClass = parseCharacterClassItems(characterRaw);
       normalized.characterItems = characterClass.items;
       normalized.negated = characterClass.negated;
       normalized.displayText = characterClass.negated ? '排除以下字符' : '以下字符之一';
