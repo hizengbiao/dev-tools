@@ -630,6 +630,37 @@
             font-weight: 700;
         }
 
+        .railroad-character-items,
+        .character-item-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .railroad-character-items span,
+        .character-item {
+            display: block;
+            white-space: nowrap;
+        }
+
+        .railroad-character-items span {
+            border-radius: 4px;
+            padding: 2px 6px;
+            background: #dafbe1;
+            color: #1a7f37;
+        }
+
+        .character-item-list {
+            margin: 6px 0 4px 22px;
+        }
+
+        .character-item {
+            line-height: 1.5;
+        }
+
         .railroad-group {
             display: inline-flex;
             flex-direction: column;
@@ -925,7 +956,7 @@
         <div class="tool-title">
             <h1>正则表达式测试</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.06</span>
+                <span>V1.07</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -1081,6 +1112,10 @@
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月19日</div>
                     <div class="changelog-entry">
+                        <div class="changelog-version">V1.07</div>
+                        <div class="changelog-desc">优化四种正则可视化视图，支持连续字符合并、字面转义解码和字符集合纵向拆分。</div>
+                    </div>
+                    <div class="changelog-entry">
                         <div class="changelog-version">V1.06</div>
                         <div class="changelog-desc">新增 Regulex 风格的正则流程图，通过连线、分支、循环和分组框展示正则匹配结构。</div>
                     </div>
@@ -1120,6 +1155,7 @@
     </div>
 
     <script src="regex-visualizer.js"></script>
+    <script src="regex-display-model.js"></script>
     <script src="regex-flow-layout.js"></script>
     <script>
         const testText = document.getElementById('testText');
@@ -1219,7 +1255,7 @@
                 'Regular expression': '完整的正则表达式',
                 Sequence: '按从左到右的顺序依次匹配',
                 Alternatives: '匹配任意一个分支',
-                'Literal character': `匹配普通字符 ${node.raw || ''}`,
+                'Literal character': `匹配普通字符 ${node.displayText || node.raw || ''}`,
                 'Start anchor': '匹配一行或文本的开头位置',
                 'End anchor': '匹配一行或文本的结尾位置',
                 'Match a digit': '匹配一个数字',
@@ -1240,11 +1276,27 @@
             return node.quantifier ? `${base}；重复规则：${getQuantifierDescription(node.quantifier)}` : base;
         }
 
+        function getNodeDisplayText(node) {
+            return node.displayText || node.raw || '空';
+        }
+
+        function getNodeTitle(node) {
+            const original = node.raw ? `原始片段：${node.raw}\n` : '';
+            return `${original}${describeVisualizerNode(node)}`;
+        }
+
+        function renderCharacterItems(items, className = 'character-item-list') {
+            if (!items || !items.length) return '';
+            return `<ul class="${className}">${items.map((item) =>
+                `<li class="character-item">${escapeHtml(item)}</li>`
+            ).join('')}</ul>`;
+        }
+
         function getVisualizerNodeLabel(node) {
             if (node.type === 'captureGroup' || node.type === 'group' || node.type === 'assertion') {
                 return getVisualizerGroupLabel(node);
             }
-            return visualizerTypeLabels[node.type] || node.raw || '节点';
+            return node.displayText || visualizerTypeLabels[node.type] || node.raw || '节点';
         }
 
         function renderRailroadNode(node) {
@@ -1269,15 +1321,20 @@
             if (node.type === 'captureGroup' || node.type === 'group' || node.type === 'assertion') {
                 const assertionClass = node.type === 'assertion' ? ' railroad-assertion' : '';
                 const quantifier = node.quantifier ? `<small>${escapeHtml(node.quantifier.raw)}</small>` : '';
-                return `<div class="railroad-group${assertionClass}" data-node-raw="${escapeHtml(node.raw || '')}" title="${escapeHtml(describeVisualizerNode(node))}">
+                return `<div class="railroad-group${assertionClass}" data-node-raw="${escapeHtml(node.raw || '')}" title="${escapeHtml(getNodeTitle(node))}">
                     <span class="railroad-group-title">${escapeHtml(getVisualizerGroupLabel(node))}${quantifier}</span>
                     ${children.length ? children.map(renderRailroadNode).join('') : '<span class="railroad-node">空匹配</span>'}
                 </div>`;
             }
 
             const quantifier = node.quantifier ? `<small>${escapeHtml(node.quantifier.raw)}</small>` : '';
-            return `<span class="railroad-node railroad-${escapeHtml(node.type || 'unknown')}" data-node-raw="${escapeHtml(node.raw || '')}" title="${escapeHtml(describeVisualizerNode(node))}">
-                <code>${escapeHtml(node.raw || '空')}</code>${quantifier}
+            const content = node.characterItems && node.characterItems.length
+                ? `<span class="railroad-character-items">${node.characterItems.map((item) =>
+                    `<span>${escapeHtml(item)}</span>`
+                ).join('')}</span>`
+                : `<code>${escapeHtml(getNodeDisplayText(node))}</code>`;
+            return `<span class="railroad-node railroad-${escapeHtml(node.type || 'unknown')}" data-node-raw="${escapeHtml(node.raw || '')}" title="${escapeHtml(getNodeTitle(node))}">
+                ${content}${quantifier}
             </span>`;
         }
 
@@ -1287,9 +1344,15 @@
 
         function renderTreeNode(node) {
             const children = node.children || [];
+            const original = !children.length && node.raw && node.raw !== node.displayText
+                ? `<code>原始：${escapeHtml(node.raw)}</code>`
+                : '';
+            const characterItems = renderCharacterItems(node.characterItems);
             return `<li><details open>
-                <summary><strong>${escapeHtml(getVisualizerNodeLabel(node))}</strong> <code>${escapeHtml(node.raw || '空')}</code></summary>
+                <summary><strong>${escapeHtml(getVisualizerNodeLabel(node))}</strong> <code>${escapeHtml(getNodeDisplayText(node))}</code></summary>
                 <p>${escapeHtml(describeVisualizerNode(node))}</p>
+                ${original}
+                ${characterItems}
                 ${children.length ? `<ul>${children.map(renderTreeNode).join('')}</ul>` : ''}
             </details></li>`;
         }
@@ -1320,13 +1383,19 @@
 
             explanationView.innerHTML = `<table class="explanation-table">
                 <thead><tr><th>片段</th><th>类型</th><th>含义</th><th>重复</th><th>分组</th></tr></thead>
-                <tbody>${rows.map(({ node, depth }) => `<tr>
-                    <td style="padding-left:${12 + depth * 18}px"><code>${escapeHtml(node.raw || '空')}</code></td>
-                    <td>${escapeHtml(getVisualizerNodeLabel(node))}</td>
-                    <td>${escapeHtml(describeVisualizerNode(node))}</td>
-                    <td>${escapeHtml(getQuantifierDescription(node.quantifier))}</td>
-                    <td>${escapeHtml(getNodeGroupText(node))}</td>
-                </tr>`).join('')}</tbody>
+                <tbody>${rows.map(({ node, depth }) => {
+                    const characterItems = renderCharacterItems(node.characterItems);
+                    const displayMeaning = node.characterItems && node.characterItems.length
+                        ? `${node.negated ? '排除以下字符' : '可匹配以下字符'}${characterItems}`
+                        : `<code>${escapeHtml(getNodeDisplayText(node))}</code><br>${escapeHtml(describeVisualizerNode(node))}`;
+                    return `<tr>
+                        <td style="padding-left:${12 + depth * 18}px"><code>${escapeHtml(node.raw || '空')}</code></td>
+                        <td>${escapeHtml(getVisualizerNodeLabel(node))}</td>
+                        <td>${displayMeaning}</td>
+                        <td>${escapeHtml(getQuantifierDescription(node.quantifier))}</td>
+                        <td>${escapeHtml(getNodeGroupText(node))}</td>
+                    </tr>`;
+                }).join('')}</tbody>
             </table>`;
         }
 
@@ -1354,10 +1423,16 @@
                 </g>`;
             }
 
+            const lines = node.lines && node.lines.length ? node.lines : [node.label];
+            const lineHeight = 18;
+            const firstOffset = -((lines.length - 1) * lineHeight) / 2;
+            const textLines = lines.map((line, index) =>
+                `<tspan x="${node.x + node.width / 2}" dy="${index ? lineHeight : firstOffset}">${escapeHtml(line)}</tspan>`
+            ).join('');
             return `<g class="flow-node flow-node-${escapeHtml(node.kind)}" data-node-raw="${escapeHtml(node.raw || '')}">
                 <title>${escapeHtml(title)}</title>
                 <rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="6"></rect>
-                <text x="${node.x + node.width / 2}" y="${node.y + node.height / 2}">${escapeHtml(node.label)}</text>
+                <text x="${node.x + node.width / 2}" y="${node.y + node.height / 2}">${textLines}</text>
             </g>`;
         }
 
@@ -1395,10 +1470,11 @@
         }
 
         function renderVisualization(result, isStale = false) {
-            renderRailroadView(result.ast);
-            renderFlowDiagramView(result.ast);
-            renderSyntaxTree(result.ast);
-            renderExplanationTable(result.ast);
+            const displayAst = RegexDisplayModel.createRegexDisplayModel(result.ast);
+            renderRailroadView(displayAst);
+            renderFlowDiagramView(displayAst);
+            renderSyntaxTree(displayAst);
+            renderExplanationTable(displayAst);
 
             if (!isStale) return;
 
