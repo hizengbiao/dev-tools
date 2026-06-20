@@ -143,13 +143,13 @@
             min-height: 520px;
             border: 1px solid #d0d7de;
             border-radius: 6px;
-            display: flex;
+            display: grid;
+            grid-template-columns: 48px minmax(0, 1fr);
             overflow: hidden;
             background: #fff;
         }
 
         .line-numbers {
-            flex: 0 0 48px;
             padding: 12px 8px;
             border-right: 1px solid #e5e7eb;
             background: #f6f8fa;
@@ -163,19 +163,66 @@
             user-select: none;
         }
 
-        textarea {
+        .editor-stage {
+            position: relative;
+            min-width: 0;
+            min-height: 0;
+        }
+
+        .editor-stage textarea,
+        .highlight-layer {
+            position: absolute;
+            inset: 0;
             width: 100%;
-            flex: 1;
-            min-height: 100%;
+            height: 100%;
+            margin: 0;
             padding: 12px;
             border: none;
             border-radius: 0;
             font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
             font-size: 14px;
             line-height: 1.6;
-            resize: vertical;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            tab-size: 4;
+        }
+
+        .editor-stage textarea {
+            z-index: 2;
+            resize: none;
             outline: none;
+            overflow: auto;
+            color: #24292f;
             background: #fff;
+        }
+
+        .editor-stage textarea.diff-active {
+            color: transparent;
+            caret-color: #24292f;
+            -webkit-text-fill-color: transparent;
+            background: transparent;
+        }
+
+        .editor-stage textarea.diff-active::selection {
+            background: rgba(9, 105, 218, 0.24);
+        }
+
+        .highlight-layer {
+            z-index: 1;
+            overflow: hidden;
+            color: #24292f;
+            background: #fff;
+            pointer-events: none;
+        }
+
+        .diff-delete {
+            color: #82071e;
+            background: #ffebe9;
+        }
+
+        .diff-insert {
+            color: #116329;
+            background: #dafbe1;
         }
 
         .editor-shell:focus-within {
@@ -193,6 +240,14 @@
             gap: 10px;
             justify-content: center;
             padding-top: 34px;
+        }
+
+        .diff-summary {
+            min-height: 38px;
+            color: var(--muted-color);
+            font-size: 12px;
+            line-height: 1.55;
+            text-align: center;
         }
 
         .btn {
@@ -661,7 +716,7 @@
         <div class="tool-title">
             <h1>文本转义转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.04</span>
+                <span>V1.05</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -681,9 +736,12 @@
                     </div>
                     <div class="editor-shell">
                         <div class="line-numbers" id="inputLineNumbers" aria-hidden="true">1</div>
-                        <textarea id="inputText" spellcheck="false" placeholder="请输入转义字符串或普通文本，例如：
+                        <div class="editor-stage">
+                            <div class="highlight-layer" id="inputHighlight" aria-hidden="true"></div>
+                            <textarea id="inputText" spellcheck="false" placeholder="请输入转义字符串或普通文本，例如：
 java.lang.RuntimeException: test
 	at com.example.Demo.main(Demo.java:12)"></textarea>
+                        </div>
                     </div>
                 </section>
 
@@ -700,6 +758,7 @@ java.lang.RuntimeException: test
                         data-tooltip="交换左侧输入区和右侧输出区内容。&#10;适合先转换一次，再把结果作为下一次转换输入。">交换输入输出</button>
                     <button class="btn btn-danger" id="clearBtn" type="button"
                         data-tooltip="清空输入区和输出区，并把光标放回输入区。&#10;适合开始处理下一段文本。">清空</button>
+                    <div class="diff-summary" id="diffSummary" aria-live="polite"></div>
                 </section>
 
                 <section class="panel">
@@ -715,7 +774,10 @@ java.lang.RuntimeException: test
                     </div>
                     <div class="editor-shell">
                         <div class="line-numbers" id="outputLineNumbers" aria-hidden="true">1</div>
-                        <textarea id="outputText" spellcheck="false" placeholder="转换结果会显示在这里..."></textarea>
+                        <div class="editor-stage">
+                            <div class="highlight-layer" id="outputHighlight" aria-hidden="true"></div>
+                            <textarea id="outputText" spellcheck="false" placeholder="转换结果会显示在这里..."></textarea>
+                        </div>
                     </div>
                 </section>
             </div>
@@ -760,6 +822,10 @@ java.lang.RuntimeException: test
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月20日</div>
                     <div class="changelog-entry">
+                        <div class="changelog-version">V1.05</div>
+                        <div class="changelog-desc">输入输出区域支持自动差异对比，以红色和绿色背景直接标记转换前后发生变化的内容。</div>
+                    </div>
+                    <div class="changelog-entry">
                         <div class="changelog-version">V1.04</div>
                         <div class="changelog-desc">拼接转换支持配置多组双向映射，可通过独立输入框新增或删除配置，映射左右顺序不影响合并与恢复结果。</div>
                     </div>
@@ -800,6 +866,9 @@ java.lang.RuntimeException: test
         const outputStats = document.getElementById('outputStats');
         const inputLineNumbers = document.getElementById('inputLineNumbers');
         const outputLineNumbers = document.getElementById('outputLineNumbers');
+        const inputHighlight = document.getElementById('inputHighlight');
+        const outputHighlight = document.getElementById('outputHighlight');
+        const diffSummary = document.getElementById('diffSummary');
         const toast = document.getElementById('toast');
 
         const decodeBtn = document.getElementById('decodeBtn');
@@ -837,11 +906,159 @@ java.lang.RuntimeException: test
             lineNumbers.scrollTop = textarea.scrollTop;
         }
 
+        function appendDiffSegment(segments, type, text) {
+            if (!text) {
+                return;
+            }
+
+            const previous = segments[segments.length - 1];
+            if (previous && previous.type === type) {
+                previous.text += text;
+                return;
+            }
+
+            segments.push({ type, text });
+        }
+
+        function buildDiffSegments(original, result) {
+            if (original === result) {
+                return original ? [{ type: 'equal', text: original }] : [];
+            }
+
+            let prefixLength = 0;
+            while (
+                prefixLength < original.length
+                && prefixLength < result.length
+                && original[prefixLength] === result[prefixLength]
+            ) {
+                prefixLength += 1;
+            }
+
+            let suffixLength = 0;
+            while (
+                suffixLength < original.length - prefixLength
+                && suffixLength < result.length - prefixLength
+                && original[original.length - 1 - suffixLength] === result[result.length - 1 - suffixLength]
+            ) {
+                suffixLength += 1;
+            }
+
+            const originalMiddle = original.slice(prefixLength, original.length - suffixLength);
+            const resultMiddle = result.slice(prefixLength, result.length - suffixLength);
+            const segments = [];
+            appendDiffSegment(segments, 'equal', original.slice(0, prefixLength));
+
+            if (originalMiddle.length * resultMiddle.length > 1000000) {
+                appendDiffSegment(segments, 'delete', originalMiddle);
+                appendDiffSegment(segments, 'insert', resultMiddle);
+            } else {
+                const table = Array.from(
+                    { length: originalMiddle.length + 1 },
+                    () => new Uint32Array(resultMiddle.length + 1)
+                );
+
+                for (let row = originalMiddle.length - 1; row >= 0; row -= 1) {
+                    for (let column = resultMiddle.length - 1; column >= 0; column -= 1) {
+                        table[row][column] = originalMiddle[row] === resultMiddle[column]
+                            ? table[row + 1][column + 1] + 1
+                            : Math.max(table[row + 1][column], table[row][column + 1]);
+                    }
+                }
+
+                let row = 0;
+                let column = 0;
+                while (row < originalMiddle.length && column < resultMiddle.length) {
+                    if (originalMiddle[row] === resultMiddle[column]) {
+                        appendDiffSegment(segments, 'equal', originalMiddle[row]);
+                        row += 1;
+                        column += 1;
+                    } else if (table[row + 1][column] >= table[row][column + 1]) {
+                        appendDiffSegment(segments, 'delete', originalMiddle[row]);
+                        row += 1;
+                    } else {
+                        appendDiffSegment(segments, 'insert', resultMiddle[column]);
+                        column += 1;
+                    }
+                }
+
+                appendDiffSegment(segments, 'delete', originalMiddle.slice(row));
+                appendDiffSegment(segments, 'insert', resultMiddle.slice(column));
+            }
+
+            appendDiffSegment(segments, 'equal', original.slice(original.length - suffixLength));
+            return segments;
+        }
+
+        function createDiffNode(text, className = '') {
+            const span = document.createElement('span');
+            span.textContent = text;
+            span.className = className;
+            return span;
+        }
+
+        function syncEditorScroll(textarea, highlight, lineNumbers) {
+            highlight.scrollTop = textarea.scrollTop;
+            highlight.scrollLeft = textarea.scrollLeft;
+            syncLineNumberScroll(textarea, lineNumbers);
+        }
+
+        function renderDiff() {
+            const original = inputText.value;
+            const result = outputText.value;
+
+            if (!original || !result) {
+                inputHighlight.replaceChildren();
+                outputHighlight.replaceChildren();
+                inputText.classList.remove('diff-active');
+                outputText.classList.remove('diff-active');
+                diffSummary.textContent = '';
+                return;
+            }
+
+            const segments = buildDiffSegments(original, result);
+            const originalNodes = [];
+            const resultNodes = [];
+            let deletedCount = 0;
+            let insertedCount = 0;
+
+            segments.forEach((segment) => {
+                if (segment.type !== 'insert') {
+                    originalNodes.push(createDiffNode(
+                        segment.text,
+                        segment.type === 'delete' ? 'diff-delete' : ''
+                    ));
+                }
+                if (segment.type !== 'delete') {
+                    resultNodes.push(createDiffNode(
+                        segment.text,
+                        segment.type === 'insert' ? 'diff-insert' : ''
+                    ));
+                }
+                if (segment.type === 'delete') {
+                    deletedCount += segment.text.length;
+                }
+                if (segment.type === 'insert') {
+                    insertedCount += segment.text.length;
+                }
+            });
+
+            inputHighlight.replaceChildren(...originalNodes);
+            outputHighlight.replaceChildren(...resultNodes);
+            inputText.classList.add('diff-active');
+            outputText.classList.add('diff-active');
+            diffSummary.textContent = deletedCount === 0 && insertedCount === 0
+                ? '输入输出内容一致'
+                : `差异：移除 ${deletedCount} 个字符，新增 ${insertedCount} 个字符`;
+            syncEditorScroll(inputText, inputHighlight, inputLineNumbers);
+            syncEditorScroll(outputText, outputHighlight, outputLineNumbers);
+        }
+
         function refreshStats() {
             inputStats.textContent = getStats(inputText.value);
             outputStats.textContent = getStats(outputText.value);
             refreshLineNumbers(inputText, inputLineNumbers);
             refreshLineNumbers(outputText, outputLineNumbers);
+            renderDiff();
         }
 
         function showToast(message, isError = false) {
@@ -1382,8 +1599,8 @@ java.lang.RuntimeException: test
 
         inputText.addEventListener('input', refreshStats);
         outputText.addEventListener('input', refreshStats);
-        inputText.addEventListener('scroll', () => syncLineNumberScroll(inputText, inputLineNumbers));
-        outputText.addEventListener('scroll', () => syncLineNumberScroll(outputText, outputLineNumbers));
+        inputText.addEventListener('scroll', () => syncEditorScroll(inputText, inputHighlight, inputLineNumbers));
+        outputText.addEventListener('scroll', () => syncEditorScroll(outputText, outputHighlight, outputLineNumbers));
 
         document.addEventListener('keydown', (event) => {
             if (event.ctrlKey && event.key === 'Enter' && !event.shiftKey) {

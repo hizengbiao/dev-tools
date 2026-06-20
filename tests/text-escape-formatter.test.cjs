@@ -13,7 +13,8 @@ assert.match(page, /<script src="nav\.js" defer><\/script>/);
 assert.match(page, /<div class="container">/);
 assert.match(page, /<div class="tool-title">/);
 assert.match(page, /class="version-info" onclick="showChangelog\(\)"/);
-assert.match(page, /<span>V1\.04<\/span>/);
+assert.match(page, /<span>V1\.05<\/span>/);
+assert.match(page, /<div class="changelog-version">V1\.05<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.04<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.00<\/div>/);
 
@@ -25,7 +26,11 @@ assert.match(page, /id="mappingList"/);
 assert.match(page, /id="addMappingBtn"/);
 assert.match(page, /id="inputLineNumbers"/);
 assert.match(page, /id="outputLineNumbers"/);
+assert.match(page, /id="inputHighlight"/);
+assert.match(page, /id="outputHighlight"/);
+assert.match(page, /id="diffSummary"/);
 assert.match(page, /class="editor-shell"/);
+assert.match(page, /class="editor-stage"/);
 assert.match(page, /data-tooltip=/);
 assert.match(page, /function decodeToReadableText\(raw\)/);
 assert.match(page, /function encodeToEscapedString\(raw\)/);
@@ -34,6 +39,10 @@ assert.match(page, /function normalizeMappingPairs\(pairs\)/);
 assert.match(page, /function restoreMappedVariables\(raw, mappings\)/);
 assert.match(page, /function refreshLineNumbers\(textarea, lineNumbers\)/);
 assert.match(page, /function syncLineNumberScroll\(textarea, lineNumbers\)/);
+assert.match(page, /function buildDiffSegments\(original, result\)/);
+assert.match(page, /function renderDiff\(\)/);
+assert.match(page, /function syncEditorScroll\(textarea, highlight, lineNumbers\)/);
+assert.doesNotMatch(page, /text-decoration:\s*line-through/);
 assert.match(page, /function showChangelog\(\)/);
 assert.match(page, /function closeChangelog\(\)/);
 assert.match(page, /window\.showChangelog = showChangelog/);
@@ -48,6 +57,16 @@ function element(id) {
             textContent: '',
             className: '',
             style: {},
+            scrollTop: 0,
+            scrollLeft: 0,
+            children: [],
+            classList: {
+                add() {},
+                remove() {},
+            },
+            replaceChildren(...children) {
+                this.children = children;
+            },
             addEventListener() {},
             focus() {},
             select() {},
@@ -71,6 +90,8 @@ const context = {
         createElement() {
             return {
                 value: '',
+                textContent: '',
+                className: '',
                 style: {},
                 focus() {},
                 select() {},
@@ -90,6 +111,46 @@ const scripts = [...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script
 for (const script of scripts) {
     vm.runInNewContext(script, context);
 }
+
+function plainSegments(segments) {
+    return JSON.parse(JSON.stringify(segments));
+}
+
+assert.deepStrictEqual(
+    plainSegments(context.buildDiffSegments('a\\nb', 'a\nb')),
+    [
+        { type: 'equal', text: 'a' },
+        { type: 'delete', text: '\\n' },
+        { type: 'insert', text: '\n' },
+        { type: 'equal', text: 'b' },
+    ]
+);
+
+const largeDiff = plainSegments(context.buildDiffSegments('a'.repeat(1100), 'b'.repeat(1100)));
+assert.deepStrictEqual(
+    largeDiff.map((segment) => ({ type: segment.type, length: segment.text.length })),
+    [
+        { type: 'delete', length: 1100 },
+        { type: 'insert', length: 1100 },
+    ]
+);
+
+elements.get('inputText').value = 'first\\nsecond';
+elements.get('outputText').value = 'first\nsecond';
+context.refreshStats();
+assert.strictEqual(elements.get('inputHighlight').children.length > 0, true);
+assert.strictEqual(elements.get('outputHighlight').children.length > 0, true);
+
+elements.get('inputText').scrollTop = 32;
+elements.get('inputText').scrollLeft = 14;
+context.syncEditorScroll(
+    elements.get('inputText'),
+    elements.get('inputHighlight'),
+    elements.get('inputLineNumbers')
+);
+assert.strictEqual(elements.get('inputHighlight').scrollTop, 32);
+assert.strictEqual(elements.get('inputHighlight').scrollLeft, 14);
+assert.strictEqual(elements.get('inputLineNumbers').scrollTop, 32);
 
 const jdbcSnippet = `"(jdbc:mysql://[^,\\\\s]+|jdbc:postgresql://[^,\\\\s]+|jdbc:tdsql-mysql://[^,\\\\s]+|jdbc:postgresql://[^,\\\\s]+"
                     + "|jdbc:gaussdb://[^,\\\\s]+|jdbc:opengauss://[^,\\\\s]+|jdbc:olap://[^,\\\\s]+|jdbc:oracle:(thin|oci):@[^,\\\\s]*"
