@@ -13,20 +13,25 @@ assert.match(page, /<script src="nav\.js" defer><\/script>/);
 assert.match(page, /<div class="container">/);
 assert.match(page, /<div class="tool-title">/);
 assert.match(page, /class="version-info" onclick="showChangelog\(\)"/);
-assert.match(page, /<span>V1\.03<\/span>/);
-assert.match(page, /<div class="changelog-version">V1\.03<\/div>/);
+assert.match(page, /<span>V1\.04<\/span>/);
+assert.match(page, /<div class="changelog-version">V1\.04<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.00<\/div>/);
 
 assert.match(page, /id="decodeBtn"/);
 assert.match(page, /id="encodeBtn"/);
 assert.match(page, /id="mergeStringsBtn"/);
+assert.match(page, /id="restoreVariablesBtn"/);
+assert.match(page, /id="mappingList"/);
+assert.match(page, /id="addMappingBtn"/);
 assert.match(page, /id="inputLineNumbers"/);
 assert.match(page, /id="outputLineNumbers"/);
 assert.match(page, /class="editor-shell"/);
 assert.match(page, /data-tooltip=/);
 assert.match(page, /function decodeToReadableText\(raw\)/);
 assert.match(page, /function encodeToEscapedString\(raw\)/);
-assert.match(page, /function mergeConcatenatedStrings\(raw\)/);
+assert.match(page, /function mergeConcatenatedStrings\(raw, mappings = \[\]\)/);
+assert.match(page, /function normalizeMappingPairs\(pairs\)/);
+assert.match(page, /function restoreMappedVariables\(raw, mappings\)/);
 assert.match(page, /function refreshLineNumbers\(textarea, lineNumbers\)/);
 assert.match(page, /function syncLineNumberScroll\(textarea, lineNumbers\)/);
 assert.match(page, /function showChangelog\(\)/);
@@ -98,6 +103,87 @@ assert.strictEqual(
 assert.strictEqual(
     context.mergeConcatenatedStrings('"jdbc:" + dbType + "://host"'),
     'jdbc:\n+ dbType +\n://host'
+);
+
+const mappings = context.normalizeMappingPairs([
+    { left: 'SERVICE_NAME', right: 'SVNM.getName()' },
+    { left: 'environment.getName()', right: 'ENV_NAME' }
+]);
+
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(mappings)),
+    [
+        { left: 'SERVICE_NAME', right: 'SVNM.getName()' },
+        { left: 'environment.getName()', right: 'ENV_NAME' }
+    ]
+);
+
+assert.strictEqual(
+    context.mergeConcatenatedStrings(
+        '"数据库${objectName}的" + SVNM.getName() + "不在已知服务列表里"',
+        mappings
+    ),
+    '数据库${objectName}的SERVICE_NAME不在已知服务列表里'
+);
+
+assert.strictEqual(
+    context.mergeConcatenatedStrings(
+        '"数据库${objectName}的" + SERVICE_NAME + "不在已知服务列表里"',
+        mappings
+    ),
+    '数据库${objectName}的SVNM.getName()不在已知服务列表里'
+);
+
+assert.strictEqual(
+    context.mergeConcatenatedStrings(
+        '"服务：" + unknownService + "，环境：" + environment.getName()',
+        mappings
+    ),
+    '服务：\n+ unknownService +\n，环境：ENV_NAME'
+);
+
+assert.strictEqual(
+    context.restoreMappedVariables(
+        '"数据库${objectName}的SERVICE_NAME不在已知服务列表里"',
+        mappings
+    ),
+    '"数据库${objectName}的" + SVNM.getName() + "不在已知服务列表里"'
+);
+
+assert.strictEqual(
+    context.restoreMappedVariables(
+        'SERVICE_NAME属于ENV_NAME，备用服务为SERVICE_NAME',
+        mappings
+    ),
+    'SVNM.getName() + "属于" + environment.getName() + "，备用服务为" + SVNM.getName()'
+);
+
+assert.strictEqual(
+    context.restoreMappedVariables(
+        '"数据库${objectName}的SVNM.getName()不在已知服务列表里"',
+        mappings
+    ),
+    '"数据库${objectName}的" + SERVICE_NAME + "不在已知服务列表里"'
+);
+
+const reversedMappings = context.normalizeMappingPairs([
+    { left: 'SVNM.getName()', right: 'SERVICE_NAME' }
+]);
+
+assert.strictEqual(
+    context.mergeConcatenatedStrings(
+        '"数据库${objectName}的" + SVNM.getName() + "不在已知服务列表里"',
+        reversedMappings
+    ),
+    '数据库${objectName}的SERVICE_NAME不在已知服务列表里'
+);
+
+assert.strictEqual(
+    context.restoreMappedVariables(
+        '"数据库${objectName}的SERVICE_NAME不在已知服务列表里"',
+        reversedMappings
+    ),
+    '"数据库${objectName}的" + SVNM.getName() + "不在已知服务列表里"'
 );
 
 console.log('text escape formatter integration passed');

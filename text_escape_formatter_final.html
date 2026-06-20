@@ -289,6 +289,115 @@
             background-color: #a40e26;
         }
 
+        .mapping-config {
+            display: grid;
+            grid-template-columns: minmax(220px, 0.65fr) minmax(0, 1.35fr);
+            gap: 14px;
+            align-items: start;
+            margin-top: 14px;
+            padding: 14px;
+            border: 1px solid #d8dee4;
+            border-radius: 6px;
+            background: #f6f8fa;
+        }
+
+        .mapping-config h3 {
+            margin: 0 0 6px;
+            color: #24292f;
+            font-size: 15px;
+        }
+
+        .mapping-help {
+            margin: 0;
+            color: var(--muted-color);
+            font-size: 12px;
+            line-height: 1.65;
+        }
+
+        .mapping-help code {
+            padding: 2px 5px;
+            border-radius: 4px;
+            background: #ddf4ff;
+            color: #0550ae;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        }
+
+        .mapping-editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+            color: #57606a;
+            font-size: 12px;
+        }
+
+        .mapping-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .mapping-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr) 34px;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .mapping-input {
+            width: 100%;
+            min-width: 0;
+            padding: 8px 10px;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            background: #fff;
+            color: #24292f;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .mapping-input:focus {
+            outline: none;
+            border-color: #0969da;
+            box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
+        }
+
+        .mapping-link {
+            color: #8c959f;
+            font-size: 18px;
+            text-align: center;
+            user-select: none;
+        }
+
+        .mapping-remove {
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            border-color: #d0d7de;
+            color: #cf222e;
+            background: #fff;
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .mapping-remove:hover {
+            border-color: #cf222e;
+            background: #ffebe9;
+        }
+
+        .mapping-add {
+            padding: 5px 10px;
+            color: #0969da;
+            border-color: #0969da;
+            background: #fff;
+            font-size: 12px;
+        }
+
+        .mapping-add:hover {
+            background: #ddf4ff;
+        }
 
         .hint {
             margin-top: 16px;
@@ -516,6 +625,33 @@
                 justify-content: space-between;
                 width: 100%;
             }
+
+            .mapping-config {
+                grid-template-columns: 1fr;
+            }
+
+            .mapping-row {
+                grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr) 34px;
+            }
+        }
+
+        @media (max-width: 620px) {
+            .mapping-row {
+                grid-template-columns: minmax(0, 1fr) 34px;
+            }
+
+            .mapping-link {
+                display: none;
+            }
+
+            .mapping-input {
+                grid-column: 1;
+            }
+
+            .mapping-remove {
+                grid-column: 2;
+                grid-row: 1 / span 2;
+            }
         }
     </style>
 </head>
@@ -525,7 +661,7 @@
         <div class="tool-title">
             <h1>文本转义转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.03</span>
+                <span>V1.04</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -557,7 +693,9 @@ java.lang.RuntimeException: test
                     <button class="btn btn-primary" id="encodeBtn" type="button"
                         data-tooltip="把普通多行文本转换成可复制进代码或配置里的转义字符串。&#10;示例：两行文本会变成 a\nb，双引号会变成 \&quot;。&#10;适合放入 Java、JSON、配置字段或日志模板。">转为转义字符串</button>
                     <button class="btn btn-primary" id="mergeStringsBtn" type="button"
-                        data-tooltip="合并代码里多段引号字符串。&#10;示例：&quot;jdbc:&quot; + &quot;mysql://host&quot; 会合并为 jdbc:mysql://host。&#10;如果 + 两边有变量或表达式，会保留边界，不跨变量合并。">合并拼接字符串</button>
+                        data-tooltip="合并代码里多段引号字符串，已配置的映射可跨变量继续合并。&#10;示例：配置 SERVICE_NAME ↔ SVNM.getName() 后，&#10;&quot;数据库${objectName}的&quot; + SVNM.getName() + &quot;不在已知服务列表里&quot;&#10;会转换为：数据库${objectName}的SERVICE_NAME不在已知服务列表里。&#10;映射左右顺序可以互换，未配置的变量仍会保留拼接边界。">合并拼接字符串</button>
+                    <button class="btn btn-primary" id="restoreVariablesBtn" type="button"
+                        data-tooltip="把普通字符串里的映射文本恢复为变量表达式和 + 拼接。&#10;示例：配置 SERVICE_NAME ↔ SVNM.getName() 后，&quot;服务SERVICE_NAME异常&quot; 会恢复为 &quot;服务&quot; + SVNM.getName() + &quot;异常&quot;。&#10;映射左右顺序可以互换。">恢复变量拼接</button>
                     <button class="btn btn-secondary" id="swapBtn" type="button"
                         data-tooltip="交换左侧输入区和右侧输出区内容。&#10;适合先转换一次，再把结果作为下一次转换输入。">交换输入输出</button>
                     <button class="btn btn-danger" id="clearBtn" type="button"
@@ -582,10 +720,29 @@ java.lang.RuntimeException: test
                 </section>
             </div>
 
+            <section class="mapping-config" aria-labelledby="mappingTitle">
+                <div>
+                    <h3 id="mappingTitle">变量映射配置</h3>
+                    <p class="mapping-help">
+                        每组填写两个需要互相替换的值，左右顺序不影响结果。同一配置既用于合并拼接字符串，也用于恢复变量拼接；
+                        转换时会用当前输入中命中的一侧替换为另一侧。配置会自动保存在当前浏览器。
+                    </p>
+                </div>
+                <div>
+                    <div class="mapping-editor-header">
+                        <span>示例：SERVICE_NAME ↔ SVNM.getName()</span>
+                        <button class="btn mapping-add" id="addMappingBtn" type="button">＋ 新增映射</button>
+                        <span id="mappingStatus">已配置 0 组</span>
+                    </div>
+                    <div class="mapping-list" id="mappingList"></div>
+                </div>
+            </section>
+
             <div class="hint">
                 <strong>说明：</strong>
                 “转为可读文本”适合把一行转义字符串展开为正常多行内容；“转为转义字符串”适合把多行文本转换成可直接复制到
-                Java、JSON、配置文件或日志字段里的字符串；“合并拼接字符串”适合把代码中多段引号字符串合并成一段，遇到变量或表达式拼接时会保留边界。
+                Java、JSON、配置文件或日志字段里的字符串；“合并拼接字符串”可结合变量映射把代码中的字符串和指定变量合并成普通文本；
+                “恢复变量拼接”可将普通文本中的映射内容重新转换成变量表达式拼接，未配置的变量仍会保留边界。
                 快捷键：<kbd>Ctrl</kbd> + <kbd>Enter</kbd> 转为可读文本，<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd> 转为转义字符串。
             </div>
         </section>
@@ -600,6 +757,13 @@ java.lang.RuntimeException: test
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年6月20日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.04</div>
+                        <div class="changelog-desc">拼接转换支持配置多组双向映射，可通过独立输入框新增或删除配置，映射左右顺序不影响合并与恢复结果。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月11日</div>
                     <div class="changelog-entry">
@@ -641,12 +805,18 @@ java.lang.RuntimeException: test
         const decodeBtn = document.getElementById('decodeBtn');
         const encodeBtn = document.getElementById('encodeBtn');
         const mergeStringsBtn = document.getElementById('mergeStringsBtn');
+        const restoreVariablesBtn = document.getElementById('restoreVariablesBtn');
+        const mappingList = document.getElementById('mappingList');
+        const addMappingBtn = document.getElementById('addMappingBtn');
+        const mappingStatus = document.getElementById('mappingStatus');
         const swapBtn = document.getElementById('swapBtn');
         const copyInputTextBtn = document.getElementById('copyInputTextBtn');
         const copyInputQuotedBtn = document.getElementById('copyInputQuotedBtn');
         const copyOutputTextBtn = document.getElementById('copyOutputTextBtn');
         const copyOutputQuotedBtn = document.getElementById('copyOutputQuotedBtn');
         const clearBtn = document.getElementById('clearBtn');
+        const MAPPING_STORAGE_KEY = 'textEscapeFormatter.variableMappings';
+        let mappingRows = [];
 
         function getStats(text) {
             if (!text) {
@@ -810,8 +980,63 @@ java.lang.RuntimeException: test
             return tokens;
         }
 
-        function mergeConcatenatedStrings(raw) {
-            const tokens = tokenizeStringExpression(raw);
+        function normalizeMappingPairs(pairs) {
+            if (!Array.isArray(pairs)) {
+                return [];
+            }
+
+            const seen = new Set();
+            return pairs.reduce((result, pair) => {
+                const left = String(pair && pair.left || '').trim();
+                const right = String(pair && pair.right || '').trim();
+                if (!left || !right || left === right) {
+                    return result;
+                }
+
+                const key = [left, right].sort().join('\u0000');
+                if (seen.has(key)) {
+                    return result;
+                }
+
+                seen.add(key);
+                result.push({ left, right });
+                return result;
+            }, []);
+        }
+
+        function parseLegacyMappings(raw) {
+            if (typeof raw !== 'string') {
+                return [];
+            }
+
+            return normalizeMappingPairs(raw.split(/\r\n|\r|\n/).map((line) => {
+                const match = line.trim().match(/^(.+?)\s*(?:=>|=)\s*(.+)$/);
+                return match ? { left: match[1], right: match[2] } : null;
+            }).filter(Boolean));
+        }
+
+        function getBidirectionalLookup(mappings) {
+            const lookup = new Map();
+            normalizeMappingPairs(mappings).forEach((mapping) => {
+                lookup.set(mapping.left, mapping.right);
+                lookup.set(mapping.right, mapping.left);
+            });
+            return lookup;
+        }
+
+        function mergeConcatenatedStrings(raw, mappings = []) {
+            const expressionMappings = getBidirectionalLookup(mappings);
+            const tokens = tokenizeStringExpression(raw).map((token) => {
+                if (token.type === 'other' && expressionMappings.has(token.text)) {
+                    return {
+                        type: 'string',
+                        text: token.text,
+                        value: expressionMappings.get(token.text)
+                    };
+                }
+
+                return token;
+            });
             if (tokens.length === 0) {
                 return '';
             }
@@ -877,6 +1102,136 @@ java.lang.RuntimeException: test
             return lines.join('\n');
         }
 
+        function restoreMappedVariables(raw, mappings) {
+            const text = decodeCommonEscapes(raw);
+            const availableMappings = [];
+            normalizeMappingPairs(mappings).forEach((mapping) => {
+                availableMappings.push({ source: mapping.left, replacement: mapping.right });
+                availableMappings.push({ source: mapping.right, replacement: mapping.left });
+            });
+            availableMappings.sort((left, right) => right.source.length - left.source.length);
+
+            if (!text || availableMappings.length === 0) {
+                return text;
+            }
+
+            const parts = [];
+            let literalStart = 0;
+            let index = 0;
+
+            while (index < text.length) {
+                const mapping = availableMappings.find((item) => text.startsWith(item.source, index));
+                if (!mapping) {
+                    index += 1;
+                    continue;
+                }
+
+                if (index > literalStart) {
+                    parts.push({
+                        type: 'string',
+                        value: text.slice(literalStart, index)
+                    });
+                }
+
+                parts.push({
+                    type: 'expression',
+                    value: mapping.replacement
+                });
+                index += mapping.source.length;
+                literalStart = index;
+            }
+
+            if (literalStart < text.length) {
+                parts.push({
+                    type: 'string',
+                    value: text.slice(literalStart)
+                });
+            }
+
+            if (!parts.some((part) => part.type === 'expression')) {
+                return text;
+            }
+
+            return parts.map((part) => {
+                if (part.type === 'expression') {
+                    return part.value;
+                }
+
+                return `"${encodeToEscapedString(part.value)}"`;
+            }).join(' + ');
+        }
+
+        function getConfiguredMappings() {
+            return normalizeMappingPairs(mappingRows);
+        }
+
+        function refreshMappingStatus() {
+            const count = getConfiguredMappings().length;
+            mappingStatus.textContent = `已配置 ${count} 组`;
+        }
+
+        function escapeHtmlAttribute(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        function renderMappingRows() {
+            if (mappingRows.length === 0) {
+                mappingRows = [{ left: '', right: '' }];
+            }
+
+            mappingList.innerHTML = mappingRows.map((mapping, index) => `
+                <div class="mapping-row" data-index="${index}">
+                    <input class="mapping-input" data-side="left" type="text" spellcheck="false"
+                        aria-label="映射值一" placeholder="例如 SERVICE_NAME" value="${escapeHtmlAttribute(mapping.left)}">
+                    <span class="mapping-link" title="双向映射">↔</span>
+                    <input class="mapping-input" data-side="right" type="text" spellcheck="false"
+                        aria-label="映射值二" placeholder="例如 SVNM.getName()" value="${escapeHtmlAttribute(mapping.right)}">
+                    <button class="btn mapping-remove" data-action="remove" type="button" title="删除此映射"
+                        aria-label="删除此映射">×</button>
+                </div>
+            `).join('');
+            refreshMappingStatus();
+        }
+
+        function saveVariableMappings() {
+            refreshMappingStatus();
+            if (!window.localStorage) {
+                return;
+            }
+
+            try {
+                window.localStorage.setItem(MAPPING_STORAGE_KEY, JSON.stringify(mappingRows));
+            } catch (error) {
+                // 浏览器禁用本地存储时仍可继续使用当前配置。
+            }
+        }
+
+        function loadVariableMappings() {
+            if (!window.localStorage) {
+                refreshMappingStatus();
+                return;
+            }
+
+            try {
+                const stored = window.localStorage.getItem(MAPPING_STORAGE_KEY) || '';
+                if (stored) {
+                    try {
+                        const parsed = JSON.parse(stored);
+                        mappingRows = Array.isArray(parsed) ? parsed : [];
+                    } catch (error) {
+                        mappingRows = parseLegacyMappings(stored);
+                    }
+                }
+            } catch (error) {
+                mappingRows = [];
+            }
+            renderMappingRows();
+        }
+
         function copyAsQuotedText(text) {
             copyToClipboard(`"${encodeToEscapedString(text)}"`);
         }
@@ -930,9 +1285,21 @@ java.lang.RuntimeException: test
         }
 
         function mergeStringsAction() {
-            outputText.value = mergeConcatenatedStrings(inputText.value);
+            outputText.value = mergeConcatenatedStrings(inputText.value, getConfiguredMappings());
             refreshStats();
             showToast('已合并拼接字符串。');
+        }
+
+        function restoreVariablesAction() {
+            const mappings = getConfiguredMappings();
+            if (mappings.length === 0) {
+                showToast('请先配置至少一组有效的变量映射。', true);
+                return;
+            }
+
+            outputText.value = restoreMappedVariables(inputText.value, mappings);
+            refreshStats();
+            showToast('已恢复变量拼接。');
         }
 
         function showChangelog() {
@@ -946,10 +1313,40 @@ java.lang.RuntimeException: test
         window.showChangelog = showChangelog;
         window.closeChangelog = closeChangelog;
         window.mergeConcatenatedStrings = mergeConcatenatedStrings;
+        window.normalizeMappingPairs = normalizeMappingPairs;
+        window.restoreMappedVariables = restoreMappedVariables;
 
         decodeBtn.addEventListener('click', decodeAction);
         encodeBtn.addEventListener('click', encodeAction);
         mergeStringsBtn.addEventListener('click', mergeStringsAction);
+        restoreVariablesBtn.addEventListener('click', restoreVariablesAction);
+        addMappingBtn.addEventListener('click', () => {
+            mappingRows.push({ left: '', right: '' });
+            renderMappingRows();
+            saveVariableMappings();
+        });
+        mappingList.addEventListener('input', (event) => {
+            const input = event.target.closest('.mapping-input');
+            if (!input) {
+                return;
+            }
+
+            const row = input.closest('.mapping-row');
+            const index = Number(row.dataset.index);
+            mappingRows[index][input.dataset.side] = input.value;
+            saveVariableMappings();
+        });
+        mappingList.addEventListener('click', (event) => {
+            const removeButton = event.target.closest('[data-action="remove"]');
+            if (!removeButton) {
+                return;
+            }
+
+            const row = removeButton.closest('.mapping-row');
+            mappingRows.splice(Number(row.dataset.index), 1);
+            renderMappingRows();
+            saveVariableMappings();
+        });
 
         swapBtn.addEventListener('click', () => {
             const temp = inputText.value;
@@ -1007,6 +1404,7 @@ java.lang.RuntimeException: test
             }
         });
 
+        loadVariableMappings();
         refreshStats();
     </script>
 </body>
