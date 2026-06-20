@@ -124,8 +124,7 @@
             outline: none;
         }
 
-        .limit-control input:focus,
-        textarea:focus {
+        .limit-control input:focus {
             border-color: var(--accent-color);
             box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
         }
@@ -166,29 +165,63 @@
             font-size: 12px;
         }
 
-        textarea {
+        .editor-shell {
             width: 100%;
             min-height: 570px;
-            padding: 14px;
             border: 1px solid var(--border-color);
             border-radius: 6px;
+            background: #fff;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .editor-shell:focus-within {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
+        }
+
+        .line-numbers,
+        .segment-line-numbers {
+            flex: 0 0 48px;
+            margin: 0;
+            padding: 14px 8px;
+            border-right: 1px solid #eaeef2;
+            background: #f6f8fa;
+            color: #8c959f;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            text-align: right;
+            white-space: pre;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        textarea {
+            width: 100%;
+            min-width: 0;
+            min-height: 568px;
+            padding: 14px;
+            border: 0;
+            border-radius: 0;
             color: var(--text-color);
             background: #fff;
             font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
             font-size: 14px;
             line-height: 1.6;
-            resize: vertical;
+            white-space: pre;
+            overflow: auto;
+            resize: none;
             outline: none;
         }
 
         .result-list {
             min-height: 570px;
-            max-height: calc(100vh - 230px);
             padding: 10px;
             border: 1px solid var(--border-color);
             border-radius: 6px;
             background: #f6f8fa;
-            overflow: auto;
+            overflow: visible;
         }
 
         .empty-state {
@@ -233,14 +266,26 @@
             font-size: 12px;
         }
 
+        .segment-editor {
+            display: flex;
+            min-height: 72px;
+            overflow: hidden;
+        }
+
+        .segment-line-numbers {
+            flex-basis: 42px;
+            padding: 12px 7px;
+            font-size: 13px;
+        }
+
         .segment-content {
+            flex: 1;
+            min-width: 0;
             margin: 0;
             padding: 12px;
-            min-height: 72px;
-            max-height: 240px;
-            overflow: auto;
-            white-space: pre-wrap;
-            overflow-wrap: anywhere;
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: pre;
             font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
             font-size: 13px;
             line-height: 1.6;
@@ -384,14 +429,15 @@
                 grid-template-columns: 1fr;
             }
 
-            textarea,
+            .editor-shell,
             .result-list {
                 min-height: 400px;
             }
 
-            .result-list {
-                max-height: none;
+            textarea {
+                min-height: 398px;
             }
+
         }
 
         @media (max-width: 600px) {
@@ -422,7 +468,7 @@
         <div class="tool-title">
             <h1>文本智能拆分</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.00</span>
+                <span>V1.01</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -446,7 +492,10 @@
                         <h2>输入文本</h2>
                         <span class="stats" id="inputStats">0 个字符</span>
                     </div>
-                    <textarea id="inputText" placeholder="粘贴需要拆分的文本。文本中的换行、空格和标点会被原样保留。"></textarea>
+                    <div class="editor-shell">
+                        <pre class="line-numbers" id="inputLineNumbers" aria-hidden="true">1</pre>
+                        <textarea id="inputText" wrap="off" placeholder="粘贴需要拆分的文本。文本中的换行、空格和标点会被原样保留。"></textarea>
+                    </div>
                 </section>
 
                 <section class="panel">
@@ -474,6 +523,10 @@
             <div class="modal-body">
                 <div class="changelog-date">2026年6月20日</div>
                 <div class="changelog-entry">
+                    <div class="changelog-version">V1.01</div>
+                    <div>为输入文本和每段拆分结果增加行号，并移除结果区嵌套的纵向滚动条。</div>
+                </div>
+                <div class="changelog-entry">
                     <div class="changelog-version">V1.00</div>
                     <div>版本初始化：支持按指定长度智能拆分文本，优先保留自然语义边界，并支持逐段快速复制。</div>
                 </div>
@@ -485,6 +538,7 @@
 
     <script>
         const inputText = document.getElementById('inputText');
+        const inputLineNumbers = document.getElementById('inputLineNumbers');
         const maxLength = document.getElementById('maxLength');
         const resultList = document.getElementById('resultList');
         const inputStats = document.getElementById('inputStats');
@@ -530,6 +584,15 @@
             inputStats.textContent = `${TextSplitter.countCharacters(inputText.value)} 个字符`;
         }
 
+        function buildLineNumbers(text) {
+            const lineCount = String(text ?? '').split('\n').length;
+            return Array.from({ length: lineCount }, (_, index) => index + 1).join('\n');
+        }
+
+        function refreshInputLineNumbers() {
+            inputLineNumbers.textContent = buildLineNumbers(inputText.value);
+        }
+
         function renderResults(segments) {
             currentSegments = segments;
             resultStats.textContent = `${segments.length} 段`;
@@ -549,7 +612,10 @@
                         </div>
                         <button class="btn btn-small copy-segment-btn" type="button" data-index="${index}">复制本段</button>
                     </div>
-                    <pre class="segment-content">${escapeHtml(segment)}</pre>
+                    <div class="segment-editor">
+                        <pre class="segment-line-numbers" aria-hidden="true">${buildLineNumbers(segment)}</pre>
+                        <pre class="segment-content">${escapeHtml(segment)}</pre>
+                    </div>
                 </article>
             `).join('');
         }
@@ -579,6 +645,7 @@
             inputText.value = '';
             renderResults([]);
             updateInputStats();
+            refreshInputLineNumbers();
             inputText.focus();
         }
 
@@ -592,7 +659,13 @@
 
         document.getElementById('splitBtn').addEventListener('click', runSplit);
         document.getElementById('clearBtn').addEventListener('click', clearAll);
-        inputText.addEventListener('input', updateInputStats);
+        inputText.addEventListener('input', () => {
+            updateInputStats();
+            refreshInputLineNumbers();
+        });
+        inputText.addEventListener('scroll', () => {
+            inputLineNumbers.scrollTop = inputText.scrollTop;
+        });
         inputText.addEventListener('keydown', (event) => {
             if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
                 runSplit();
@@ -619,6 +692,7 @@
         window.showChangelog = showChangelog;
         window.closeChangelog = closeChangelog;
         updateInputStats();
+        refreshInputLineNumbers();
     </script>
 </body>
 
