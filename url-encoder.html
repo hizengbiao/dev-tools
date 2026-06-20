@@ -30,7 +30,7 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 1180px;
             width: 100%;
         }
 
@@ -119,13 +119,12 @@
 
         textarea {
             width: 100%;
-            height: 150px;
             padding: 12px;
             border: 1px solid #d0d7de;
             border-radius: 6px;
             font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
             font-size: 14px;
-            resize: vertical;
+            resize: none;
             outline: none;
             box-sizing: border-box;
         }
@@ -166,6 +165,131 @@
 
         .btn-primary:hover {
             background-color: #4b525a;
+        }
+
+        .btn-secondary {
+            background-color: #fff;
+            color: #0969da;
+            border-color: #0969da;
+        }
+
+        .btn-secondary:hover {
+            background-color: #f0f7ff;
+        }
+
+        .converter-workspace {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 18px;
+        }
+
+        .editor-column {
+            min-width: 0;
+        }
+
+        .editor-column .panel-header {
+            margin-bottom: 10px;
+        }
+
+        .editor-shell {
+            position: relative;
+            height: 320px;
+            overflow: hidden;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            background: #fff;
+        }
+
+        .editor-shell:focus-within {
+            border-color: #0969da;
+            box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.3);
+        }
+
+        .editor-shell textarea,
+        .highlight-layer {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 12px;
+            border: 0;
+            border-radius: 0;
+            box-sizing: border-box;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 14px;
+            line-height: 1.55;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            tab-size: 4;
+        }
+
+        .editor-shell textarea {
+            z-index: 2;
+            overflow: auto;
+            background: transparent;
+        }
+
+        .editor-shell textarea:focus {
+            border: 0;
+            box-shadow: none;
+        }
+
+        .editor-shell textarea.diff-active {
+            color: transparent;
+            caret-color: #24292f;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .editor-shell textarea.diff-active::selection {
+            background: rgba(9, 105, 218, 0.24);
+        }
+
+        .highlight-layer {
+            z-index: 1;
+            overflow: hidden;
+            color: #24292f;
+            pointer-events: none;
+        }
+
+        .output-column .editor-shell,
+        .output-column .highlight-layer {
+            background: #f6f8fa;
+        }
+
+        .workspace-footer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            padding-top: 2px;
+        }
+
+        .diff-summary {
+            color: #57606a;
+            font-size: 13px;
+        }
+
+        .diff-delete {
+            color: #82071e;
+            background: #ffebe9;
+            text-decoration: line-through;
+        }
+
+        .diff-insert {
+            color: #116329;
+            background: #dafbe1;
+        }
+
+        @media (max-width: 760px) {
+            .converter-workspace {
+                grid-template-columns: 1fr;
+            }
+
+            .editor-shell {
+                height: 240px;
+            }
         }
 
         .icon-btn {
@@ -329,30 +453,44 @@
         <div class="tool-title">
             <h1>URL 编解码</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.00</span>
+                <span>V1.01</span>
                 <span>ℹ️</span>
             </div>
         </div>
 
         <div class="panel">
-            <div class="panel-header">
-                <h3>输入文本</h3>
-                <button class="icon-btn" onclick="clearAll()">🗑️ 清空</button>
-            </div>
-            <textarea id="input-text" placeholder="在此输入需要编码或解码的 URL..."></textarea>
+            <div class="converter-workspace">
+                <section class="editor-column input-column">
+                    <div class="panel-header">
+                        <h3>输入文本</h3>
+                        <button class="icon-btn" onclick="clearAll()">🗑️ 清空</button>
+                    </div>
+                    <div class="editor-shell">
+                        <div id="inputHighlight" class="highlight-layer" aria-hidden="true"></div>
+                        <textarea id="input-text" placeholder="在此输入需要编码或解码的 URL..." spellcheck="false"></textarea>
+                    </div>
+                </section>
 
-            <div class="actions">
-                <button class="btn btn-primary" onclick="doEncode()">编码 (Encode)</button>
-                <button class="btn btn-primary" onclick="doDecode()">解码 (Decode)</button>
+                <section class="editor-column output-column">
+                    <div class="panel-header">
+                        <h3>处理结果</h3>
+                        <button class="icon-btn" onclick="copyResult()">📋 复制结果</button>
+                    </div>
+                    <div class="editor-shell">
+                        <div id="outputHighlight" class="highlight-layer" aria-hidden="true"></div>
+                        <textarea id="output-text" readonly placeholder="结果生成于此..." spellcheck="false"></textarea>
+                    </div>
+                </section>
             </div>
-        </div>
 
-        <div class="panel">
-            <div class="panel-header">
-                <h3>处理结果</h3>
-                <button class="icon-btn" onclick="copyResult()">📋 复制结果</button>
+            <div class="workspace-footer">
+                <div class="actions">
+                    <button class="btn btn-primary" onclick="doEncode()">编码 (Encode)</button>
+                    <button class="btn btn-primary" onclick="doDecode()">解码 (Decode)</button>
+                    <button id="swapBtn" class="btn btn-secondary" onclick="swapInputOutput()">⇄ 交换输入输出</button>
+                </div>
+                <span id="diffSummary" class="diff-summary"></span>
             </div>
-            <textarea id="output-text" readonly placeholder="结果生成于此..." style="background-color: #f6f8fa;"></textarea>
         </div>
     </div>
 
@@ -365,6 +503,13 @@
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年6月20日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.01</div>
+                        <div class="changelog-desc">输入输出调整为左右布局，支持在编辑框内直接高亮编码、解码差异，并可交换内容</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月9日</div>
                     <div class="changelog-entry">
@@ -379,6 +524,146 @@
     <script>
         const inputArea = document.getElementById('input-text');
         const outputArea = document.getElementById('output-text');
+        const diffSummary = document.getElementById('diffSummary');
+        const inputHighlight = document.getElementById('inputHighlight');
+        const outputHighlight = document.getElementById('outputHighlight');
+
+        function appendDiffSegment(segments, type, text) {
+            if (!text) return;
+            const previous = segments[segments.length - 1];
+            if (previous && previous.type === type) {
+                previous.text += text;
+                return;
+            }
+            segments.push({ type, text });
+        }
+
+        function buildDiffSegments(original, result) {
+            if (original === result) {
+                return original ? [{ type: 'equal', text: original }] : [];
+            }
+
+            let prefixLength = 0;
+            while (
+                prefixLength < original.length
+                && prefixLength < result.length
+                && original[prefixLength] === result[prefixLength]
+            ) {
+                prefixLength++;
+            }
+
+            let suffixLength = 0;
+            while (
+                suffixLength < original.length - prefixLength
+                && suffixLength < result.length - prefixLength
+                && original[original.length - 1 - suffixLength] === result[result.length - 1 - suffixLength]
+            ) {
+                suffixLength++;
+            }
+
+            const originalMiddle = original.slice(prefixLength, original.length - suffixLength);
+            const resultMiddle = result.slice(prefixLength, result.length - suffixLength);
+            const segments = [];
+            appendDiffSegment(segments, 'equal', original.slice(0, prefixLength));
+
+            if (originalMiddle.length * resultMiddle.length > 1000000) {
+                appendDiffSegment(segments, 'delete', originalMiddle);
+                appendDiffSegment(segments, 'insert', resultMiddle);
+            } else {
+                const rows = originalMiddle.length + 1;
+                const columns = resultMiddle.length + 1;
+                const table = Array.from({ length: rows }, () => new Uint32Array(columns));
+
+                for (let row = originalMiddle.length - 1; row >= 0; row--) {
+                    for (let column = resultMiddle.length - 1; column >= 0; column--) {
+                        table[row][column] = originalMiddle[row] === resultMiddle[column]
+                            ? table[row + 1][column + 1] + 1
+                            : Math.max(table[row + 1][column], table[row][column + 1]);
+                    }
+                }
+
+                let row = 0;
+                let column = 0;
+                while (row < originalMiddle.length && column < resultMiddle.length) {
+                    if (originalMiddle[row] === resultMiddle[column]) {
+                        appendDiffSegment(segments, 'equal', originalMiddle[row]);
+                        row++;
+                        column++;
+                    } else if (table[row + 1][column] >= table[row][column + 1]) {
+                        appendDiffSegment(segments, 'delete', originalMiddle[row]);
+                        row++;
+                    } else {
+                        appendDiffSegment(segments, 'insert', resultMiddle[column]);
+                        column++;
+                    }
+                }
+
+                appendDiffSegment(segments, 'delete', originalMiddle.slice(row));
+                appendDiffSegment(segments, 'insert', resultMiddle.slice(column));
+            }
+
+            appendDiffSegment(segments, 'equal', original.slice(original.length - suffixLength));
+            return segments;
+        }
+
+        function createDiffNode(text, className = '') {
+            const span = document.createElement('span');
+            span.textContent = text;
+            span.className = className;
+            return span;
+        }
+
+        function syncHighlightScroll(textarea, highlight) {
+            highlight.scrollTop = textarea.scrollTop;
+            highlight.scrollLeft = textarea.scrollLeft;
+        }
+
+        function renderDiff() {
+            const original = inputArea.value;
+            const result = outputArea.value;
+
+            if (!original || !result) {
+                inputHighlight.replaceChildren();
+                outputHighlight.replaceChildren();
+                inputArea.classList.remove('diff-active');
+                outputArea.classList.remove('diff-active');
+                diffSummary.textContent = '';
+                return;
+            }
+
+            const segments = buildDiffSegments(original, result);
+            const originalNodes = [];
+            const resultNodes = [];
+            let deletedCount = 0;
+            let insertedCount = 0;
+
+            for (const segment of segments) {
+                if (segment.type !== 'insert') {
+                    const className = segment.type === 'delete' ? 'diff-delete' : '';
+                    originalNodes.push(createDiffNode(segment.text, className));
+                }
+                if (segment.type !== 'delete') {
+                    const className = segment.type === 'insert' ? 'diff-insert' : '';
+                    resultNodes.push(createDiffNode(segment.text, className));
+                }
+                if (segment.type === 'delete') deletedCount += segment.text.length;
+                if (segment.type === 'insert') insertedCount += segment.text.length;
+            }
+
+            inputHighlight.replaceChildren(...originalNodes);
+            outputHighlight.replaceChildren(...resultNodes);
+            inputArea.classList.add('diff-active');
+            outputArea.classList.add('diff-active');
+            diffSummary.textContent = deletedCount === 0 && insertedCount === 0
+                ? '输入输出内容一致'
+                : `移除 ${deletedCount} 个字符，新增 ${insertedCount} 个字符`;
+            syncHighlightScroll(inputArea, inputHighlight);
+            syncHighlightScroll(outputArea, outputHighlight);
+        }
+
+        inputArea.addEventListener('input', renderDiff);
+        inputArea.addEventListener('scroll', () => syncHighlightScroll(inputArea, inputHighlight));
+        outputArea.addEventListener('scroll', () => syncHighlightScroll(outputArea, outputHighlight));
 
         function showChangelog() {
             document.getElementById('changelog-modal').style.display = 'flex';
@@ -402,10 +687,12 @@
                 // Using encodeURIComponent as it's the most common need (encoding params)
                 // We could offer encodeURI optionally, but usually users want safe strings.
                 outputArea.value = encodeURIComponent(val);
+                renderDiff();
                 showToast("编码成功");
             } catch (e) {
                 showToast("编码错误: " + e.message);
                 outputArea.value = "Error: " + e.message;
+                renderDiff();
             }
         }
 
@@ -414,17 +701,28 @@
             if (!val) return;
             try {
                 outputArea.value = decodeURIComponent(val);
+                renderDiff();
                 showToast("解码成功");
             } catch (e) {
                 // Often happens with "%" at end or bad sequence
                 showToast("解码错误: 无效的编码序列");
                 outputArea.value = "Error: Invalid URL encoding sequence";
+                renderDiff();
             }
+        }
+
+        function swapInputOutput() {
+            const input = inputArea.value;
+            inputArea.value = outputArea.value;
+            outputArea.value = input;
+            renderDiff();
+            showToast("已交换输入输出");
         }
 
         function clearAll() {
             inputArea.value = '';
             outputArea.value = '';
+            renderDiff();
             inputArea.focus();
         }
 
