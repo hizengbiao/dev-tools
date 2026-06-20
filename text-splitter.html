@@ -167,6 +167,7 @@
 
         .editor-shell {
             width: 100%;
+            height: 570px;
             min-height: 570px;
             border: 1px solid var(--border-color);
             border-radius: 6px;
@@ -199,8 +200,9 @@
 
         textarea {
             width: 100%;
+            height: 100%;
             min-width: 0;
-            min-height: 568px;
+            min-height: 0;
             padding: 14px;
             border: 0;
             border-radius: 0;
@@ -268,7 +270,7 @@
 
         .segment-editor {
             display: flex;
-            min-height: 72px;
+            height: calc(6 * 1.6em + 24px);
             overflow: hidden;
         }
 
@@ -283,12 +285,17 @@
             min-width: 0;
             margin: 0;
             padding: 12px;
-            overflow-x: auto;
-            overflow-y: hidden;
+            overflow: auto;
             white-space: pre;
             font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
             font-size: 13px;
             line-height: 1.6;
+        }
+
+        .result-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .btn {
@@ -397,6 +404,60 @@
             padding: 20px;
         }
 
+        .segment-preview-content {
+            width: min(1200px, calc(100vw - 40px));
+            height: min(820px, calc(100vh - 40px));
+            display: flex;
+            flex-direction: column;
+        }
+
+        .segment-preview-content .modal-header {
+            flex: 0 0 auto;
+        }
+
+        .segment-preview-body {
+            flex: 1;
+            min-height: 0;
+            padding: 0;
+            display: flex;
+        }
+
+        .segment-preview-editor {
+            width: 100%;
+            min-height: 0;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .preview-line-numbers {
+            flex: 0 0 56px;
+            margin: 0;
+            padding: 16px 10px;
+            border-right: 1px solid #eaeef2;
+            background: #f6f8fa;
+            color: #8c959f;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            text-align: right;
+            white-space: pre;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .segment-preview-text {
+            flex: 1;
+            min-width: 0;
+            min-height: 0;
+            margin: 0;
+            padding: 16px;
+            overflow: auto;
+            white-space: pre;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
         .changelog-date {
             display: inline-block;
             padding-bottom: 6px;
@@ -434,8 +495,12 @@
                 min-height: 400px;
             }
 
+            .editor-shell {
+                height: 400px;
+            }
+
             textarea {
-                min-height: 398px;
+                min-height: 0;
             }
 
         }
@@ -468,7 +533,7 @@
         <div class="tool-title">
             <h1>文本智能拆分</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.01</span>
+                <span>V1.02</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -523,12 +588,31 @@
             <div class="modal-body">
                 <div class="changelog-date">2026年6月20日</div>
                 <div class="changelog-entry">
+                    <div class="changelog-version">V1.02</div>
+                    <div>优化大量文本粘贴体验，避免页面自动滚动到底部；拆分结果调整为六行高度并支持滚动和全屏查看。</div>
+                </div>
+                <div class="changelog-entry">
                     <div class="changelog-version">V1.01</div>
                     <div>为输入文本和每段拆分结果增加行号，并移除结果区嵌套的纵向滚动条。</div>
                 </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.00</div>
                     <div>版本初始化：支持按指定长度智能拆分文本，优先保留自然语义边界，并支持逐段快速复制。</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="segment-preview-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="segmentPreviewTitle">
+        <div class="modal-content segment-preview-content">
+            <div class="modal-header">
+                <h3 id="segmentPreviewTitle">拆分结果全屏查看</h3>
+                <button class="close-modal" type="button" onclick="closeSegmentPreview()" aria-label="关闭">&times;</button>
+            </div>
+            <div class="modal-body segment-preview-body">
+                <div class="segment-preview-editor">
+                    <pre class="preview-line-numbers" id="segmentPreviewLineNumbers" aria-hidden="true">1</pre>
+                    <pre class="segment-preview-text" id="segmentPreviewContent"></pre>
                 </div>
             </div>
         </div>
@@ -610,7 +694,10 @@
                             <span class="segment-number">第 ${index + 1} 段</span>
                             <span class="segment-length">${TextSplitter.countCharacters(segment)} 个字符</span>
                         </div>
-                        <button class="btn btn-small copy-segment-btn" type="button" data-index="${index}">复制本段</button>
+                        <div class="result-actions">
+                            <button class="btn btn-small fullscreen-segment-btn" type="button" data-index="${index}" title="全屏查看本段完整内容">全屏查看</button>
+                            <button class="btn btn-small copy-segment-btn" type="button" data-index="${index}">复制本段</button>
+                        </div>
                     </div>
                     <div class="segment-editor">
                         <pre class="segment-line-numbers" aria-hidden="true">${buildLineNumbers(segment)}</pre>
@@ -618,6 +705,13 @@
                     </div>
                 </article>
             `).join('');
+
+            resultList.querySelectorAll('.segment-content').forEach((segmentContent) => {
+                const segmentLineNumbers = segmentContent.previousElementSibling;
+                segmentContent.addEventListener('scroll', () => {
+                    segmentLineNumbers.scrollTop = segmentContent.scrollTop;
+                });
+            });
         }
 
         function runSplit() {
@@ -657,11 +751,40 @@
             document.getElementById('changelog-modal').style.display = 'none';
         }
 
+        function showSegmentPreview(index) {
+            const segment = currentSegments[index];
+            if (typeof segment !== 'string') {
+                return;
+            }
+
+            document.getElementById('segmentPreviewTitle').textContent = `第 ${index + 1} 段完整内容`;
+            document.getElementById('segmentPreviewLineNumbers').textContent = buildLineNumbers(segment);
+            const previewContent = document.getElementById('segmentPreviewContent');
+            previewContent.textContent = segment;
+            previewContent.scrollTop = 0;
+            previewContent.scrollLeft = 0;
+            document.getElementById('segment-preview-modal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSegmentPreview() {
+            document.getElementById('segment-preview-modal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
         document.getElementById('splitBtn').addEventListener('click', runSplit);
         document.getElementById('clearBtn').addEventListener('click', clearAll);
         inputText.addEventListener('input', () => {
             updateInputStats();
             refreshInputLineNumbers();
+        });
+        inputText.addEventListener('paste', () => {
+            const scrollPosition = { x: window.scrollX, y: window.scrollY };
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    window.scrollTo(scrollPosition.x, scrollPosition.y);
+                });
+            });
         });
         inputText.addEventListener('scroll', () => {
             inputLineNumbers.scrollTop = inputText.scrollTop;
@@ -672,6 +795,12 @@
             }
         });
         resultList.addEventListener('click', (event) => {
+            const fullscreenButton = event.target.closest('.fullscreen-segment-btn');
+            if (fullscreenButton) {
+                showSegmentPreview(Number(fullscreenButton.dataset.index));
+                return;
+            }
+
             const button = event.target.closest('.copy-segment-btn');
             if (!button) {
                 return;
@@ -683,14 +812,28 @@
             copyText(currentSegments.join('\n\n'), '全部分段已复制');
         });
         window.addEventListener('click', (event) => {
-            const modal = document.getElementById('changelog-modal');
-            if (event.target === modal) {
+            const changelogModal = document.getElementById('changelog-modal');
+            const previewModal = document.getElementById('segment-preview-modal');
+            if (event.target === changelogModal) {
+                closeChangelog();
+            } else if (event.target === previewModal) {
+                closeSegmentPreview();
+            }
+        });
+        document.getElementById('segmentPreviewContent').addEventListener('scroll', (event) => {
+            document.getElementById('segmentPreviewLineNumbers').scrollTop = event.currentTarget.scrollTop;
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                closeSegmentPreview();
                 closeChangelog();
             }
         });
 
         window.showChangelog = showChangelog;
         window.closeChangelog = closeChangelog;
+        window.showSegmentPreview = showSegmentPreview;
+        window.closeSegmentPreview = closeSegmentPreview;
         updateInputStats();
         refreshInputLineNumbers();
     </script>
