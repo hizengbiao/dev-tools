@@ -30,7 +30,7 @@
         }
 
         .container {
-            max-width: 1180px;
+            max-width: 1560px;
             width: 100%;
         }
 
@@ -179,8 +179,9 @@
 
         .converter-workspace {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-            gap: 18px;
+            grid-template-columns: minmax(0, 1fr) 132px minmax(0, 1fr);
+            gap: 14px;
+            align-items: stretch;
         }
 
         .editor-column {
@@ -192,8 +193,10 @@
         }
 
         .editor-shell {
-            position: relative;
-            height: 320px;
+            display: grid;
+            grid-template-columns: 48px minmax(0, 1fr);
+            height: min(62vh, 560px);
+            min-height: 420px;
             overflow: hidden;
             border: 1px solid #d0d7de;
             border-radius: 6px;
@@ -205,7 +208,27 @@
             box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.3);
         }
 
-        .editor-shell textarea,
+        .line-numbers {
+            padding: 12px 9px 12px 6px;
+            overflow: hidden;
+            border-right: 1px solid #d8dee4;
+            background: #f6f8fa;
+            color: #8c959f;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 14px;
+            line-height: 1.55;
+            text-align: right;
+            white-space: pre;
+            user-select: none;
+        }
+
+        .editor-stage {
+            position: relative;
+            min-width: 0;
+            min-height: 0;
+        }
+
+        .editor-stage textarea,
         .highlight-layer {
             position: absolute;
             inset: 0;
@@ -219,29 +242,29 @@
             font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
             font-size: 14px;
             line-height: 1.55;
-            white-space: pre-wrap;
-            overflow-wrap: anywhere;
+            white-space: pre;
+            overflow-wrap: normal;
             tab-size: 4;
         }
 
-        .editor-shell textarea {
+        .editor-stage textarea {
             z-index: 2;
             overflow: auto;
             background: transparent;
         }
 
-        .editor-shell textarea:focus {
+        .editor-stage textarea:focus {
             border: 0;
             box-shadow: none;
         }
 
-        .editor-shell textarea.diff-active {
+        .editor-stage textarea.diff-active {
             color: transparent;
             caret-color: #24292f;
             -webkit-text-fill-color: transparent;
         }
 
-        .editor-shell textarea.diff-active::selection {
+        .editor-stage textarea.diff-active::selection {
             background: rgba(9, 105, 218, 0.24);
         }
 
@@ -253,28 +276,40 @@
         }
 
         .output-column .editor-shell,
-        .output-column .highlight-layer {
+        .output-column .highlight-layer,
+        .output-column .line-numbers {
             background: #f6f8fa;
         }
 
-        .workspace-footer {
+        .workspace-actions {
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 16px;
-            flex-wrap: wrap;
-            padding-top: 2px;
+            gap: 10px;
+            padding-top: 38px;
+        }
+
+        .workspace-actions .actions {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .workspace-actions .btn {
+            width: 100%;
+            padding: 10px 8px;
         }
 
         .diff-summary {
             color: #57606a;
             font-size: 13px;
+            line-height: 1.5;
+            text-align: center;
         }
 
         .diff-delete {
             color: #82071e;
             background: #ffebe9;
-            text-decoration: line-through;
         }
 
         .diff-insert {
@@ -282,13 +317,27 @@
             background: #dafbe1;
         }
 
-        @media (max-width: 760px) {
+        @media (max-width: 900px) {
             .converter-workspace {
                 grid-template-columns: 1fr;
             }
 
+            .workspace-actions {
+                grid-row: 2;
+                padding-top: 0;
+            }
+
+            .workspace-actions .actions {
+                flex-direction: row;
+            }
+
+            .workspace-actions .btn {
+                width: auto;
+            }
+
             .editor-shell {
-                height: 240px;
+                height: 320px;
+                min-height: 320px;
             }
         }
 
@@ -453,7 +502,7 @@
         <div class="tool-title">
             <h1>URL 编解码</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.01</span>
+                <span>V1.02</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -466,10 +515,22 @@
                         <button class="icon-btn" onclick="clearAll()">🗑️ 清空</button>
                     </div>
                     <div class="editor-shell">
-                        <div id="inputHighlight" class="highlight-layer" aria-hidden="true"></div>
-                        <textarea id="input-text" placeholder="在此输入需要编码或解码的 URL..." spellcheck="false"></textarea>
+                        <div id="inputLineNumbers" class="line-numbers" aria-hidden="true">1</div>
+                        <div class="editor-stage">
+                            <div id="inputHighlight" class="highlight-layer" aria-hidden="true"></div>
+                            <textarea id="input-text" wrap="off" placeholder="在此输入需要编码或解码的 URL..." spellcheck="false"></textarea>
+                        </div>
                     </div>
                 </section>
+
+                <div class="workspace-actions">
+                    <div class="actions">
+                        <button class="btn btn-primary" onclick="doEncode()">编码 (Encode)</button>
+                        <button class="btn btn-primary" onclick="doDecode()">解码 (Decode)</button>
+                        <button id="swapBtn" class="btn btn-secondary" onclick="swapInputOutput()">⇄ 交换输入输出</button>
+                    </div>
+                    <span id="diffSummary" class="diff-summary"></span>
+                </div>
 
                 <section class="editor-column output-column">
                     <div class="panel-header">
@@ -477,19 +538,13 @@
                         <button class="icon-btn" onclick="copyResult()">📋 复制结果</button>
                     </div>
                     <div class="editor-shell">
-                        <div id="outputHighlight" class="highlight-layer" aria-hidden="true"></div>
-                        <textarea id="output-text" readonly placeholder="结果生成于此..." spellcheck="false"></textarea>
+                        <div id="outputLineNumbers" class="line-numbers" aria-hidden="true">1</div>
+                        <div class="editor-stage">
+                            <div id="outputHighlight" class="highlight-layer" aria-hidden="true"></div>
+                            <textarea id="output-text" wrap="off" readonly placeholder="结果生成于此..." spellcheck="false"></textarea>
+                        </div>
                     </div>
                 </section>
-            </div>
-
-            <div class="workspace-footer">
-                <div class="actions">
-                    <button class="btn btn-primary" onclick="doEncode()">编码 (Encode)</button>
-                    <button class="btn btn-primary" onclick="doDecode()">解码 (Decode)</button>
-                    <button id="swapBtn" class="btn btn-secondary" onclick="swapInputOutput()">⇄ 交换输入输出</button>
-                </div>
-                <span id="diffSummary" class="diff-summary"></span>
             </div>
         </div>
     </div>
@@ -505,6 +560,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月20日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.02</div>
+                        <div class="changelog-desc">输入输出增加行号并扩大编辑区域，操作按钮移至两栏中间，差异删除内容改为仅使用背景色标记</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.01</div>
                         <div class="changelog-desc">输入输出调整为左右布局，支持在编辑框内直接高亮编码、解码差异，并可交换内容</div>
@@ -527,6 +586,8 @@
         const diffSummary = document.getElementById('diffSummary');
         const inputHighlight = document.getElementById('inputHighlight');
         const outputHighlight = document.getElementById('outputHighlight');
+        const inputLineNumbers = document.getElementById('inputLineNumbers');
+        const outputLineNumbers = document.getElementById('outputLineNumbers');
 
         function appendDiffSegment(segments, type, text) {
             if (!text) return;
@@ -613,14 +674,27 @@
             return span;
         }
 
-        function syncHighlightScroll(textarea, highlight) {
+        function updateLineNumbers(textarea, lineNumbers) {
+            const lineCount = Math.max(1, textarea.value.split('\n').length);
+            lineNumbers.textContent = Array.from(
+                { length: lineCount },
+                (_, index) => index + 1
+            ).join('\n');
+        }
+
+        function syncHighlightScroll(textarea, highlight, lineNumbers) {
             highlight.scrollTop = textarea.scrollTop;
             highlight.scrollLeft = textarea.scrollLeft;
+            if (lineNumbers) {
+                lineNumbers.scrollTop = textarea.scrollTop;
+            }
         }
 
         function renderDiff() {
             const original = inputArea.value;
             const result = outputArea.value;
+            updateLineNumbers(inputArea, inputLineNumbers);
+            updateLineNumbers(outputArea, outputLineNumbers);
 
             if (!original || !result) {
                 inputHighlight.replaceChildren();
@@ -657,13 +731,14 @@
             diffSummary.textContent = deletedCount === 0 && insertedCount === 0
                 ? '输入输出内容一致'
                 : `移除 ${deletedCount} 个字符，新增 ${insertedCount} 个字符`;
-            syncHighlightScroll(inputArea, inputHighlight);
-            syncHighlightScroll(outputArea, outputHighlight);
+            syncHighlightScroll(inputArea, inputHighlight, inputLineNumbers);
+            syncHighlightScroll(outputArea, outputHighlight, outputLineNumbers);
         }
 
         inputArea.addEventListener('input', renderDiff);
-        inputArea.addEventListener('scroll', () => syncHighlightScroll(inputArea, inputHighlight));
-        outputArea.addEventListener('scroll', () => syncHighlightScroll(outputArea, outputHighlight));
+        inputArea.addEventListener('scroll', () => syncHighlightScroll(inputArea, inputHighlight, inputLineNumbers));
+        outputArea.addEventListener('scroll', () => syncHighlightScroll(outputArea, outputHighlight, outputLineNumbers));
+        renderDiff();
 
         function showChangelog() {
             document.getElementById('changelog-modal').style.display = 'flex';

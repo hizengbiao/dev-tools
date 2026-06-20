@@ -11,12 +11,17 @@ assert.match(page, /class="converter-workspace"/);
 assert.match(page, /class="editor-shell"/);
 assert.match(page, /id="inputHighlight"/);
 assert.match(page, /id="outputHighlight"/);
+assert.match(page, /id="inputLineNumbers"/);
+assert.match(page, /id="outputLineNumbers"/);
+assert.match(page, /class="workspace-actions"/);
 assert.doesNotMatch(page, /id="diffPanel"/);
+assert.doesNotMatch(page, /text-decoration:\s*line-through/);
 assert.match(page, /function buildDiffSegments\(original, result\)/);
 assert.match(page, /function renderDiff\(\)/);
-assert.match(page, /function syncHighlightScroll\(textarea, highlight\)/);
-assert.match(page, /<span>V1\.01<\/span>/);
-assert.match(page, /<div class="changelog-version">V1\.01<\/div>/);
+assert.match(page, /function syncHighlightScroll\(textarea, highlight, lineNumbers\)/);
+assert.match(page, /function updateLineNumbers\(textarea, lineNumbers\)/);
+assert.match(page, /<span>V1\.02<\/span>/);
+assert.match(page, /<div class="changelog-version">V1\.02<\/div>/);
 
 const elements = new Map();
 function createElement(id = '') {
@@ -137,5 +142,20 @@ context.renderDiff();
 assert.strictEqual(elements.get('inputHighlight').children.length, 0);
 assert.strictEqual(elements.get('outputHighlight').children.length, 0);
 assert.strictEqual(elements.get('diffSummary').textContent, '');
+
+elements.get('input-text').value = 'first\nsecond\nthird';
+context.updateLineNumbers(elements.get('input-text'), elements.get('inputLineNumbers'));
+assert.strictEqual(elements.get('inputLineNumbers').textContent, '1\n2\n3');
+
+elements.get('input-text').scrollTop = 44;
+elements.get('input-text').scrollLeft = 18;
+context.syncHighlightScroll(
+    elements.get('input-text'),
+    elements.get('inputHighlight'),
+    elements.get('inputLineNumbers')
+);
+assert.strictEqual(elements.get('inputHighlight').scrollTop, 44);
+assert.strictEqual(elements.get('inputHighlight').scrollLeft, 18);
+assert.strictEqual(elements.get('inputLineNumbers').scrollTop, 44);
 
 console.log('url encoder diff behavior passed');
