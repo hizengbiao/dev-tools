@@ -58,8 +58,13 @@
         return Array.from(String(text ?? '')).length;
     }
 
+    function getClipboardHistoryWriteOrder(segments) {
+        return Array.from(segments ?? []).reverse();
+    }
+
     return {
         splitText,
         countCharacters,
+        getClipboardHistoryWriteOrder,
     };
 });

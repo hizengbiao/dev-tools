@@ -298,6 +298,14 @@
             gap: 6px;
         }
 
+        .result-summary-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
         .btn {
             padding: 8px 13px;
             border: 1px solid rgba(27, 31, 36, 0.15);
@@ -533,7 +541,7 @@
         <div class="tool-title">
             <h1>文本智能拆分</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.02</span>
+                <span>V1.03</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -566,9 +574,11 @@
                 <section class="panel">
                     <div class="panel-header">
                         <h2>拆分结果</h2>
-                        <div>
+                        <div class="result-summary-actions">
                             <span class="stats" id="resultStats">0 段</span>
                             <button class="btn btn-small" id="copyAllBtn" type="button" disabled>复制全部分段</button>
+                            <button class="btn btn-small" id="copyHistoryBtn" type="button" disabled
+                                title="按相反顺序逐段写入剪切板，使 Win + V 中从上到下按第 1 段开始排列">逐段加入剪切板历史</button>
                         </div>
                     </div>
                     <div class="result-list" id="resultList">
@@ -587,6 +597,10 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date">2026年6月20日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.03</div>
+                    <div>新增逐段加入剪切板历史功能，按顺序保存各分段，方便通过 Win + V 逐段选择粘贴。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.02</div>
                     <div>优化大量文本粘贴体验，避免页面自动滚动到底部；拆分结果调整为六行高度并支持滚动和全屏查看。</div>
@@ -628,6 +642,7 @@
         const inputStats = document.getElementById('inputStats');
         const resultStats = document.getElementById('resultStats');
         const copyAllBtn = document.getElementById('copyAllBtn');
+        const copyHistoryBtn = document.getElementById('copyHistoryBtn');
         let currentSegments = [];
         let toastTimer;
 
@@ -648,7 +663,7 @@
             toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
         }
 
-        async function copyText(value, successMessage) {
+        async function writeClipboardText(value) {
             try {
                 await navigator.clipboard.writeText(value);
             } catch (error) {
@@ -658,10 +673,21 @@
                 helper.style.opacity = '0';
                 document.body.appendChild(helper);
                 helper.select();
-                document.execCommand('copy');
+                const copied = document.execCommand('copy');
                 helper.remove();
+                if (!copied) {
+                    throw error;
+                }
             }
+        }
+
+        async function copyText(value, successMessage) {
+            await writeClipboardText(value);
             showToast(successMessage);
+        }
+
+        function delay(milliseconds) {
+            return new Promise((resolve) => setTimeout(resolve, milliseconds));
         }
 
         function updateInputStats() {
@@ -681,6 +707,7 @@
             currentSegments = segments;
             resultStats.textContent = `${segments.length} 段`;
             copyAllBtn.disabled = segments.length === 0;
+            copyHistoryBtn.disabled = segments.length === 0;
 
             if (!segments.length) {
                 resultList.innerHTML = '<div class="empty-state">暂无可拆分的文本</div>';
@@ -772,6 +799,36 @@
             document.body.style.overflow = '';
         }
 
+        async function copySegmentsToHistory() {
+            if (!currentSegments.length || copyHistoryBtn.disabled) {
+                return;
+            }
+
+            const writeOrder = TextSplitter.getClipboardHistoryWriteOrder(currentSegments);
+            const originalText = copyHistoryBtn.textContent;
+            copyHistoryBtn.disabled = true;
+            copyAllBtn.disabled = true;
+
+            let copiedCount = 0;
+            try {
+                for (const segment of writeOrder) {
+                    await writeClipboardText(segment);
+                    copiedCount += 1;
+                    copyHistoryBtn.textContent = `正在加入 ${copiedCount}/${writeOrder.length}`;
+                    if (copiedCount < writeOrder.length) {
+                        await delay(600);
+                    }
+                }
+                showToast(`已将 ${copiedCount} 个分段加入剪切板历史`);
+            } catch (error) {
+                showToast(`写入中断，已完成 ${copiedCount}/${writeOrder.length} 段`);
+            } finally {
+                copyHistoryBtn.textContent = originalText;
+                copyHistoryBtn.disabled = currentSegments.length === 0;
+                copyAllBtn.disabled = currentSegments.length === 0;
+            }
+        }
+
         document.getElementById('splitBtn').addEventListener('click', runSplit);
         document.getElementById('clearBtn').addEventListener('click', clearAll);
         inputText.addEventListener('input', () => {
@@ -811,6 +868,7 @@
         copyAllBtn.addEventListener('click', () => {
             copyText(currentSegments.join('\n\n'), '全部分段已复制');
         });
+        copyHistoryBtn.addEventListener('click', copySegmentsToHistory);
         window.addEventListener('click', (event) => {
             const changelogModal = document.getElementById('changelog-modal');
             const previewModal = document.getElementById('segment-preview-modal');

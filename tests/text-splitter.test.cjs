@@ -35,6 +35,11 @@ assert.ok(segments.every((segment) => segment.length <= 18));
 
 assert.throws(() => splitter.splitText('text', 0), /positive integer/);
 assert.throws(() => splitter.splitText('text', 2.5), /positive integer/);
+assert.deepStrictEqual(
+    splitter.getClipboardHistoryWriteOrder(['第一段', '第二段', '第三段']),
+    ['第三段', '第二段', '第一段']
+);
+assert.deepStrictEqual(splitter.getClipboardHistoryWriteOrder([]), []);
 
 const page = fs.readFileSync(path.resolve(__dirname, '../text-splitter.html'), 'utf8');
 const nav = fs.readFileSync(path.resolve(__dirname, '../nav.js'), 'utf8');
@@ -51,6 +56,7 @@ assert.match(page, /id="inputText"/);
 assert.match(page, /id="inputLineNumbers"/);
 assert.match(page, /id="splitBtn"/);
 assert.match(page, /id="copyAllBtn"/);
+assert.match(page, /id="copyHistoryBtn"/);
 assert.match(page, /id="resultList"/);
 assert.match(page, /class="editor-shell"/);
 assert.match(page, /class="segment-editor"/);
@@ -72,6 +78,11 @@ assert.match(page, /function closeSegmentPreview\(\)/);
 assert.match(page, /segmentLineNumbers\.scrollTop = segmentContent\.scrollTop/);
 assert.match(page, /const scrollPosition = \{ x: window\.scrollX, y: window\.scrollY \};/);
 assert.match(page, /window\.scrollTo\(scrollPosition\.x, scrollPosition\.y\)/);
+assert.match(page, /async function copySegmentsToHistory\(\)/);
+assert.match(page, /TextSplitter\.getClipboardHistoryWriteOrder\(currentSegments\)/);
+assert.match(page, /await delay\(600\)/);
+assert.match(page, /copyHistoryBtn\.addEventListener\('click', copySegmentsToHistory\)/);
+assert.match(page, /V1\.03/);
 assert.match(page, /class="version-info" onclick="showChangelog\(\)"/);
 assert.match(page, /🚀 版本更新说明/);
 assert.match(page, /V1\.00/);
