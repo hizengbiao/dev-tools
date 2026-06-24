@@ -716,7 +716,7 @@
         <div class="tool-title">
             <h1>文本转义转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.08</span>
+                <span>V1.09</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -821,6 +821,10 @@ java.lang.RuntimeException: test
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月24日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.09</div>
+                        <div class="changelog-desc">转为可读文本支持先合并纯字符串字面量拼接，再展开 \n、\t 等转义内容；包含变量时仍保留拼接边界。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.08</div>
                         <div class="changelog-desc">优化加引号复制：内容本身没有外层引号时仅在两边补充双引号，保留已有 \n、\t 等字面量转义文本。</div>
@@ -1136,8 +1140,45 @@ java.lang.RuntimeException: test
                 .replace(/\s+\.\.\.\s+(\d+\s+more)/g, '\n\t... $1');
         }
 
+        function getReadableDecodeSource(raw) {
+            const tokens = tokenizeStringExpression(raw);
+            if (!tokens.length || tokens.some((token) => token.type === 'other')) {
+                return raw;
+            }
+
+            let value = '';
+            let expectString = true;
+            let hasString = false;
+
+            for (const token of tokens) {
+                if (expectString) {
+                    if (token.type !== 'string') {
+                        return raw;
+                    }
+                    value += token.value;
+                    hasString = true;
+                    expectString = false;
+                    continue;
+                }
+
+                if (token.type === 'plus') {
+                    expectString = true;
+                    continue;
+                }
+
+                if (token.type === 'string') {
+                    value += token.value;
+                    continue;
+                }
+
+                return raw;
+            }
+
+            return hasString && !expectString ? value : raw;
+        }
+
         function decodeToReadableText(raw) {
-            const decoded = decodeCommonEscapes(raw);
+            const decoded = decodeCommonEscapes(getReadableDecodeSource(raw));
             return improveStackLikeLineBreaks(decoded);
         }
 
