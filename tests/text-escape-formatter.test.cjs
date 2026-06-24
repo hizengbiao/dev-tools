@@ -13,9 +13,10 @@ assert.match(page, /<script src="nav\.js" defer><\/script>/);
 assert.match(page, /<div class="container">/);
 assert.match(page, /<div class="tool-title">/);
 assert.match(page, /class="version-info" onclick="showChangelog\(\)"/);
-assert.match(page, /<span>V1\.06<\/span>/);
+assert.match(page, /<span>V1\.07<\/span>/);
+assert.match(page, /<div class="changelog-version">V1\.07<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.06<\/div>/);
-assert.match(page, /<div class="changelog-date">2026年6月24日<\/div>[\s\S]*?<div class="changelog-version">V1\.06<\/div>/);
+assert.match(page, /<div class="changelog-date">2026年6月24日<\/div>[\s\S]*?<div class="changelog-version">V1\.07<\/div>[\s\S]*?<div class="changelog-version">V1\.06<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.05<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.04<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.00<\/div>/);
@@ -127,6 +128,11 @@ assert.deepStrictEqual(
         { type: 'insert', text: '\n' },
         { type: 'equal', text: 'b' },
     ]
+);
+
+assert.strictEqual(
+    context.decodeToReadableText('"SQ#at com.huawei\\n"\n                + "\\tat com.mysql.ConnectionFactoryImpl\\n"'),
+    '"SQ#at com.huawei\n"\n                + "\tat com.mysql.ConnectionFactoryImpl\n"'
 );
 
 const largeDiff = plainSegments(context.buildDiffSegments('a'.repeat(1100), 'b'.repeat(1100)));
