@@ -15,6 +15,7 @@ assert.match(page, /<div class="tool-title">/);
 assert.match(page, /class="version-info" onclick="showChangelog\(\)"/);
 assert.match(page, /<span>V1\.06<\/span>/);
 assert.match(page, /<div class="changelog-version">V1\.06<\/div>/);
+assert.match(page, /<div class="changelog-date">2026年6月24日<\/div>[\s\S]*?<div class="changelog-version">V1\.06<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.05<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.04<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.00<\/div>/);
