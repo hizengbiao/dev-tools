@@ -13,7 +13,8 @@ assert.match(page, /<script src="nav\.js" defer><\/script>/);
 assert.match(page, /<div class="container">/);
 assert.match(page, /<div class="tool-title">/);
 assert.match(page, /class="version-info" onclick="showChangelog\(\)"/);
-assert.match(page, /<span>V1\.05<\/span>/);
+assert.match(page, /<span>V1\.06<\/span>/);
+assert.match(page, /<div class="changelog-version">V1\.06<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.05<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.04<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.00<\/div>/);
@@ -34,6 +35,7 @@ assert.match(page, /class="editor-stage"/);
 assert.match(page, /data-tooltip=/);
 assert.match(page, /function decodeToReadableText\(raw\)/);
 assert.match(page, /function encodeToEscapedString\(raw\)/);
+assert.match(page, /function decodeStringLiteralForMerge\(text\)/);
 assert.match(page, /function mergeConcatenatedStrings\(raw, mappings = \[\]\)/);
 assert.match(page, /function normalizeMappingPairs\(pairs\)/);
 assert.match(page, /function restoreMappedVariables\(raw, mappings\)/);
@@ -159,6 +161,11 @@ const jdbcSnippet = `"(jdbc:mysql://[^,\\\\s]+|jdbc:postgresql://[^,\\\\s]+|jdbc
 assert.strictEqual(
     context.mergeConcatenatedStrings(jdbcSnippet),
     '(jdbc:mysql://[^,\\s]+|jdbc:postgresql://[^,\\s]+|jdbc:tdsql-mysql://[^,\\s]+|jdbc:postgresql://[^,\\s]+|jdbc:gaussdb://[^,\\s]+|jdbc:opengauss://[^,\\s]+|jdbc:olap://[^,\\s]+|jdbc:oracle:(thin|oci):@[^,\\s]*|jdbc:sqlserver://[^,\\s]+)'
+);
+
+assert.strictEqual(
+    context.mergeConcatenatedStrings('"SQ#at com.huawei\\n" + "\\tat com.mysql.ConnectionFactoryImpl\\n"'),
+    'SQ#at com.huawei\\n\\tat com.mysql.ConnectionFactoryImpl\\n'
 );
 
 assert.strictEqual(

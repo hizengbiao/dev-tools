@@ -716,7 +716,7 @@
         <div class="tool-title">
             <h1>文本转义转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.05</span>
+                <span>V1.06</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -821,6 +821,10 @@ java.lang.RuntimeException: test
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月20日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.06</div>
+                        <div class="changelog-desc">合并拼接字符串时保留字符串字面量中的 \n、\t 等转义文本，仅处理引号和反斜杠边界，避免日志或堆栈片段被误展开。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.05</div>
                         <div class="changelog-desc">输入输出区域支持自动差异对比，以红色和绿色背景直接标记转换前后发生变化的内容。</div>
@@ -1104,6 +1108,15 @@ java.lang.RuntimeException: test
                 .replace(/\u0000/g, '\\');
         }
 
+        function decodeStringLiteralForMerge(text) {
+            const withoutQuotes = stripWrappedQuote(text);
+            return withoutQuotes
+                .replace(/\\\\/g, '\u0000')
+                .replace(/\\"/g, '"')
+                .replace(/\\'/g, "'")
+                .replace(/\u0000/g, '\\');
+        }
+
         function improveStackLikeLineBreaks(text) {
             return text
                 .replace(/\s+at\s+([a-zA-Z_$][\w$]*(?:\.[\w$]+)+\()/g, '\n\tat $1')
@@ -1179,7 +1192,7 @@ java.lang.RuntimeException: test
                     tokens.push({
                         type: 'string',
                         text: token.literal,
-                        value: decodeCommonEscapes(token.literal)
+                        value: decodeStringLiteralForMerge(token.literal)
                     });
                     index = token.end;
                     continue;
