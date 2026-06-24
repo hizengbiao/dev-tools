@@ -716,7 +716,7 @@
         <div class="tool-title">
             <h1>文本转义转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.07</span>
+                <span>V1.08</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -821,6 +821,10 @@ java.lang.RuntimeException: test
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月24日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.08</div>
+                        <div class="changelog-desc">优化加引号复制：内容本身没有外层引号时仅在两边补充双引号，保留已有 \n、\t 等字面量转义文本。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.07</div>
                         <div class="changelog-desc">修复转为可读文本处理多段字符串拼接时误删首尾引号的问题，仅在输入确实是单个完整字符串字面量时去除外层引号。</div>
@@ -1469,8 +1473,18 @@ java.lang.RuntimeException: test
             renderMappingRows();
         }
 
+        function formatQuotedCopyText(text) {
+            const value = String(text || '');
+            const trimmed = value.trim();
+            if (trimmed.length >= 2 && hasWrappedQuote(trimmed) && readQuotedString(trimmed, 0)?.end === trimmed.length) {
+                return value;
+            }
+
+            return `"${value}"`;
+        }
+
         function copyAsQuotedText(text) {
-            copyToClipboard(`"${encodeToEscapedString(text)}"`);
+            copyToClipboard(formatQuotedCopyText(text));
         }
 
         function copyToClipboard(text) {
