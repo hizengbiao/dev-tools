@@ -11,6 +11,7 @@ const script = [...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>
 
 assert.match(page, /<span>V1\.81<\/span>/);
 assert.match(page, /<div class="changelog-version">V1\.81<\/div>/);
+assert.match(page, /<div class="changelog-date">2026年6月25日<\/div>[\s\S]*?<div class="changelog-version">V1\.81<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年6月11日<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.80<\/div>/);
 assert.match(page, /function shouldSkipJsonRepair\(raw\)/);
