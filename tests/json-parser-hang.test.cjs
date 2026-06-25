@@ -9,7 +9,8 @@ const script = [...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>
     .map((match) => match[1])
     .join('\n');
 
-assert.match(page, /<span>V1\.80<\/span>/);
+assert.match(page, /<span>V1\.81<\/span>/);
+assert.match(page, /<div class="changelog-version">V1\.81<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年6月11日<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.80<\/div>/);
 assert.match(page, /function shouldSkipJsonRepair\(raw\)/);
@@ -97,4 +98,26 @@ assert.equal(elements.get('json-output').innerHTML, '');
 assert.equal(elements.get('error-msg').style.display, 'block');
 assert.match(elements.get('error-msg').textContent, /JSON|修复|格式/);
 
-console.log('json parser non-json guard passed');
+const truncatedNestedArray = `[
+    [
+        {
+            "id": 0,
+            "srcType": "ServiceUnit",
+            "data": "{\\"attributes\\":{\\"database_name\\":\\"db-0.cn_30100,db-1.cn_30100,db-2.cn_30100/db\\"},\\"aggregation\\":{\\"latest\\":\\"2.0\\",\\"latest_time\\":\\"2026-06-23 23:59:37\\"}}",
+            "disconnected": false`;
+
+const secondHarness = createHarness();
+secondHarness.elements.get('json-input').value = truncatedNestedArray;
+secondHarness.context.fixJson();
+
+assert.equal(secondHarness.elements.get('error-msg').style.display, 'none');
+const repaired = JSON.parse(secondHarness.elements.get('json-input').value);
+assert.equal(repaired[0][0].id, 0);
+assert.equal(repaired[0][0].srcType, 'ServiceUnit');
+assert.equal(repaired[0][0].disconnected, false);
+assert.equal(
+    JSON.parse(repaired[0][0].data).attributes.database_name,
+    'db-0.cn_30100,db-1.cn_30100,db-2.cn_30100/db'
+);
+
+console.log('json parser repair guards passed');

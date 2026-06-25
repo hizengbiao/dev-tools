@@ -786,7 +786,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V1.80</span>
+            <span>V1.81</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -821,6 +821,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月11日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.81</div>
+                        <div class="changelog-desc">修复增强：支持含字符串化 JSON 字段的截断多层数组自动补齐，修复时不再误展开字段内部的 \" 转义引号。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.80</div>
                         <div class="changelog-desc">稳定性修复：格式化非 JSON 的代码字符串拼接或正则片段时快速报错，不再进入 JSON 修复流程导致页面卡住。</div>
@@ -1450,7 +1454,7 @@
                 raw = raw.replace(/\\\r?\n/g, "");
 
                 // 2. Check if this looks like an escaped JSON string (has \" pattern)
-                if (raw.includes('\\"')) {
+                if (raw.includes('\\"') && !/^\s*[\[{]/.test(raw)) {
                     // Properly unescape by handling escape sequences in order
                     // Process each escape sequence: \\ -> \, \" -> ", \n -> newline, etc.
                     raw = raw.replace(/\\(.)/g, (match, char) => {
