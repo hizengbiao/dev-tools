@@ -28,14 +28,14 @@
 1. [x] `TODO-CORE-001` 增加版本更新说明日期校验测试
 2. [x] `TODO-TIME-001` 补齐时间戳工具批量转换
 3. [x] `TODO-URL-001` 将 URL 编解码扩展为 URL 参数分析器
-4. [ ] `TODO-CORE-002` 增加导航、首页、README 工具入口一致性校验
+4. [x] `TODO-CORE-002` 增加导航、首页、README 工具入口一致性校验
 5. [ ] `TODO-REGEX-001` 增加常用正则模板库
 
 ## 公共基础设施
 
 ### TODO-CORE-001：版本更新说明日期校验
 
-- 状态：`[ ]`
+- 状态：`[x]`
 - 优先级：`P0`
 - 类型：测试 / 质量保障
 - 目标：扫描所有带版本更新说明的工具页面，检查顶部版本号对应的 changelog 条目位于实际提交日期或指定当前日期分组下，避免新版本被放到旧日期下面。
@@ -58,11 +58,11 @@
   - `nav.js` 中的每个工具都能在首页找到入口。
   - `README.md` 和 `DEVELOPMENT.md` 都包含工具路径。
   - 测试输出遗漏位置。
-- 完成记录：待填写。
+- 完成记录：2026-06-26 已新增 `tests/tool-registry.test.cjs`，校验 `nav.js`、`index.html`、`README.md`、`DEVELOPMENT.md` 的工具入口一致性；已补齐 README 和开发手册中缺失的工具入口，并通过 `node tests\tool-registry.test.cjs`。
 
 ### TODO-CORE-003：抽取版本弹窗公共模块
 
-- 状态：`[x]`
+- 状态：`[ ]`
 - 优先级：`P1`
 - 类型：重构 / 可维护性
 - 目标：将各页面重复的版本按钮、弹窗打开关闭、点击遮罩关闭逻辑抽为公共模块。
@@ -71,7 +71,7 @@
   - 所有工具仍能打开版本更新说明。
   - 弹窗标题统一为 `🚀 版本更新说明`。
   - 相关页面测试通过。
-- 完成记录：2026-06-26 已在 `url-encoder.html` 中新增 URL 参数分析面板，支持解析协议、域名、端口、路径、Hash 和 Query 参数原始值/解码值；已更新 `tests/url-encoder.test.cjs` 并通过 `node tests\url-encoder.test.cjs`。
+- 完成记录：待填写。
 
 ### TODO-CORE-004：抽取行号编辑器公共能力
 
@@ -289,7 +289,7 @@
 
 ### TODO-URL-001：URL 参数分析器
 
-- 状态：`[ ]`
+- 状态：`[x]`
 - 优先级：`P1`
 - 类型：功能增强
 - 目标：在现有 URL 编解码页面中解析协议、域名、端口、路径、Hash、Query 参数。
@@ -298,7 +298,7 @@
   - 输入 URL 后自动展示结构化字段。
   - Query 参数表格展示 key、value、decode 后 value。
   - 非完整 URL 有清晰提示或降级解析。
-- 完成记录：待填写。
+- 完成记录：2026-06-26 已在 `url-encoder.html` 中新增 URL 参数分析面板，支持解析协议、域名、端口、路径、Hash 和 Query 参数原始值/解码值；已更新 `tests/url-encoder.test.cjs` 并通过 `node tests\url-encoder.test.cjs`。
 
 ### TODO-URL-002：Query 参数编辑和反向组装
 

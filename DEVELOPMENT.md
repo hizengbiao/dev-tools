@@ -16,10 +16,13 @@
 | **首页** | `index.html` | 工具箱入口，展示所有工具卡片。 | HTML/CSS |
 | **JSON 格式化** | `json-parser.html` | 支持格式化、压缩、修复、排序、折叠/展开。 | Vanilla JS |
 | **时间戳转换** | `timestamp-converter.html` | 时间戳与日期互转，支持动态时钟。 | Vanilla JS |
-| **URL 编解码** | `url-encoder.html` | URL Encode/Decode。 | Vanilla JS |
+| **URL 编解码** | `url-encoder.html` | URL Encode/Decode、输入输出差异对比和 URL 参数分析。 | Vanilla JS |
 | **Base64 编解码** | `base64-encoder.html` | 文本与文件的 Base64 转换。 | Vanilla JS |
+| **命名转换** | `text-case-converter.html` | 大小写、蛇形、驼峰、短横线等变量命名格式互转。 | Vanilla JS |
+| **文本转义转换工具** | `text_escape_formatter_final.html` | 转义文本与可读文本互转、拼接字符串合并和输入输出差异对比。 | Vanilla JS |
 | **文本智能拆分** | `text-splitter.html` | 按指定长度智能拆分文本，优先保留自然边界并支持逐段复制。 | Vanilla JS |
-| **Neon Timer** | `neon-timer/dist/` | 霓虹风格倒计时/秒表 (独立 App)。 | React + Vite |
+| **正则表达式测试** | `regex-tester.html` | 正则匹配、替换、分组高亮和可视化。 | Vanilla JS |
+| **Neon Timer** | `neon-timer/dist/index.html` | 霓虹风格倒计时/秒表 (独立 App)。 | React + Vite |
 
 **公共组件：**
 - **公共导航栏**: 由 `nav.js` 和 `nav.css` 统一管理，所有子页面均需引入。
@@ -53,12 +56,12 @@
 
 #### 步骤 3: 更新首页入口
 - 打开 `index.html`。
-- 在 `.grid` 容器中添加一个新的卡片 (`a.card`)：
+- 在 `.tools-grid` 容器中添加一个新的卡片 (`a.tool-card`)：
   ```html
-  <a href="new-tool.html" class="card">
-      <div class="icon">🔧</div>
-      <div class="title">新工具名称</div>
-      <div class="desc">简短的工具描述...</div>
+  <a href="new-tool.html" class="tool-card">
+      <span class="tool-icon">🔧</span>
+      <h2>新工具名称</h2>
+      <p>简短的工具描述...</p>
   </a>
   ```
 

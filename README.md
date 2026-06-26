@@ -9,11 +9,15 @@
 
 | 工具 | 描述 |
 | :--- | :--- |
+| [首页](index.html) | 工具箱入口页，集中展示所有可用工具。 |
 | [JSON 格式化工具](json-parser.html) | 支持格式化、压缩、修复、排序、折叠/展开。 |
 | [时间戳转换](timestamp-converter.html) | Unix 时间戳与日期在线互转，支持动态时钟。 |
-| [URL 编解码](url-encoder.html) | 快速 URL Encode/Decode。 |
+| [URL 编解码](url-encoder.html) | URL Encode/Decode、输入输出差异对比和 URL 参数分析。 |
 | [Base64 编解码](base64-encoder.html) | 支持文本和文件的 Base64 互相转换。 |
+| [命名转换](text-case-converter.html) | 支持变量名大小写、蛇形、驼峰、短横线等格式互转。 |
+| [文本转义转换工具](text_escape_formatter_final.html) | 支持转义文本、可读文本、拼接字符串合并和输入输出差异对比。 |
 | [文本智能拆分](text-splitter.html) | 按指定长度智能拆分长文本，优先保留自然语义边界并支持逐段复制。 |
+| [正则表达式测试](regex-tester.html) | 支持正则匹配、替换、分组高亮和正则表达式可视化。 |
 | [Neon Timer](neon-timer/dist/index.html) | 炫酷霓虹风格的倒计时与秒表应用。 |
 
 ## 📖 开发指南 (Development Guide)
