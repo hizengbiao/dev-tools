@@ -20,8 +20,18 @@ assert.match(page, /function buildDiffSegments\(original, result\)/);
 assert.match(page, /function renderDiff\(\)/);
 assert.match(page, /function syncHighlightScroll\(textarea, highlight, lineNumbers\)/);
 assert.match(page, /function updateLineNumbers\(textarea, lineNumbers\)/);
-assert.match(page, /<span>V1\.02<\/span>/);
-assert.match(page, /<div class="changelog-version">V1\.02<\/div>/);
+assert.match(page, /<span>V1\.03<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年6月26日<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>/);
+assert.match(page, /id="urlAnalysisPanel"/);
+assert.match(page, /id="urlAnalysisStatus"/);
+assert.match(page, /id="urlFieldProtocol"/);
+assert.match(page, /id="urlFieldHostname"/);
+assert.match(page, /id="urlFieldPort"/);
+assert.match(page, /id="urlFieldPathname"/);
+assert.match(page, /id="urlFieldHash"/);
+assert.match(page, /id="queryParamTable"/);
+assert.match(page, /function parseUrlInfo\(raw\)/);
+assert.match(page, /function renderUrlAnalysis\(\)/);
 
 const elements = new Map();
 function createElement(id = '') {
@@ -60,6 +70,7 @@ function element(id) {
 
 const context = {
     console,
+    URL,
     navigator: {
         clipboard: {
             writeText() {
@@ -122,6 +133,28 @@ assert.deepStrictEqual(
         { type: 'equal', text: 't' },
     ]
 );
+
+const parsedUrl = context.parseUrlInfo('https://example.com:8443/api/users?name=%E5%BC%A0%E4%B8%89&empty=&flag#top');
+assert.strictEqual(parsedUrl.ok, true);
+assert.strictEqual(parsedUrl.protocol, 'https:');
+assert.strictEqual(parsedUrl.hostname, 'example.com');
+assert.strictEqual(parsedUrl.port, '8443');
+assert.strictEqual(parsedUrl.pathname, '/api/users');
+assert.strictEqual(parsedUrl.hash, '#top');
+assert.deepStrictEqual(JSON.parse(JSON.stringify(parsedUrl.queryParams)), [
+    { key: 'name', value: '%E5%BC%A0%E4%B8%89', decodedKey: 'name', decodedValue: '张三' },
+    { key: 'empty', value: '', decodedKey: 'empty', decodedValue: '' },
+    { key: 'flag', value: '', decodedKey: 'flag', decodedValue: '' },
+]);
+
+const parsedRelativeUrl = context.parseUrlInfo('/api/users?page=1');
+assert.strictEqual(parsedRelativeUrl.ok, true);
+assert.strictEqual(parsedRelativeUrl.isRelative, true);
+assert.strictEqual(parsedRelativeUrl.pathname, '/api/users');
+assert.strictEqual(parsedRelativeUrl.queryParams[0].decodedValue, '1');
+
+const invalidUrl = context.parseUrlInfo('not a url with spaces');
+assert.strictEqual(invalidUrl.ok, false);
 
 elements.get('input-text').value = 'left';
 elements.get('output-text').value = 'right';

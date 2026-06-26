@@ -317,6 +317,71 @@
             background: #dafbe1;
         }
 
+        .url-analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .url-field {
+            border: 1px solid #d8dee4;
+            border-radius: 6px;
+            background: #f6f8fa;
+            padding: 10px;
+            min-width: 0;
+        }
+
+        .url-field-label {
+            display: block;
+            color: #57606a;
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+
+        .url-field-value {
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 13px;
+            word-break: break-all;
+            color: #24292f;
+        }
+
+        .url-analysis-status {
+            color: #57606a;
+            font-size: 13px;
+        }
+
+        .query-table-wrap {
+            overflow: auto;
+            border: 1px solid #d8dee4;
+            border-radius: 6px;
+        }
+
+        .query-param-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .query-param-table th,
+        .query-param-table td {
+            border-bottom: 1px solid #d8dee4;
+            padding: 8px 10px;
+            text-align: left;
+            vertical-align: top;
+            word-break: break-all;
+        }
+
+        .query-param-table th {
+            background: #f6f8fa;
+            color: #57606a;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .query-param-table tr:last-child td {
+            border-bottom: 0;
+        }
+
         @media (max-width: 900px) {
             .converter-workspace {
                 grid-template-columns: 1fr;
@@ -338,6 +403,10 @@
             .editor-shell {
                 height: 320px;
                 min-height: 320px;
+            }
+
+            .url-analysis-grid {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -502,7 +571,7 @@
         <div class="tool-title">
             <h1>URL 编解码</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.02</span>
+                <span>V1.03</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -547,6 +616,53 @@
                 </section>
             </div>
         </div>
+
+        <div id="urlAnalysisPanel" class="panel">
+            <div class="panel-header">
+                <h3>URL 参数分析</h3>
+                <span id="urlAnalysisStatus" class="url-analysis-status">输入 URL 后自动解析</span>
+            </div>
+            <div class="url-analysis-grid">
+                <div class="url-field">
+                    <span class="url-field-label">协议</span>
+                    <div id="urlFieldProtocol" class="url-field-value">-</div>
+                </div>
+                <div class="url-field">
+                    <span class="url-field-label">域名</span>
+                    <div id="urlFieldHostname" class="url-field-value">-</div>
+                </div>
+                <div class="url-field">
+                    <span class="url-field-label">端口</span>
+                    <div id="urlFieldPort" class="url-field-value">-</div>
+                </div>
+                <div class="url-field">
+                    <span class="url-field-label">路径</span>
+                    <div id="urlFieldPathname" class="url-field-value">-</div>
+                </div>
+                <div class="url-field">
+                    <span class="url-field-label">Hash</span>
+                    <div id="urlFieldHash" class="url-field-value">-</div>
+                </div>
+            </div>
+            <div class="query-table-wrap">
+                <table class="query-param-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>参数名</th>
+                            <th>原始值</th>
+                            <th>解码参数名</th>
+                            <th>解码值</th>
+                        </tr>
+                    </thead>
+                    <tbody id="queryParamTable">
+                        <tr>
+                            <td colspan="5">暂无 Query 参数</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <div id="toast">提示信息</div>
@@ -558,6 +674,13 @@
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年6月26日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.03</div>
+                        <div class="changelog-desc">新增 URL 参数分析器，自动拆解协议、域名、端口、路径、Hash 和 Query 参数。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月20日</div>
                     <div class="changelog-entry">
@@ -588,6 +711,13 @@
         const outputHighlight = document.getElementById('outputHighlight');
         const inputLineNumbers = document.getElementById('inputLineNumbers');
         const outputLineNumbers = document.getElementById('outputLineNumbers');
+        const urlAnalysisStatus = document.getElementById('urlAnalysisStatus');
+        const urlFieldProtocol = document.getElementById('urlFieldProtocol');
+        const urlFieldHostname = document.getElementById('urlFieldHostname');
+        const urlFieldPort = document.getElementById('urlFieldPort');
+        const urlFieldPathname = document.getElementById('urlFieldPathname');
+        const urlFieldHash = document.getElementById('urlFieldHash');
+        const queryParamTable = document.getElementById('queryParamTable');
 
         function appendDiffSegment(segments, type, text) {
             if (!text) return;
@@ -735,10 +865,14 @@
             syncHighlightScroll(outputArea, outputHighlight, outputLineNumbers);
         }
 
-        inputArea.addEventListener('input', renderDiff);
+        inputArea.addEventListener('input', () => {
+            renderDiff();
+            renderUrlAnalysis();
+        });
         inputArea.addEventListener('scroll', () => syncHighlightScroll(inputArea, inputHighlight, inputLineNumbers));
         outputArea.addEventListener('scroll', () => syncHighlightScroll(outputArea, outputHighlight, outputLineNumbers));
         renderDiff();
+        renderUrlAnalysis();
 
         function showChangelog() {
             document.getElementById('changelog-modal').style.display = 'flex';
@@ -754,6 +888,103 @@
                 closeChangelog();
             }
         });
+
+        function safeDecodeQueryComponent(value) {
+            try {
+                return decodeURIComponent(String(value).replace(/\+/g, ' '));
+            } catch (error) {
+                return String(value);
+            }
+        }
+
+        function parseQueryParams(search) {
+            const raw = search.startsWith('?') ? search.slice(1) : search;
+            if (!raw) return [];
+            return raw.split('&').filter(part => part.length > 0).map((part) => {
+                const equalIndex = part.indexOf('=');
+                const key = equalIndex >= 0 ? part.slice(0, equalIndex) : part;
+                const value = equalIndex >= 0 ? part.slice(equalIndex + 1) : '';
+                return {
+                    key,
+                    value,
+                    decodedKey: safeDecodeQueryComponent(key),
+                    decodedValue: safeDecodeQueryComponent(value),
+                };
+            });
+        }
+
+        function parseUrlInfo(raw) {
+            const source = String(raw || '').trim();
+            if (!source) {
+                return { ok: false, error: '请输入 URL' };
+            }
+            if (!/^[a-z][a-z\d+.-]*:\/\//i.test(source) && !source.startsWith('/')) {
+                return { ok: false, error: '请输入完整 URL，或以 / 开头的相对 URL' };
+            }
+            try {
+                const isRelative = source.startsWith('/');
+                const url = isRelative ? new URL(source, 'https://local.example') : new URL(source);
+                return {
+                    ok: true,
+                    isRelative,
+                    protocol: isRelative ? '相对路径' : url.protocol,
+                    hostname: isRelative ? '-' : url.hostname,
+                    port: url.port || '-',
+                    pathname: url.pathname || '/',
+                    hash: url.hash || '-',
+                    queryParams: parseQueryParams(url.search),
+                };
+            } catch (error) {
+                return { ok: false, error: 'URL 格式无效' };
+            }
+        }
+
+        function setUrlField(element, value) {
+            element.textContent = value || '-';
+        }
+
+        function renderQueryParams(params) {
+            if (!params.length) {
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+                cell.colSpan = 5;
+                cell.textContent = '暂无 Query 参数';
+                row.appendChild(cell);
+                queryParamTable.replaceChildren(row);
+                return;
+            }
+            const rows = params.map((param, index) => {
+                const row = document.createElement('tr');
+                [index + 1, param.key, param.value, param.decodedKey, param.decodedValue].forEach((value) => {
+                    const cell = document.createElement('td');
+                    cell.textContent = String(value);
+                    row.appendChild(cell);
+                });
+                return row;
+            });
+            queryParamTable.replaceChildren(...rows);
+        }
+
+        function renderUrlAnalysis() {
+            const result = parseUrlInfo(inputArea.value);
+            if (!result.ok) {
+                urlAnalysisStatus.textContent = result.error;
+                [urlFieldProtocol, urlFieldHostname, urlFieldPort, urlFieldPathname, urlFieldHash].forEach((field) => {
+                    field.textContent = '-';
+                });
+                renderQueryParams([]);
+                return;
+            }
+            setUrlField(urlFieldProtocol, result.protocol);
+            setUrlField(urlFieldHostname, result.hostname);
+            setUrlField(urlFieldPort, result.port);
+            setUrlField(urlFieldPathname, result.pathname);
+            setUrlField(urlFieldHash, result.hash);
+            renderQueryParams(result.queryParams);
+            urlAnalysisStatus.textContent = result.queryParams.length
+                ? `已解析 ${result.queryParams.length} 个 Query 参数`
+                : 'URL 中没有 Query 参数';
+        }
 
         function doEncode() {
             const val = inputArea.value;
@@ -791,6 +1022,7 @@
             inputArea.value = outputArea.value;
             outputArea.value = input;
             renderDiff();
+            renderUrlAnalysis();
             showToast("已交换输入输出");
         }
 
@@ -798,6 +1030,7 @@
             inputArea.value = '';
             outputArea.value = '';
             renderDiff();
+            renderUrlAnalysis();
             inputArea.focus();
         }
 
