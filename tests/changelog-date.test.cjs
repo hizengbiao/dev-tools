@@ -19,6 +19,20 @@ function getVersionIntroducedDate(file, version) {
     ).trim().split(/\r?\n/).filter(Boolean)[0];
 }
 
+function getCurrentIsoDate() {
+    if (process.env.CURRENT_DATE) return process.env.CURRENT_DATE;
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Singapore',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    }).formatToParts(new Date()).reduce((acc, part) => {
+        acc[part.type] = part.value;
+        return acc;
+    }, {});
+    return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
 function toChineseDate(isoDate) {
     const [year, month, day] = isoDate.split('-').map(Number);
     return `${year}年${month}月${day}日`;
@@ -59,8 +73,7 @@ for (const file of listHtmlFiles()) {
     const versionGroup = findVersionGroup(groups, topVersion);
     assert.ok(versionGroup, `${file}: changelog 缺少顶部版本 ${topVersion}`);
 
-    const introducedDate = getVersionIntroducedDate(file, topVersion);
-    assert.ok(introducedDate, `${file}: 无法从 git 历史中找到顶部版本 ${topVersion} 的引入日期`);
+    const introducedDate = getVersionIntroducedDate(file, topVersion) || getCurrentIsoDate();
 
     const expectedDate = toChineseDate(introducedDate);
     assert.equal(

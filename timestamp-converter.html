@@ -201,6 +201,19 @@
             border-radius: 6px 6px 0 0;
         }
 
+        .panel {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-top: none;
+            padding: 25px;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+        .panel.hidden {
+            display: none;
+        }
+
         /* Conversion Rows */
         .io-group {
             display: flex;
@@ -227,6 +240,7 @@
         }
 
         input[type="text"],
+        textarea,
         select {
             width: 100%;
             padding: 8px 12px;
@@ -239,13 +253,54 @@
         }
 
         input[type="text"]:focus,
+        textarea:focus,
         select:focus {
             border-color: #0969da;
             box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.3);
         }
 
+        textarea {
+            min-height: 180px;
+            resize: vertical;
+            line-height: 1.6;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        }
+
         .select-wrapper {
             width: 140px;
+        }
+
+        .batch-toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .batch-toolbar .select-wrapper {
+            width: 180px;
+        }
+
+        .batch-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 16px;
+        }
+
+        .batch-field-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #24292f;
+        }
+
+        .batch-summary {
+            color: #57606a;
+            font-size: 13px;
         }
 
         .action-btn {
@@ -300,6 +355,14 @@
 
             .select-wrapper,
             .action-btn {
+                width: 100%;
+            }
+
+            .batch-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .batch-toolbar .select-wrapper {
                 width: 100%;
             }
         }
@@ -426,7 +489,7 @@
         <div class="tool-title">
             <h1>时间戳转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.00</span>
+                <span>V1.01</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -448,12 +511,11 @@
         <!-- Conversion Card -->
         <div class="card" style="padding: 0; border: none; background: none; box-shadow: none;">
             <div class="tabs">
-                <button class="tab-btn active">单个转换</button>
-                <button class="tab-btn" style="cursor: not-allowed; opacity: 0.6;">批量转换 (Coming Soon)</button>
+                <button id="tab-single" class="tab-btn active" onclick="switchConversionTab('single')">单个转换</button>
+                <button id="tab-batch" class="tab-btn" onclick="switchConversionTab('batch')">批量转换</button>
             </div>
 
-            <div
-                style="background: white; border: 1px solid var(--border-color); border-top: none; padding: 25px; border-radius: 0 0 8px 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+            <div id="panel-single" class="panel">
 
                 <!-- Timestamp to Date -->
                 <div class="io-group">
@@ -506,6 +568,46 @@
                 </div>
 
             </div>
+
+            <div id="panel-batch" class="panel hidden">
+                <div class="batch-toolbar">
+                    <div class="select-wrapper">
+                        <select id="batch-mode" title="选择批量转换方向">
+                            <option value="timestamp-to-date">时间戳转日期时间</option>
+                            <option value="date-to-timestamp">日期时间转时间戳</option>
+                        </select>
+                    </div>
+                    <div class="select-wrapper" style="width: 120px;">
+                        <select id="batch-unit" title="输入或输出的时间戳单位">
+                            <option value="s">秒(s)</option>
+                            <option value="ms">毫秒(ms)</option>
+                        </select>
+                    </div>
+                    <div class="select-wrapper">
+                        <select id="batch-timezone" title="批量转换使用的时区">
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+                    <button class="action-btn" onclick="convertBatch()">批量转换</button>
+                    <button class="btn" onclick="copyBatchOutput()">📋 复制结果</button>
+                </div>
+                <div class="batch-grid">
+                    <div>
+                        <div class="batch-field-header">
+                            <span>批量输入</span>
+                            <span class="batch-summary">每行一条，空行会跳过</span>
+                        </div>
+                        <textarea id="batch-input" placeholder="示例：&#10;1710000000&#10;1710000060&#10;或：&#10;2024-03-10 00:00:00"></textarea>
+                    </div>
+                    <div>
+                        <div class="batch-field-header">
+                            <span>批量结果</span>
+                            <span id="batch-summary" class="batch-summary">等待转换</span>
+                        </div>
+                        <textarea id="batch-output" readonly placeholder="批量转换结果会显示在这里..." style="background-color: #f6f8fa;"></textarea>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -518,6 +620,13 @@
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年6月26日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.01</div>
+                        <div class="changelog-desc">补齐批量转换功能，支持多行时间戳与日期时间互转，并逐行输出错误行号。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月9日</div>
                     <div class="changelog-entry">
@@ -573,13 +682,19 @@
         const elTz2 = document.getElementById('timezone-select-2');
         const elTsOutput = document.getElementById('ts-output');
         const elDateUnit = document.getElementById('date-unit');
+        const elBatchMode = document.getElementById('batch-mode');
+        const elBatchUnit = document.getElementById('batch-unit');
+        const elBatchTz = document.getElementById('batch-timezone');
+        const elBatchInput = document.getElementById('batch-input');
+        const elBatchOutput = document.getElementById('batch-output');
+        const elBatchSummary = document.getElementById('batch-summary');
 
         // --- Init ---
         function init() {
             // Populate Timezones
             const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-            [elTz1, elTz2].forEach(select => {
+            [elTz1, elTz2, elBatchTz].forEach(select => {
                 timezones.forEach(tz => {
                     const opt = document.createElement('option');
                     opt.value = tz.value;
@@ -598,6 +713,14 @@
             const now = new Date();
             elTsInput.value = Math.floor(now.getTime() / 1000);
             elDateInput.value = formatDate(now, 'Asia/Shanghai');
+        }
+
+        function switchConversionTab(tab) {
+            const isBatch = tab === 'batch';
+            document.getElementById('tab-single').classList.toggle('active', !isBatch);
+            document.getElementById('tab-batch').classList.toggle('active', isBatch);
+            document.getElementById('panel-single').classList.toggle('hidden', isBatch);
+            document.getElementById('panel-batch').classList.toggle('hidden', !isBatch);
         }
 
         // --- Live Clock ---
@@ -650,28 +773,12 @@
             let val = elTsInput.value.trim();
             if (!val) return;
 
-            // Simple validation
-            if (!/^\d+$/.test(val)) {
-                showToast("请输入有效的数字时间戳");
+            const result = convertTimestampLineToDate(val, elTsUnit.value, elTz1.value);
+            if (!result.ok) {
+                showToast(result.error);
                 return;
             }
-
-            let ts = parseInt(val, 10);
-            const unit = elTsUnit.value;
-
-            // Convert to ms for Date object
-            if (unit === 's') {
-                ts *= 1000;
-            }
-
-            const date = new Date(ts);
-            if (isNaN(date.getTime())) {
-                showToast("无效的时间戳");
-                return;
-            }
-
-            const tz = elTz1.value;
-            elDateOutput.value = formatDate(date, tz);
+            elDateOutput.value = result.value;
         }
 
         // --- Logic: Date -> Timestamp ---
@@ -679,96 +786,12 @@
             let val = elDateInput.value.trim();
             if (!val) return;
 
-            // Try to parse. User might input YYYY-MM-DD HH:mm:ss
-            // We need to interpret this string AS the selected timezone.
-            // JS Date.parse assumes local or UTC if ISO.
-
-            // Strategy: Create a date object that represents the same content in UTC, then shift it.
-            // Or use libraries. Since vanilla, we'll try a trick or just use formatting comparisons.
-            // Best vanilla way: parse as string, create date, then adjust for timezone offset.
-
-            // However, `new Date("2023-01-01 12:00:00")` is typically treated as local time in string parsing.
-            // Let's rely on constructing a date object and then using standard methods.
-
-            const tz = elTz2.value;
-
-            // 1. naive parse (browser local)
-            let date = new Date(val);
-            if (isNaN(date.getTime())) {
-                showToast("无效的日期格式，请使用 YYYY-MM-DD HH:mm:ss");
+            const result = convertDateLineToTimestamp(val, elDateUnit.value, elTz2.value);
+            if (!result.ok) {
+                showToast(result.error);
                 return;
             }
-
-            // The user INTENDED 'val' to be in 'tz'.
-            // But 'date' interprets 'val' as Local (usually).
-            // We need to find the specific UTC timestamp that, when displayed in 'tz', matches 'val'.
-
-            // Complex without Moment.js/Day.js. 
-            // Simplified approach for typical inputs:
-            // 1. Parse string manually to get components.
-            // 2. Create version in UTC.
-            // 3. Subtract offset?
-
-            // Let's try to assume input is standard format 
-            // We can treat the input string as ISO by replacing space with T
-            // "2023-01-01 12:00:00" -> "2023-01-01T12:00:00" -> Local time logic applies.
-
-            // Hacky reliable way for no-dep:
-            // Utilize toLocaleString to binary search or offset search? Too slow.
-            // Let's stick strictly to what the browser gives or just warn user.
-
-            // Actually, we can use `new Date(Date.UTC(...))` if we parse the numbers manually.
-            // 2024-12-30 00:33:58
-            const match = val.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})$/);
-            if (match) {
-                const [_, y, m, d, h, min, s] = match;
-                // Construct UTC date with these components
-                // basically stating: "This time exists in UTC... wait no"
-
-                // We want: Time in TZ = y,m,d...
-                // Only reliable lightweight way is if we only support UTC and Local. 
-                // Supporting arbitrary TZ like 'Asia/Shanghai' without a library is painful in vanilla JS because we can't easily "Set" time in a timezone.
-
-                // Workaround: 
-                // We will accept the input, create a Date (which uses local), 
-                // Then calculate the difference between Local-String and Target-TZ-String and adjust.
-
-                const tentative = new Date(val.replace(' ', 'T')); // Local interpretation
-                const targetString = tentative.toLocaleString('en-US', { timeZone: tz, hour12: false });
-
-                // This doesn't help us find the timestamp. 
-
-                // Let's fallback to: Treat input as Local if TZ is Local, UTC if UTC.
-                // For "Asia/Shanghai" specifically, if user is IN Shanghai, it works.
-                // If user is elsewhere, it might be off.
-
-                // Given constraints and typical dev tool usage, we can assume standard Date parsing for now unless we add a library or heavy polyfill.
-                // Let's warn if timezone !== local.
-
-                // Actually, let's just use the current browser behavior which is usually Local.
-                // If the user selects a different timezone, we can't easily respect it for INPUT without a library.
-                // *Self-Correction*: The screenshot shows a timezone selector for input.
-                // I will ignore the timezone selector for input parsing for now or just treat as local, 
-                // OR add a simplified offset if easy (e.g. +8 for Shanghai).
-
-                // Let's try a simple manual offset for Shanghai (UTC+8) since it's the main use case.
-                if (tz === 'Asia/Shanghai') {
-                    // Create UTC date from components
-                    const utc = Date.UTC(y, m - 1, d, h, min, s);
-                    // Subtract 8 hours to get the timestamp (since input was +8)
-                    const ts = utc - (8 * 60 * 60 * 1000);
-                    outputResult(ts);
-                    return;
-                }
-                if (tz === 'UTC') {
-                    const ts = Date.UTC(y, m - 1, d, h, min, s);
-                    outputResult(ts);
-                    return;
-                }
-            }
-
-            // Fallback for non-regex match or other TZs
-            outputResult(date.getTime());
+            elTsOutput.value = result.value;
         }
 
         function outputResult(ms) {
@@ -782,8 +805,7 @@
 
         // --- Helpers ---
         function formatDate(date, timezone) {
-            // "2025-12-30 00:33:58" format
-            return date.toLocaleString('zh-CN', {
+            const parts = new Intl.DateTimeFormat('en-US', {
                 timeZone: timezone,
                 year: 'numeric',
                 month: '2-digit',
@@ -791,9 +813,154 @@
                 hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit',
-                hour12: false
-            }).replace(/\//g, '-');
-            // Note: zh-CN in Chrome produces yyyy/mm/dd. Replace / with -
+                hourCycle: 'h23'
+            }).formatToParts(date).reduce((acc, part) => {
+                acc[part.type] = part.value;
+                return acc;
+            }, {});
+            return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second}`;
+        }
+
+        function parseDateTimeParts(value) {
+            const match = String(value).trim().match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})$/);
+            if (!match) return null;
+            const [, y, m, d, h, min, s] = match;
+            const parts = {
+                year: Number(y),
+                month: Number(m),
+                day: Number(d),
+                hour: Number(h),
+                minute: Number(min),
+                second: Number(s)
+            };
+            if (
+                parts.month < 1 || parts.month > 12 ||
+                parts.day < 1 || parts.day > 31 ||
+                parts.hour > 23 || parts.minute > 59 || parts.second > 59
+            ) {
+                return null;
+            }
+            return parts;
+        }
+
+        function getTimezoneOffsetMs(date, timezone) {
+            const parts = new Intl.DateTimeFormat('en-US', {
+                timeZone: timezone,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hourCycle: 'h23'
+            }).formatToParts(date).reduce((acc, part) => {
+                acc[part.type] = part.value;
+                return acc;
+            }, {});
+            const asUtc = Date.UTC(
+                Number(parts.year),
+                Number(parts.month) - 1,
+                Number(parts.day),
+                Number(parts.hour),
+                Number(parts.minute),
+                Number(parts.second)
+            );
+            return asUtc - date.getTime();
+        }
+
+        function zonedDateTimeToUtcMs(parts, timezone) {
+            const utcGuess = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
+            let offset = getTimezoneOffsetMs(new Date(utcGuess), timezone);
+            let utcMs = utcGuess - offset;
+            const nextOffset = getTimezoneOffsetMs(new Date(utcMs), timezone);
+            if (nextOffset !== offset) {
+                utcMs = utcGuess - nextOffset;
+            }
+            return utcMs;
+        }
+
+        function convertTimestampLineToDate(value, unit, timezone) {
+            const raw = String(value).trim();
+            if (!/^\d+$/.test(raw)) {
+                return { ok: false, error: '无效的数字时间戳' };
+            }
+            if (unit === 's' && raw.length > 10) {
+                return { ok: false, error: '秒级时间戳长度异常，请切换为毫秒或修正输入' };
+            }
+            if (unit === 'ms' && raw.length < 11) {
+                return { ok: false, error: '毫秒级时间戳长度异常，请切换为秒或修正输入' };
+            }
+            let timestamp = Number(raw);
+            if (!Number.isSafeInteger(timestamp)) {
+                return { ok: false, error: '时间戳超出安全整数范围' };
+            }
+            if (unit === 's') timestamp *= 1000;
+            const date = new Date(timestamp);
+            if (Number.isNaN(date.getTime())) {
+                return { ok: false, error: '无效的时间戳' };
+            }
+            return { ok: true, value: formatDate(date, timezone) };
+        }
+
+        function convertDateLineToTimestamp(value, unit, timezone) {
+            const parts = parseDateTimeParts(value);
+            if (!parts) {
+                return { ok: false, error: '无效的日期时间格式，请使用 YYYY-MM-DD HH:mm:ss' };
+            }
+            const utcMs = zonedDateTimeToUtcMs(parts, timezone);
+            return {
+                ok: true,
+                value: unit === 's' ? String(Math.floor(utcMs / 1000)) : String(utcMs)
+            };
+        }
+
+        function convertBatchLines(raw, converter) {
+            const output = [];
+            let successCount = 0;
+            let errorCount = 0;
+            String(raw).split(/\r?\n/).forEach((line, index) => {
+                if (!line.trim()) return;
+                const result = converter(line);
+                if (result.ok) {
+                    successCount += 1;
+                    output.push(`${index + 1}. ${result.value}`);
+                } else {
+                    errorCount += 1;
+                    output.push(`${index + 1}. 错误：${result.error}`);
+                }
+            });
+            return {
+                text: output.join('\n'),
+                successCount,
+                errorCount
+            };
+        }
+
+        function convertBatchTimestampsToDates(raw, unit, timezone) {
+            return convertBatchLines(raw, (line) => convertTimestampLineToDate(line, unit, timezone));
+        }
+
+        function convertBatchDatesToTimestamps(raw, unit, timezone) {
+            return convertBatchLines(raw, (line) => convertDateLineToTimestamp(line, unit, timezone));
+        }
+
+        function convertBatch() {
+            const result = elBatchMode.value === 'timestamp-to-date'
+                ? convertBatchTimestampsToDates(elBatchInput.value, elBatchUnit.value, elBatchTz.value)
+                : convertBatchDatesToTimestamps(elBatchInput.value, elBatchUnit.value, elBatchTz.value);
+            elBatchOutput.value = result.text;
+            elBatchSummary.textContent = `成功 ${result.successCount} 行，错误 ${result.errorCount} 行`;
+            if (!result.text) {
+                showToast('请输入需要批量转换的内容');
+            }
+        }
+
+        function copyBatchOutput() {
+            if (!elBatchOutput.value) {
+                showToast('没有可复制的批量结果');
+                return;
+            }
+            copyText(elBatchOutput.value);
         }
 
         function copyText(text) {
