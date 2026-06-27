@@ -10,6 +10,7 @@ assert.match(page, /onclick="swapInputOutput\(\)"/);
 assert.match(page, /class="converter-workspace"/);
 assert.match(page, /class="editor-shell"/);
 assert.match(page, /<script src="editor-lines\.js"><\/script>/);
+assert.match(page, /<script src="diff-viewer\.js"><\/script>/);
 assert.match(page, /id="inputHighlight"/);
 assert.match(page, /id="outputHighlight"/);
 assert.match(page, /id="inputLineNumbers"/);
@@ -82,6 +83,24 @@ const context = {
         },
         syncLineNumberScroll(textarea, lineNumbers) {
             lineNumbers.scrollTop = textarea.scrollTop;
+        },
+    },
+    DiffViewer: {
+        buildDiffSegments(original, result) {
+            if (original === result) {
+                return original ? [{ type: 'equal', text: original }] : [];
+            }
+            const source = fs.readFileSync(path.resolve(__dirname, '../diff-viewer.js'), 'utf8');
+            const diffContext = { window: {}, module: { exports: {} } };
+            diffContext.globalThis = diffContext;
+            vm.runInNewContext(source, diffContext);
+            return diffContext.module.exports.buildDiffSegments(original, result);
+        },
+        createDiffNode(documentRef, text, className = '') {
+            const span = documentRef.createElement('span');
+            span.textContent = text;
+            span.className = className;
+            return span;
         },
     },
     navigator: {

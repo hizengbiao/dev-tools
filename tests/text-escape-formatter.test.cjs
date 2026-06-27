@@ -12,6 +12,7 @@ assert.match(page, /<link rel="stylesheet" href="nav\.css">/);
 assert.match(page, /<script src="nav\.js" defer><\/script>/);
 assert.match(page, /<script src="changelog\.js"><\/script>/);
 assert.match(page, /<script src="editor-lines\.js"><\/script>/);
+assert.match(page, /<script src="diff-viewer\.js"><\/script>/);
 assert.match(page, /<div class="container">/);
 assert.match(page, /<div class="tool-title">/);
 assert.match(page, /class="version-info" onclick="showChangelog\(\)"/);
@@ -97,6 +98,21 @@ const context = {
         },
         syncLineNumberScroll(textarea, lineNumbers) {
             lineNumbers.scrollTop = textarea.scrollTop;
+        },
+    },
+    DiffViewer: {
+        buildDiffSegments(original, result) {
+            const source = fs.readFileSync(path.resolve(__dirname, '../diff-viewer.js'), 'utf8');
+            const diffContext = { window: {}, module: { exports: {} } };
+            diffContext.globalThis = diffContext;
+            vm.runInNewContext(source, diffContext);
+            return diffContext.module.exports.buildDiffSegments(original, result);
+        },
+        createDiffNode(documentRef, text, className = '') {
+            const span = documentRef.createElement('span');
+            span.textContent = text;
+            span.className = className;
+            return span;
         },
     },
     navigator: {},
