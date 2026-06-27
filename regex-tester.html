@@ -226,6 +226,29 @@
             margin: 0;
         }
 
+        .template-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 10px;
+            align-items: end;
+        }
+
+        .template-select {
+            width: 100%;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            padding: 9px 10px;
+            background: #fff;
+            color: #24292f;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .template-select:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.25);
+        }
+
         .flag-tooltip {
             position: fixed;
             z-index: 2500;
@@ -1010,6 +1033,10 @@
             .visualizer-view {
                 padding: 12px;
             }
+
+            .template-row {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -1019,7 +1046,7 @@
         <div class="tool-title">
             <h1>正则表达式测试</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.07</span>
+                <span>V1.08</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -1046,6 +1073,17 @@
                 </section>
 
                 <section class="panel control-panel">
+                    <div class="field">
+                        <label for="templateSelect">常用模板</label>
+                        <div class="template-row">
+                            <select id="templateSelect" class="template-select">
+                                <option value="">选择模板后填入示例、规则和推荐标志</option>
+                            </select>
+                            <button class="btn" id="applyTemplateBtn" type="button">应用模板</button>
+                        </div>
+                        <p id="templateDescription" class="field-help">模板只在选择或点击应用时覆盖内容，手动输入不会被自动改写。</p>
+                    </div>
+
                     <div class="field">
                         <label for="patternInput">匹配规则</label>
                         <div class="pattern-row">
@@ -1177,6 +1215,13 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date-group">
+                    <div class="changelog-date">2026年6月27日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.08</div>
+                        <div class="changelog-desc">新增常用正则模板库，可一键填入手机号、URL、JDBC、IP、邮箱、日志时间和异常堆栈示例。</div>
+                    </div>
+                </div>
+                <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月19日</div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.07</div>
@@ -1235,6 +1280,8 @@
         const highlightPreview = document.getElementById('highlightPreview');
         const matchCount = document.getElementById('matchCount');
         const statusText = document.getElementById('statusText');
+        const templateSelect = document.getElementById('templateSelect');
+        const templateDescription = document.getElementById('templateDescription');
         const flagTooltip = document.getElementById('flagTooltip');
         const toast = document.getElementById('toast');
         const railroadView = document.getElementById('railroadView');
@@ -1263,6 +1310,72 @@
             s: document.getElementById('flagDotAll'),
             u: document.getElementById('flagUnicode')
         };
+
+        const regexTemplates = [
+            {
+                id: 'phone',
+                name: '手机号脱敏',
+                description: '匹配中国大陆手机号，并用替换文本保留前 4 位和后 4 位。',
+                sample: '13800138000\n15912345678\n18600001111\n19999999999\n14712345678',
+                pattern: '^(1[3-9]\\d{2})\\d{3}(\\d{4})$',
+                replacement: '$1***$2',
+                flags: 'gm'
+            },
+            {
+                id: 'url',
+                name: 'URL 地址',
+                description: '匹配 http 或 https URL，适合从日志、配置和文档中提取链接。',
+                sample: '官网：https://example.com/docs?id=100\n本地：http://localhost:8080/api/users\n无效：ftp://example.com/file',
+                pattern: '\\bhttps?:\\/\\/[^\\s"\'<>]+',
+                replacement: '[$&]',
+                flags: 'gm'
+            },
+            {
+                id: 'jdbc',
+                name: 'JDBC 连接串',
+                description: '匹配常见 JDBC URL，包括 MySQL、PostgreSQL、Oracle、SQL Server 等。',
+                sample: 'URL: jdbc:mysql://demo.mysql.dbdns.cn:6446/schema?useUnicode=true&characterEncoding=utf8&useSSL=false&connectTimeout=10000&socketTimeout=600000\nuser: somdbdev',
+                pattern: '(jdbc:mysql://[^,\\s]+|jdbc:postgresql://[^,\\s]+|jdbc:tdsql-mysql://[^,\\s]+|jdbc:gaussdb://[^,\\s]+|jdbc:opengauss://[^,\\s]+|jdbc:olap://[^,\\s]+|jdbc:oracle:(thin|oci):@[^,\\s]*|jdbc:sqlserver://[^,\\s]+)',
+                replacement: '$1',
+                flags: 'gm'
+            },
+            {
+                id: 'ipv4',
+                name: 'IPv4 地址',
+                description: '匹配 0.0.0.0 到 255.255.255.255 范围内的 IPv4 地址。',
+                sample: 'server 10.85.146.143:21001\nbackup 192.168.1.10\ninvalid 999.1.1.1',
+                pattern: '\\b(?:(?:25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)\\.){3}(?:25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)\\b',
+                replacement: '$&',
+                flags: 'gm'
+            },
+            {
+                id: 'email',
+                name: '邮箱地址',
+                description: '匹配常见邮箱格式，适合批量提取联系人邮箱。',
+                sample: 'owner: dev@example.com\nnotify: ops-team@corp.example.cn\nbad: user@@example',
+                pattern: '\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b',
+                replacement: '$&',
+                flags: 'gmi'
+            },
+            {
+                id: 'log-time',
+                name: '日志时间',
+                description: '匹配常见日志时间戳，例如 2026-06-26 10:30:45,123。',
+                sample: '2026-06-26 10:30:45 INFO started\n2026-06-26 10:31:12,345 ERROR failed',
+                pattern: '\\b\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}(?:[.,]\\d{3})?\\b',
+                replacement: '[$&]',
+                flags: 'gm'
+            },
+            {
+                id: 'stack',
+                name: '异常堆栈行',
+                description: '匹配 Java 堆栈里的 at 行，便于提取类名、方法和行号。',
+                sample: 'java.lang.RuntimeException: failed\n\tat com.mysql.ConnectionFactoryImpl.create(ConnectionFactoryImpl.java:87)\n\tat com.huawei.demo.Main.main(Main.java:21)',
+                pattern: '^\\s*at\\s+([\\w.$]+)\\(([^:()]+):(\\d+)\\)$',
+                replacement: '$1 第 $3 行',
+                flags: 'gm'
+            }
+        ];
 
         function escapeHtml(value) {
             return String(value)
@@ -1351,6 +1464,42 @@
         function getNodeTitle(node) {
             const original = node.raw ? `原始片段：${node.raw}\n` : '';
             return `${original}${describeVisualizerNode(node)}`;
+        }
+
+        function populateTemplateSelect() {
+            regexTemplates.forEach((template) => {
+                const option = document.createElement('option');
+                option.value = template.id;
+                option.textContent = template.name;
+                templateSelect.appendChild(option);
+            });
+        }
+
+        function getSelectedTemplate() {
+            return regexTemplates.find((template) => template.id === templateSelect.value) || null;
+        }
+
+        function setRegexFlags(flags) {
+            Object.entries(flagControls).forEach(([flag, control]) => {
+                control.checked = flags.includes(flag);
+            });
+        }
+
+        function applySelectedTemplate() {
+            const template = getSelectedTemplate();
+            if (!template) {
+                showToast('请先选择一个正则模板。');
+                return;
+            }
+
+            testText.value = template.sample;
+            patternInput.value = template.pattern;
+            replaceInput.value = template.replacement;
+            setRegexFlags(template.flags);
+            templateDescription.textContent = template.description;
+            updateLineNumbers();
+            runReplace(false);
+            scheduleVisualizerRefresh();
         }
 
         function renderCharacterItems(items, className = 'character-item-list') {
@@ -2053,10 +2202,15 @@
             statusText.className = '';
             replaceHint.className = 'field-note warning';
             replaceHint.innerHTML = '';
+            templateSelect.value = '';
+            templateDescription.textContent = '模板只在选择或点击应用时覆盖内容，手动输入不会被自动改写。';
             highlightPreview.className = 'result-box highlight-preview empty-state';
             highlightPreview.textContent = '匹配内容会高亮显示在这里。';
             updateLineNumbers();
         });
+
+        templateSelect.addEventListener('change', applySelectedTemplate);
+        document.getElementById('applyTemplateBtn').addEventListener('click', applySelectedTemplate);
 
         testText.addEventListener('input', () => {
             updateLineNumbers();
@@ -2116,6 +2270,7 @@
             }
         });
 
+        populateTemplateSelect();
         updateLineNumbers();
         runReplace(false);
     </script>
