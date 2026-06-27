@@ -879,6 +879,7 @@ java.lang.RuntimeException: test
     </div>
 
     <script src="changelog.js"></script>
+    <script src="editor-lines.js"></script>
     <script>
         const inputText = document.getElementById('inputText');
         const outputText = document.getElementById('outputText');
@@ -917,13 +918,11 @@ java.lang.RuntimeException: test
         }
 
         function refreshLineNumbers(textarea, lineNumbers) {
-            const lineCount = textarea.value ? textarea.value.split(/\r\n|\r|\n/).length : 1;
-            lineNumbers.textContent = Array.from({ length: lineCount }, (_, index) => index + 1).join('\n');
-            syncLineNumberScroll(textarea, lineNumbers);
+            EditorLines.refreshLineNumbers(textarea, lineNumbers);
         }
 
         function syncLineNumberScroll(textarea, lineNumbers) {
-            lineNumbers.scrollTop = textarea.scrollTop;
+            EditorLines.syncLineNumberScroll(textarea, lineNumbers);
         }
 
         function appendDiffSegment(segments, type, text) {

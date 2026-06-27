@@ -1267,6 +1267,7 @@
     </div>
 
     <script src="changelog.js"></script>
+    <script src="editor-lines.js"></script>
     <script src="regex-visualizer.js"></script>
     <script src="regex-display-model.js"></script>
     <script src="regex-flow-layout.js"></script>
@@ -1862,13 +1863,11 @@
         }
 
         function updateLineNumbers() {
-            const lineCount = Math.max(1, testText.value.split('\n').length);
-            testLineNumbers.textContent = Array.from({ length: lineCount }, (_, index) => index + 1).join('\n');
-            syncLineNumberScroll();
+            EditorLines.refreshLineNumbers(testText, testLineNumbers);
         }
 
         function syncLineNumberScroll() {
-            testLineNumbers.scrollTop = testText.scrollTop;
+            EditorLines.syncLineNumberScroll(testText, testLineNumbers);
         }
 
         function getLineColumn(text, index) {

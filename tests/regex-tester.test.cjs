@@ -16,6 +16,7 @@ assert.match(page, /<title>正则表达式测试工具<\/title>/);
 assert.match(page, /<link rel="stylesheet" href="nav\.css">/);
 assert.match(page, /<script src="nav\.js" defer><\/script>/);
 assert.match(page, /<script src="changelog\.js"><\/script>/);
+assert.match(page, /<script src="editor-lines\.js"><\/script>/);
 assert.match(page, /<h1>正则表达式测试<\/h1>/);
 assert.match(page, /class="version-info" onclick="showChangelog\(\)"/);
 assert.match(page, /<span>V1\.08<\/span>/);

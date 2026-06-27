@@ -9,6 +9,7 @@ assert.match(page, /id="swapBtn"/);
 assert.match(page, /onclick="swapInputOutput\(\)"/);
 assert.match(page, /class="converter-workspace"/);
 assert.match(page, /class="editor-shell"/);
+assert.match(page, /<script src="editor-lines\.js"><\/script>/);
 assert.match(page, /id="inputHighlight"/);
 assert.match(page, /id="outputHighlight"/);
 assert.match(page, /id="inputLineNumbers"/);
@@ -71,6 +72,18 @@ function element(id) {
 const context = {
     console,
     URL,
+    EditorLines: {
+        buildLineNumbers(text) {
+            return String(text || '').split('\n').map((_, index) => index + 1).join('\n');
+        },
+        refreshLineNumbers(textarea, lineNumbers) {
+            lineNumbers.textContent = this.buildLineNumbers(textarea.value);
+            this.syncLineNumberScroll(textarea, lineNumbers);
+        },
+        syncLineNumberScroll(textarea, lineNumbers) {
+            lineNumbers.scrollTop = textarea.scrollTop;
+        },
+    },
     navigator: {
         clipboard: {
             writeText() {

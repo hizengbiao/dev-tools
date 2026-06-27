@@ -50,6 +50,7 @@ const development = fs.readFileSync(path.resolve(__dirname, '../DEVELOPMENT.md')
 assert.match(page, /<title>文本智能拆分<\/title>/);
 assert.match(page, /<link rel="stylesheet" href="nav\.css">/);
 assert.match(page, /<script src="nav\.js" defer><\/script>/);
+assert.match(page, /<script src="editor-lines\.js"><\/script>/);
 assert.match(page, /<script src="text-splitter\.js"><\/script>/);
 assert.match(page, /id="maxLength"[^>]*value="2950"/);
 assert.match(page, /id="inputText"/);

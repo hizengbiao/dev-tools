@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="nav.css">
     <script src="nav.js" defer></script>
     <script src="changelog.js"></script>
+    <script src="editor-lines.js"></script>
     <script src="text-splitter.js"></script>
     <style>
         :root {
@@ -696,8 +697,7 @@
         }
 
         function buildLineNumbers(text) {
-            const lineCount = String(text ?? '').split('\n').length;
-            return Array.from({ length: lineCount }, (_, index) => index + 1).join('\n');
+            return EditorLines.buildLineNumbers(text);
         }
 
         function refreshInputLineNumbers() {

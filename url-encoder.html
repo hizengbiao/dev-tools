@@ -704,6 +704,7 @@
     </div>
 
     <script src="changelog.js"></script>
+    <script src="editor-lines.js"></script>
     <script>
         const inputArea = document.getElementById('input-text');
         const outputArea = document.getElementById('output-text');
@@ -806,18 +807,14 @@
         }
 
         function updateLineNumbers(textarea, lineNumbers) {
-            const lineCount = Math.max(1, textarea.value.split('\n').length);
-            lineNumbers.textContent = Array.from(
-                { length: lineCount },
-                (_, index) => index + 1
-            ).join('\n');
+            EditorLines.refreshLineNumbers(textarea, lineNumbers);
         }
 
         function syncHighlightScroll(textarea, highlight, lineNumbers) {
             highlight.scrollTop = textarea.scrollTop;
             highlight.scrollLeft = textarea.scrollLeft;
             if (lineNumbers) {
-                lineNumbers.scrollTop = textarea.scrollTop;
+                EditorLines.syncLineNumberScroll(textarea, lineNumbers);
             }
         }
 

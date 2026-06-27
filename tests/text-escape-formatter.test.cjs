@@ -11,6 +11,7 @@ assert.match(page, /<title>文本转义转换工具<\/title>/);
 assert.match(page, /<link rel="stylesheet" href="nav\.css">/);
 assert.match(page, /<script src="nav\.js" defer><\/script>/);
 assert.match(page, /<script src="changelog\.js"><\/script>/);
+assert.match(page, /<script src="editor-lines\.js"><\/script>/);
 assert.match(page, /<div class="container">/);
 assert.match(page, /<div class="tool-title">/);
 assert.match(page, /class="version-info" onclick="showChangelog\(\)"/);
@@ -86,6 +87,18 @@ function element(id) {
 
 const context = {
     console,
+    EditorLines: {
+        buildLineNumbers(text) {
+            return String(text || '').split('\n').map((_, index) => index + 1).join('\n');
+        },
+        refreshLineNumbers(textarea, lineNumbers) {
+            lineNumbers.textContent = this.buildLineNumbers(textarea.value);
+            this.syncLineNumberScroll(textarea, lineNumbers);
+        },
+        syncLineNumberScroll(textarea, lineNumbers) {
+            lineNumbers.scrollTop = textarea.scrollTop;
+        },
+    },
     navigator: {},
     window: {
         clearTimeout() {},
