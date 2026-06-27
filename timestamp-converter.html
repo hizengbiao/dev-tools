@@ -638,6 +638,7 @@
         </div>
     </div>
 
+    <script src="changelog.js"></script>
     <script>
         // --- Configuration ---
         const timezones = [
@@ -652,21 +653,6 @@
         let timerId = null;
         let isLiveRunning = true;
         let isLiveSeconds = true;
-
-        function showChangelog() {
-            document.getElementById('changelog-modal').style.display = 'flex';
-        }
-
-        function closeChangelog() {
-            document.getElementById('changelog-modal').style.display = 'none';
-        }
-
-        window.addEventListener('click', (event) => {
-            const modal = document.getElementById('changelog-modal');
-            if (event.target === modal) {
-                closeChangelog();
-            }
-        });
 
         // --- DOM Elements ---
         const elLiveTs = document.getElementById('live-timestamp');

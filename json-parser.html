@@ -1199,6 +1199,7 @@
         </div>
     </div>
 
+    <script src="changelog.js"></script>
     <script>
         const inputArea = document.getElementById('json-input');
         const outputDiv = document.getElementById('json-output');
@@ -1286,21 +1287,6 @@
         }
 
         // --- Modal Control ---
-        function showChangelog() {
-            document.getElementById('changelog-modal').style.display = 'flex';
-        }
-
-        function closeChangelog() {
-            document.getElementById('changelog-modal').style.display = 'none';
-        }
-
-        // Close modal on outside click
-        window.onclick = function (event) {
-            const modal = document.getElementById('changelog-modal');
-            if (event.target == modal) {
-                closeChangelog();
-            }
-        };
 
         // --- View Switching Logic ---
         function switchMode(mode) {

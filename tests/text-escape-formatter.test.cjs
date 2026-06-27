@@ -10,6 +10,7 @@ assert.match(nav, /path: 'text_escape_formatter_final\.html'/);
 assert.match(page, /<title>文本转义转换工具<\/title>/);
 assert.match(page, /<link rel="stylesheet" href="nav\.css">/);
 assert.match(page, /<script src="nav\.js" defer><\/script>/);
+assert.match(page, /<script src="changelog\.js"><\/script>/);
 assert.match(page, /<div class="container">/);
 assert.match(page, /<div class="tool-title">/);
 assert.match(page, /class="version-info" onclick="showChangelog\(\)"/);
@@ -51,10 +52,10 @@ assert.match(page, /function buildDiffSegments\(original, result\)/);
 assert.match(page, /function renderDiff\(\)/);
 assert.match(page, /function syncEditorScroll\(textarea, highlight, lineNumbers\)/);
 assert.doesNotMatch(page, /text-decoration:\s*line-through/);
-assert.match(page, /function showChangelog\(\)/);
-assert.match(page, /function closeChangelog\(\)/);
-assert.match(page, /window\.showChangelog = showChangelog/);
-assert.match(page, /window\.closeChangelog = closeChangelog/);
+assert.doesNotMatch(page, /function showChangelog\(\)/);
+assert.doesNotMatch(page, /function closeChangelog\(\)/);
+assert.doesNotMatch(page, /window\.showChangelog = showChangelog/);
+assert.doesNotMatch(page, /window\.closeChangelog = closeChangelog/);
 
 const elements = new Map();
 function element(id) {

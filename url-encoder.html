@@ -703,6 +703,7 @@
         </div>
     </div>
 
+    <script src="changelog.js"></script>
     <script>
         const inputArea = document.getElementById('input-text');
         const outputArea = document.getElementById('output-text');
@@ -873,21 +874,6 @@
         outputArea.addEventListener('scroll', () => syncHighlightScroll(outputArea, outputHighlight, outputLineNumbers));
         renderDiff();
         renderUrlAnalysis();
-
-        function showChangelog() {
-            document.getElementById('changelog-modal').style.display = 'flex';
-        }
-
-        function closeChangelog() {
-            document.getElementById('changelog-modal').style.display = 'none';
-        }
-
-        window.addEventListener('click', (event) => {
-            const modal = document.getElementById('changelog-modal');
-            if (event.target === modal) {
-                closeChangelog();
-            }
-        });
 
         function safeDecodeQueryComponent(value) {
             try {

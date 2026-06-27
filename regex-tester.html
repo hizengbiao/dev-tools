@@ -1266,6 +1266,7 @@
         </div>
     </div>
 
+    <script src="changelog.js"></script>
     <script src="regex-visualizer.js"></script>
     <script src="regex-display-model.js"></script>
     <script src="regex-flow-layout.js"></script>
@@ -2173,18 +2174,6 @@
                 toast.className = '';
             }, 2000);
         }
-
-        function showChangelog() {
-            document.getElementById('changelog-modal').style.display = 'flex';
-        }
-
-        function closeChangelog() {
-            document.getElementById('changelog-modal').style.display = 'none';
-        }
-
-        window.showChangelog = showChangelog;
-        window.closeChangelog = closeChangelog;
-
         document.getElementById('testBtn').addEventListener('click', runMatch);
         document.getElementById('replaceBtn').addEventListener('click', runReplace);
         document.getElementById('visualizeBtn').addEventListener('click', openRegexVisualizer);
@@ -2255,10 +2244,6 @@
         });
 
         window.addEventListener('click', (event) => {
-            const changelogModal = document.getElementById('changelog-modal');
-            if (event.target === changelogModal) {
-                closeChangelog();
-            }
             if (event.target === visualizerModal) {
                 closeRegexVisualizer();
             }

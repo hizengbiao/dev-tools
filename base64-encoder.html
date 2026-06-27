@@ -445,25 +445,11 @@
         </div>
     </div>
 
+    <script src="changelog.js"></script>
     <script>
         const inputText = document.getElementById('input-text');
         const outputText = document.getElementById('output-text');
         const resMeta = document.getElementById('res-meta');
-
-        function showChangelog() {
-            document.getElementById('changelog-modal').style.display = 'flex';
-        }
-
-        function closeChangelog() {
-            document.getElementById('changelog-modal').style.display = 'none';
-        }
-
-        window.addEventListener('click', (event) => {
-            const modal = document.getElementById('changelog-modal');
-            if (event.target === modal) {
-                closeChangelog();
-            }
-        });
 
         let activeTab = 'text';
 

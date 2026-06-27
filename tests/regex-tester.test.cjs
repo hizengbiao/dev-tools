@@ -15,6 +15,7 @@ assert.match(index, /正则表达式测试/);
 assert.match(page, /<title>正则表达式测试工具<\/title>/);
 assert.match(page, /<link rel="stylesheet" href="nav\.css">/);
 assert.match(page, /<script src="nav\.js" defer><\/script>/);
+assert.match(page, /<script src="changelog\.js"><\/script>/);
 assert.match(page, /<h1>正则表达式测试<\/h1>/);
 assert.match(page, /class="version-info" onclick="showChangelog\(\)"/);
 assert.match(page, /<span>V1\.08<\/span>/);
@@ -226,8 +227,8 @@ assert.match(page, /runReplace\(false\)/);
 assert.match(page, /<strong>正则表达式测试工具说明：<\/strong>/);
 assert.match(page, /用于在多行文本中快速验证正则表达式、预览匹配高亮、查看每条匹配的索引与行列位置，并按替换文本生成替换结果。/);
 assert.doesNotMatch(page, /常用标志/);
-assert.match(page, /function showChangelog\(\)/);
-assert.match(page, /window\.showChangelog = showChangelog/);
+assert.doesNotMatch(page, /function showChangelog\(\)/);
+assert.doesNotMatch(page, /window\.showChangelog = showChangelog/);
 
 const normalizeEscapedRegexPattern = (pattern) => pattern.replace(/\\\\(?=[dDsSwWbBtrnvf0()[\]{}.^$|?*+\\/])/g, '\\');
 const jdbcText = `URL: jdbc:mysql://demo.mysql.dbdns.cn:6446/schema?useUnicode=true&characterEncoding=utf8&useSSL=false&connectTimeout=10000&socketTimeout=600000

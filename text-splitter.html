@@ -7,6 +7,7 @@
     <title>文本智能拆分</title>
     <link rel="stylesheet" href="nav.css">
     <script src="nav.js" defer></script>
+    <script src="changelog.js"></script>
     <script src="text-splitter.js"></script>
     <style>
         :root {
@@ -770,14 +771,6 @@
             inputText.focus();
         }
 
-        function showChangelog() {
-            document.getElementById('changelog-modal').style.display = 'flex';
-        }
-
-        function closeChangelog() {
-            document.getElementById('changelog-modal').style.display = 'none';
-        }
-
         function showSegmentPreview(index) {
             const segment = currentSegments[index];
             if (typeof segment !== 'string') {
@@ -869,12 +862,10 @@
             copyText(currentSegments.join('\n\n'), '全部分段已复制');
         });
         copyHistoryBtn.addEventListener('click', copySegmentsToHistory);
+
         window.addEventListener('click', (event) => {
-            const changelogModal = document.getElementById('changelog-modal');
             const previewModal = document.getElementById('segment-preview-modal');
-            if (event.target === changelogModal) {
-                closeChangelog();
-            } else if (event.target === previewModal) {
+            if (event.target === previewModal) {
                 closeSegmentPreview();
             }
         });
@@ -887,9 +878,6 @@
                 closeChangelog();
             }
         });
-
-        window.showChangelog = showChangelog;
-        window.closeChangelog = closeChangelog;
         window.showSegmentPreview = showSegmentPreview;
         window.closeSegmentPreview = closeSegmentPreview;
         updateInputStats();

@@ -878,6 +878,7 @@ java.lang.RuntimeException: test
         </div>
     </div>
 
+    <script src="changelog.js"></script>
     <script>
         const inputText = document.getElementById('inputText');
         const outputText = document.getElementById('outputText');
@@ -1593,17 +1594,6 @@ java.lang.RuntimeException: test
             refreshStats();
             showToast('已恢复变量拼接。');
         }
-
-        function showChangelog() {
-            document.getElementById('changelog-modal').style.display = 'flex';
-        }
-
-        function closeChangelog() {
-            document.getElementById('changelog-modal').style.display = 'none';
-        }
-
-        window.showChangelog = showChangelog;
-        window.closeChangelog = closeChangelog;
         window.mergeConcatenatedStrings = mergeConcatenatedStrings;
         window.normalizeMappingPairs = normalizeMappingPairs;
         window.restoreMappedVariables = restoreMappedVariables;
@@ -1686,13 +1676,6 @@ java.lang.RuntimeException: test
             if (event.ctrlKey && event.shiftKey && event.key === 'Enter') {
                 event.preventDefault();
                 encodeAction();
-            }
-        });
-
-        window.addEventListener('click', (event) => {
-            const modal = document.getElementById('changelog-modal');
-            if (event.target === modal) {
-                closeChangelog();
             }
         });
 
