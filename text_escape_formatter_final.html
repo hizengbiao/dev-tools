@@ -879,6 +879,7 @@ java.lang.RuntimeException: test
     </div>
 
     <script src="changelog.js"></script>
+    <script src="clipboard-utils.js"></script>
     <script src="editor-lines.js"></script>
     <script src="diff-viewer.js"></script>
     <script>
@@ -1000,12 +1001,7 @@ java.lang.RuntimeException: test
         }
 
         function showToast(message, isError = false) {
-            toast.textContent = message;
-            toast.className = isError ? 'show error' : 'show';
-            window.clearTimeout(showToast.timer);
-            showToast.timer = window.setTimeout(() => {
-                toast.className = '';
-            }, 2000);
+            ClipboardUtils.showToast(message, { toastElement: toast, isError });
         }
 
         function hasWrappedQuote(text) {
@@ -1448,39 +1444,12 @@ java.lang.RuntimeException: test
         }
 
         function copyToClipboard(text) {
-            if (!text) {
-                showToast('没有可复制的内容。', true);
-                return;
-            }
-
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(text)
-                    .then(() => showToast('已复制到剪贴板。'))
-                    .catch(() => fallbackCopy(text));
-                return;
-            }
-
-            fallbackCopy(text);
-        }
-
-        function fallbackCopy(text) {
-            const temp = document.createElement('textarea');
-            temp.value = text;
-            temp.style.position = 'fixed';
-            temp.style.left = '-9999px';
-            temp.style.top = '-9999px';
-            document.body.appendChild(temp);
-            temp.focus();
-            temp.select();
-
-            try {
-                const ok = document.execCommand('copy');
-                showToast(ok ? '已复制到剪贴板。' : '复制失败，请手动复制。', !ok);
-            } catch (e) {
-                showToast('复制失败，请手动复制。', true);
-            } finally {
-                document.body.removeChild(temp);
-            }
+            ClipboardUtils.copyText(text, {
+                emptyMessage: '没有可复制的内容。',
+                successMessage: '已复制到剪贴板。',
+                errorMessage: '复制失败，请手动复制。',
+                toastElement: toast
+            });
         }
 
         function decodeAction() {

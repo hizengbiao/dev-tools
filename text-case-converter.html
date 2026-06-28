@@ -496,6 +496,7 @@
     <div id="toast">已复制到剪贴板</div>
 
     <script src="changelog.js"></script>
+    <script src="clipboard-utils.js"></script>
     <script>
         const inputText = document.getElementById('input-text');
         const outputText = document.getElementById('output-text');
@@ -532,18 +533,14 @@
         }
 
         function showToast(message) {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2000);
+            ClipboardUtils.showToast(message);
         }
 
         function copyText(value) {
             if (!value) return;
-            navigator.clipboard.writeText(value).then(() => {
-                showToast('已复制到剪贴板');
-            }).catch(() => {
-                showToast('复制失败，请手动复制');
+            ClipboardUtils.copyText(value, {
+                successMessage: '已复制到剪贴板',
+                errorMessage: '复制失败，请手动复制'
             });
         }
 

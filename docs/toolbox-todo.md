@@ -101,7 +101,7 @@
 
 ### TODO-CORE-006：抽取复制、Toast 公共能力
 
-- 状态：`[ ]`
+- 状态：`[x]`
 - 优先级：`P2`
 - 类型：重构 / 可维护性
 - 目标：统一复制成功、复制失败、降级复制、Toast 展示方式。
@@ -109,7 +109,7 @@
 - 验收标准：
   - 各工具复制按钮反馈一致。
   - 浏览器不支持 Clipboard API 时仍可降级复制。
-- 完成记录：待填写。
+- 完成记录：2026-06-28 已新增 `clipboard-utils.js`，统一提供 Toast 展示、Clipboard API 复制和 textarea 降级复制能力；已接入所有带复制和 Toast 的工具页面，并新增 `tests/clipboard-utils.test.cjs` 覆盖公共能力和页面接入。
 
 ### TODO-CORE-007：拆分大型 HTML 内联脚本
 

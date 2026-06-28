@@ -1267,6 +1267,7 @@
     </div>
 
     <script src="changelog.js"></script>
+    <script src="clipboard-utils.js"></script>
     <script src="editor-lines.js"></script>
     <script src="regex-visualizer.js"></script>
     <script src="regex-display-model.js"></script>
@@ -2143,35 +2144,15 @@
         }
 
         function copyToClipboard(text) {
-            if (!text) {
-                showToast('没有可复制的内容。');
-                return;
-            }
-
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(text).then(() => showToast('已复制到剪贴板。'));
-                return;
-            }
-
-            const temp = document.createElement('textarea');
-            temp.value = text;
-            temp.style.position = 'fixed';
-            temp.style.left = '-9999px';
-            document.body.appendChild(temp);
-            temp.focus();
-            temp.select();
-            document.execCommand('copy');
-            document.body.removeChild(temp);
-            showToast('已复制到剪贴板。');
+            ClipboardUtils.copyText(text, {
+                emptyMessage: '没有可复制的内容。',
+                successMessage: '已复制到剪贴板。',
+                errorMessage: '复制失败，请手动复制。'
+            });
         }
 
         function showToast(message) {
-            toast.textContent = message;
-            toast.className = 'show';
-            window.clearTimeout(showToast.timer);
-            showToast.timer = window.setTimeout(() => {
-                toast.className = '';
-            }, 2000);
+            ClipboardUtils.showToast(message, { toastElement: toast });
         }
         document.getElementById('testBtn').addEventListener('click', runMatch);
         document.getElementById('replaceBtn').addEventListener('click', runReplace);

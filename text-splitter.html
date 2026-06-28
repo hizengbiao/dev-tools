@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="nav.css">
     <script src="nav.js" defer></script>
     <script src="changelog.js"></script>
+    <script src="clipboard-utils.js"></script>
     <script src="editor-lines.js"></script>
     <script src="text-splitter.js"></script>
     <style>
@@ -658,29 +659,12 @@
         }
 
         function showToast(message) {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.classList.add('show');
-            clearTimeout(toastTimer);
-            toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+            ClipboardUtils.showToast(message, { duration: 1800 });
         }
 
         async function writeClipboardText(value) {
-            try {
-                await navigator.clipboard.writeText(value);
-            } catch (error) {
-                const helper = document.createElement('textarea');
-                helper.value = value;
-                helper.style.position = 'fixed';
-                helper.style.opacity = '0';
-                document.body.appendChild(helper);
-                helper.select();
-                const copied = document.execCommand('copy');
-                helper.remove();
-                if (!copied) {
-                    throw error;
-                }
-            }
+            const ok = await ClipboardUtils.writeClipboardText(value);
+            if (!ok) throw new Error('Clipboard write failed');
         }
 
         async function copyText(value, successMessage) {

@@ -72,6 +72,10 @@ function createHarness() {
         document,
         window: {},
         navigator: { clipboard: { readText: async () => '', writeText: async () => {} } },
+        ClipboardUtils: {
+            showToast() {},
+            copyText: async () => true,
+        },
         console,
         setTimeout,
         clearTimeout,

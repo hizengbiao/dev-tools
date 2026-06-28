@@ -103,6 +103,12 @@ const context = {
             return span;
         },
     },
+    ClipboardUtils: {
+        showToast() {},
+        copyText() {
+            return Promise.resolve(true);
+        },
+    },
     navigator: {
         clipboard: {
             writeText() {

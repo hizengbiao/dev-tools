@@ -639,6 +639,7 @@
     </div>
 
     <script src="changelog.js"></script>
+    <script src="clipboard-utils.js"></script>
     <script>
         // --- Configuration ---
         const timezones = [
@@ -950,21 +951,14 @@
         }
 
         function copyText(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                showToast("已复制到剪贴板");
-            }).catch(err => {
-                console.error(err);
-                showToast("复制失败");
+            ClipboardUtils.copyText(text, {
+                successMessage: '已复制到剪贴板',
+                errorMessage: '复制失败'
             });
         }
 
         function showToast(msg) {
-            const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.classList.add('show');
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 2000);
+            ClipboardUtils.showToast(msg);
         }
 
         // Run

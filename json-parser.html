@@ -1200,6 +1200,7 @@
     </div>
 
     <script src="changelog.js"></script>
+    <script src="clipboard-utils.js"></script>
     <script>
         const inputArea = document.getElementById('json-input');
         const outputDiv = document.getElementById('json-output');
@@ -3188,25 +3189,14 @@
         }
 
         async function copyText(text) {
-            try {
-                await navigator.clipboard.writeText(text);
-                showToast("复制成功 ✅");
-            } catch (err) {
-                const ta = document.createElement("textarea");
-                ta.value = text;
-                document.body.appendChild(ta);
-                ta.select();
-                document.execCommand("Copy");
-                ta.remove();
-                showToast("复制成功 (兼容) ✅");
-            }
+            await ClipboardUtils.copyText(text, {
+                successMessage: '复制成功 ✅',
+                errorMessage: '复制失败，请手动复制'
+            });
         }
 
         function showToast(msg) {
-            const t = document.getElementById("toast");
-            t.textContent = msg;
-            t.className = "show";
-            setTimeout(() => t.className = t.className.replace("show", ""), 2000);
+            ClipboardUtils.showToast(msg);
         }
 
         /**

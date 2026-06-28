@@ -446,6 +446,7 @@
     </div>
 
     <script src="changelog.js"></script>
+    <script src="clipboard-utils.js"></script>
     <script>
         const inputText = document.getElementById('input-text');
         const outputText = document.getElementById('output-text');
@@ -538,22 +539,15 @@
         // --- Common ---
         function copyResult() {
             if (!outputText.value) return;
-            // Select text if very long (for visual confirmation)
             outputText.select();
-            navigator.clipboard.writeText(outputText.value).then(() => {
-                showToast("已复制到剪贴板");
-            }).catch(() => {
-                showToast("复制失败");
+            ClipboardUtils.copyText(outputText.value, {
+                successMessage: '已复制到剪贴板',
+                errorMessage: '复制失败'
             });
         }
 
         function showToast(msg) {
-            const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.classList.add('show');
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 2000);
+            ClipboardUtils.showToast(msg);
         }
     </script>
 </body>

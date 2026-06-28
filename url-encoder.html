@@ -704,6 +704,7 @@
     </div>
 
     <script src="changelog.js"></script>
+    <script src="clipboard-utils.js"></script>
     <script src="editor-lines.js"></script>
     <script src="diff-viewer.js"></script>
     <script>
@@ -943,18 +944,14 @@
 
         function copyResult() {
             if (!outputArea.value) return;
-            navigator.clipboard.writeText(outputArea.value).then(() => {
-                showToast("已复制到剪贴板");
+            ClipboardUtils.copyText(outputArea.value, {
+                successMessage: '已复制到剪贴板',
+                errorMessage: '复制失败'
             });
         }
 
         function showToast(msg) {
-            const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.classList.add('show');
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 2000);
+            ClipboardUtils.showToast(msg);
         }
     </script>
 </body>
