@@ -130,6 +130,7 @@
   - 2026-06-28 已将 `json-parser.html` 中的 JSON key 递归排序逻辑抽取到 `json-sorter.js`，新增 `tests/json-sorter.test.cjs` 覆盖升序、降序、数组嵌套和页面接入。
   - 2026-06-28 已将 `regex-tester.html` 中的正则运行时工具逻辑抽取到 `regex-runtime-utils.js`，新增 `tests/regex-runtime-utils.test.cjs` 覆盖内联标志、转义标准化、行列定位和替换分组检查。
   - 2026-06-28 已将 `json-parser.html` 中的 JSON 路径写入和对象 key 重命名逻辑抽取到 `json-path-editor.js`，新增 `tests/json-path-editor.test.cjs` 覆盖嵌套写入、根节点替换和 key 顺序保持。
+  - 2026-06-28 已将 `json-parser.html` 中的 JSON 节点路径解析和前缀判断逻辑抽取到 `json-dom-path-utils.js`，新增 `tests/json-dom-path-utils.test.cjs` 覆盖路径解析容错、前缀判断和页面集成。
 
 ## JSON 格式化工具
 
