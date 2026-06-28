@@ -1273,6 +1273,7 @@
     <script src="regex-visualizer.js"></script>
     <script src="regex-display-model.js"></script>
     <script src="regex-flow-layout.js"></script>
+    <script src="regex-runtime-utils.js"></script>
     <script>
         const testText = document.getElementById('testText');
         const testLineNumbers = document.getElementById('testLineNumbers');
@@ -1713,7 +1714,7 @@
                 return;
             }
 
-            const source = normalizeEscapedRegexPattern(patternInput.value);
+            const source = RegexRuntimeUtils.normalizeEscapedRegexPattern(patternInput.value);
             const result = RegexVisualizer.parseRegexVisualization(source, getFlags());
 
             if (!result.ok) {
@@ -1765,39 +1766,13 @@
                 .join('');
         }
 
-        function getRegexWithFlags(source, flags) {
-            const orderedFlags = ['d', 'g', 'i', 'm', 's', 'u', 'v', 'y'];
-            const uniqueFlags = new Set(flags.split(''));
-            return new RegExp(source, orderedFlags.filter((flag) => uniqueFlags.has(flag)).join(''));
-        }
-
-        function parseInlineFlags(pattern, selectedFlags) {
-            const inlineFlagMatch = pattern.match(/^\(\?([gimsu]+)\)/);
-            const flags = new Set(selectedFlags.split(''));
-
-            if (!inlineFlagMatch) {
-                return { source: pattern, flags: selectedFlags };
-            }
-
-            inlineFlagMatch[1].split('').forEach((flag) => flags.add(flag));
-
-            return {
-                source: pattern.slice(inlineFlagMatch[0].length),
-                flags: ['g', 'i', 'm', 's', 'u'].filter((flag) => flags.has(flag)).join('')
-            };
-        }
-
-        function normalizeEscapedRegexPattern(pattern) {
-            return pattern.replace(/\\\\(?=[dDsSwWbBtrnvf0()[\]{}.^$|?*+\\/])/g, '\\');
-        }
-
         function getFlagsForPattern(pattern) {
-            return parseInlineFlags(normalizeEscapedRegexPattern(pattern), getFlags());
+            return RegexRuntimeUtils.parseInlineFlags(RegexRuntimeUtils.normalizeEscapedRegexPattern(pattern), getFlags());
         }
 
         function buildRegex() {
             const parsedPattern = getFlagsForPattern(patternInput.value);
-            return getRegexWithFlags(parsedPattern.source, parsedPattern.flags);
+            return RegexRuntimeUtils.getRegexWithFlags(parsedPattern.source, parsedPattern.flags);
         }
 
         function updateLineNumbers() {
@@ -1808,83 +1783,8 @@
             EditorLines.syncLineNumberScroll(testText, testLineNumbers);
         }
 
-        function getLineColumn(text, index) {
-            const before = text.slice(0, index);
-            const lines = before.split('\n');
-            return {
-                line: lines.length,
-                column: lines[lines.length - 1].length + 1
-            };
-        }
-
-        function getCaptureGroupCount(pattern) {
-            let count = 0;
-            let escaped = false;
-            let inClass = false;
-
-            for (let index = 0; index < pattern.length; index++) {
-                const char = pattern[index];
-
-                if (escaped) {
-                    escaped = false;
-                    continue;
-                }
-
-                if (char === '\\') {
-                    escaped = true;
-                    continue;
-                }
-
-                if (char === '[') {
-                    inClass = true;
-                    continue;
-                }
-
-                if (char === ']') {
-                    inClass = false;
-                    continue;
-                }
-
-                if (char !== '(' || inClass) {
-                    continue;
-                }
-
-                const next = pattern[index + 1];
-                const afterNext = pattern[index + 2];
-                const isNonCapturing = next === '?' && afterNext !== '<';
-
-                if (!isNonCapturing) {
-                    count += 1;
-                }
-            }
-
-            return count;
-        }
-
-        function getMissingReplacementGroups(replacement, pattern) {
-            const captureGroupCount = getCaptureGroupCount(pattern);
-            const missingGroups = new Set();
-            const groupReferenceRegex = /\$(\d{1,2})/g;
-            let match;
-
-            while ((match = groupReferenceRegex.exec(replacement)) !== null) {
-                const previousChar = replacement[match.index - 1];
-                const groupNumber = Number(match[1]);
-
-                if (previousChar === '$' || groupNumber === 0) {
-                    continue;
-                }
-
-                if (groupNumber > captureGroupCount) {
-                    missingGroups.add(`$${groupNumber}`);
-                }
-            }
-
-            return Array.from(missingGroups);
-        }
-
         function updateReplaceHint() {
-            const missingGroups = getMissingReplacementGroups(replaceInput.value, patternInput.value);
+            const missingGroups = RegexRuntimeUtils.getMissingReplacementGroups(replaceInput.value, patternInput.value);
 
             if (!missingGroups.length) {
                 replaceHint.className = 'field-note warning';
@@ -2010,7 +1910,7 @@
             }
 
             return matches.map((match, index) => {
-                const position = getLineColumn(testText.value, match.index);
+                const position = RegexRuntimeUtils.getLineColumn(testText.value, match.index);
                 const lines = [
                     `#${index + 1}`,
                     `匹配内容: ${match.text}`,

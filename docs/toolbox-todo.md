@@ -128,6 +128,7 @@
   - 2026-06-28 已将 `text_escape_formatter_final.html` 中的转义转换、字符串拼接合并、变量映射恢复和加引号复制等纯逻辑抽取到 `text-escape-core.js`，新增 `tests/text-escape-core.test.cjs` 覆盖模块导出和页面接入。
   - 2026-06-28 已将 `json-parser.html` 中的 JSON/Java 互转纯逻辑抽取到 `json-java-converter.js`，新增 `tests/json-java-converter.test.cjs` 覆盖模块导出和页面接入。
   - 2026-06-28 已将 `json-parser.html` 中的 JSON key 递归排序逻辑抽取到 `json-sorter.js`，新增 `tests/json-sorter.test.cjs` 覆盖升序、降序、数组嵌套和页面接入。
+  - 2026-06-28 已将 `regex-tester.html` 中的正则运行时工具逻辑抽取到 `regex-runtime-utils.js`，新增 `tests/regex-runtime-utils.test.cjs` 覆盖内联标志、转义标准化、行列定位和替换分组检查。
 
 ## JSON 格式化工具
 
