@@ -122,6 +122,8 @@
   - 拆分后页面功能不变。
   - 关键函数可在 Node 测试中直接导入或通过现有 harness 测试。
 - 完成记录：待填写。
+- 进展记录：
+  - 2026-06-28 已将 `regex-tester.html` 中的常用正则模板抽取到 `regex-templates.js`，新增 `tests/regex-templates.test.cjs` 覆盖模板模块导出和页面接入。
 
 ## JSON 格式化工具
 
