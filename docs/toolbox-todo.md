@@ -126,6 +126,7 @@
   - 2026-06-28 已将 `regex-tester.html` 中的常用正则模板抽取到 `regex-templates.js`，新增 `tests/regex-templates.test.cjs` 覆盖模板模块导出和页面接入。
   - 2026-06-28 已将 `json-parser.html` 中的 JSON 修复跳过判断抽取到 `json-repair-guards.js`，新增 `tests/json-repair-guards.test.cjs` 覆盖拼接字符串、正则片段和普通 JSON 判断。
   - 2026-06-28 已将 `text_escape_formatter_final.html` 中的转义转换、字符串拼接合并、变量映射恢复和加引号复制等纯逻辑抽取到 `text-escape-core.js`，新增 `tests/text-escape-core.test.cjs` 覆盖模块导出和页面接入。
+  - 2026-06-28 已将 `json-parser.html` 中的 JSON/Java 互转纯逻辑抽取到 `json-java-converter.js`，新增 `tests/json-java-converter.test.cjs` 覆盖模块导出和页面接入。
 
 ## JSON 格式化工具
 
