@@ -1202,6 +1202,7 @@
     <script src="changelog.js"></script>
     <script src="clipboard-utils.js"></script>
     <script src="json-repair-guards.js"></script>
+    <script src="json-sorter.js"></script>
     <script src="json-java-converter.js"></script>
     <script>
         const inputArea = document.getElementById('json-input');
@@ -2514,7 +2515,7 @@
         // Sort/Order Logic (Operates on currentObj)
         function sortJson(asc) {
             if (!currentObj) return;
-            currentObj = sortObject(currentObj, asc);
+            currentObj = JsonSorter.sortObjectKeys(currentObj, asc);
             syncToInput();
             saveState();
             reRenderTree();
@@ -2560,18 +2561,6 @@
                     }
                 });
             });
-        }
-
-        function sortObject(obj, asc) {
-            if (Array.isArray(obj)) return obj.map(item => sortObject(item, asc));
-            else if (obj !== null && typeof obj === 'object') {
-                const keys = Object.keys(obj).sort();
-                if (!asc) keys.reverse();
-                const newObj = {};
-                keys.forEach(key => newObj[key] = sortObject(obj[key], asc));
-                return newObj;
-            }
-            return obj;
         }
 
         // Java Conversion Logic
