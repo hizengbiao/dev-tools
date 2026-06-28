@@ -14,9 +14,9 @@ assert.match(page, /<div class="changelog-version">V1\.81<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年6月25日<\/div>[\s\S]*?<div class="changelog-version">V1\.81<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年6月11日<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.80<\/div>/);
-assert.match(page, /function shouldSkipJsonRepair\(raw\)/);
-assert.match(page, /function looksLikeCodeStringConcatenation\(raw\)/);
-assert.match(page, /function looksLikeRegexSnippet\(raw\)/);
+assert.match(page, /<script src="json-repair-guards\.js"><\/script>/);
+assert.match(page, /JsonRepairGuards\.shouldSkipJsonRepair\(raw\)/);
+assert.doesNotMatch(page, /function shouldSkipJsonRepair\(raw\)/);
 
 function createElementStub(id = '') {
     return {
@@ -76,6 +76,7 @@ function createHarness() {
             showToast() {},
             copyText: async () => true,
         },
+        JsonRepairGuards: require(path.resolve(__dirname, '../json-repair-guards.js')),
         console,
         setTimeout,
         clearTimeout,
