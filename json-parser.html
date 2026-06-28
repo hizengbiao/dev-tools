@@ -1203,6 +1203,7 @@
     <script src="clipboard-utils.js"></script>
     <script src="json-repair-guards.js"></script>
     <script src="json-sorter.js"></script>
+    <script src="json-path-editor.js"></script>
     <script src="json-java-converter.js"></script>
     <script>
         const inputArea = document.getElementById('json-input');
@@ -3583,15 +3584,7 @@
         }
 
         function setValueByPathWithoutRerender(path, value) {
-            if (path.length === 0) {
-                currentObj = value;
-            } else {
-                let ref = currentObj;
-                for (let i = 0; i < path.length - 1; i++) {
-                    ref = ref[path[i]];
-                }
-                ref[path[path.length - 1]] = value;
-            }
+            currentObj = JsonPathEditor.setValueAtPath(currentObj, path, value);
             sourceDirty = true;
         }
 
@@ -3602,35 +3595,7 @@
         }
 
         function renameKeyWithoutRerender(parentPath, oldKey, newKey) {
-            let parent;
-            if (parentPath.length === 0) {
-                parent = currentObj;
-            } else {
-                parent = currentObj;
-                for (let i = 0; i < parentPath.length; i++) {
-                    parent = parent[parentPath[i]];
-                }
-            }
-
-            if (Array.isArray(parent)) return;
-
-            const keys = Object.keys(parent);
-            const newObj = {};
-            keys.forEach(k => {
-                if (k === oldKey) {
-                    newObj[newKey] = parent[oldKey];
-                } else {
-                    newObj[k] = parent[k];
-                }
-            });
-
-            if (parentPath.length === 0) {
-                currentObj = newObj;
-            } else {
-                keys.forEach(k => delete parent[k]);
-                Object.assign(parent, newObj);
-            }
-
+            currentObj = JsonPathEditor.renameKeyAtPath(currentObj, parentPath, oldKey, newKey);
             sourceDirty = true;
         }
 
