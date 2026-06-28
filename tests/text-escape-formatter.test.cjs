@@ -13,6 +13,7 @@ assert.match(page, /<script src="nav\.js" defer><\/script>/);
 assert.match(page, /<script src="changelog\.js"><\/script>/);
 assert.match(page, /<script src="editor-lines\.js"><\/script>/);
 assert.match(page, /<script src="diff-viewer\.js"><\/script>/);
+assert.match(page, /<script src="text-escape-core\.js"><\/script>/);
 assert.match(page, /<div class="container">/);
 assert.match(page, /<div class="tool-title">/);
 assert.match(page, /class="version-info" onclick="showChangelog\(\)"/);
@@ -115,6 +116,7 @@ const context = {
             return span;
         },
     },
+    TextEscapeCore: require('../text-escape-core.js'),
     navigator: {},
     window: {
         clearTimeout() {},
