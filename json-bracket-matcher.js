@@ -150,9 +150,46 @@
         return -1;
     }
 
+    function findMatchingIndexAt(text, index) {
+        const char = text[index];
+        if (bracketPairs[char]) {
+            return findMatchingOpenBracket(text, index);
+        }
+
+        if (reversePairs[char]) {
+            return findMatchingCloseBracket(text, index);
+        }
+
+        if (char === '"' || char === "'") {
+            return findMatchingQuote(text, index);
+        }
+
+        return -1;
+    }
+
+    function findMatchingIndexAroundCursor(text, cursorPos) {
+        if (typeof text !== 'string' || typeof cursorPos !== 'number') {
+            return -1;
+        }
+
+        if (cursorPos > 0) {
+            const beforeMatch = findMatchingIndexAt(text, cursorPos - 1);
+            if (beforeMatch >= 0) {
+                return beforeMatch;
+            }
+        }
+
+        if (cursorPos < text.length) {
+            return findMatchingIndexAt(text, cursorPos);
+        }
+
+        return -1;
+    }
+
     return {
         findMatchingOpenBracket,
         findMatchingCloseBracket,
         findMatchingQuote,
+        findMatchingIndexAroundCursor,
     };
 });

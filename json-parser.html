@@ -3087,9 +3087,6 @@
          * 当光标在右括号时，高亮对应的左括号
          */
         function setupBracketMatching(textarea) {
-            const openingBrackets = new Set(['(', '[', '{']);
-            const closingBrackets = new Set([')', ']', '}']);
-
             let highlightOverlay = null;
 
             function removeHighlight() {
@@ -3190,62 +3187,10 @@
                 const pos = textarea.selectionStart;
                 const text = textarea.value;
 
-                // Check character before cursor
-                if (pos > 0) {
-                    const charBeforeCursor = text[pos - 1];
-                    // Closing bracket -> highlight opening bracket
-                    if (closingBrackets.has(charBeforeCursor)) {
-                        const matchPos = JsonBracketMatcher.findMatchingOpenBracket(text, pos - 1);
-                        if (matchPos >= 0) {
-                            highlightBracket(matchPos);
-                            return;
-                        }
-                    }
-                    // Opening bracket -> highlight closing bracket
-                    if (openingBrackets.has(charBeforeCursor)) {
-                        const matchPos = JsonBracketMatcher.findMatchingCloseBracket(text, pos - 1);
-                        if (matchPos >= 0) {
-                            highlightBracket(matchPos);
-                            return;
-                        }
-                    }
-                    // Quote -> highlight matching quote
-                    if (charBeforeCursor === '"' || charBeforeCursor === "'") {
-                        const matchPos = JsonBracketMatcher.findMatchingQuote(text, pos - 1);
-                        if (matchPos >= 0) {
-                            highlightBracket(matchPos);
-                            return;
-                        }
-                    }
-                }
-
-                // Check character at cursor position
-                if (pos < text.length) {
-                    const charAtCursor = text[pos];
-                    // Closing bracket -> highlight opening bracket
-                    if (closingBrackets.has(charAtCursor)) {
-                        const matchPos = JsonBracketMatcher.findMatchingOpenBracket(text, pos);
-                        if (matchPos >= 0) {
-                            highlightBracket(matchPos);
-                            return;
-                        }
-                    }
-                    // Opening bracket -> highlight closing bracket
-                    if (openingBrackets.has(charAtCursor)) {
-                        const matchPos = JsonBracketMatcher.findMatchingCloseBracket(text, pos);
-                        if (matchPos >= 0) {
-                            highlightBracket(matchPos);
-                            return;
-                        }
-                    }
-                    // Quote -> highlight matching quote
-                    if (charAtCursor === '"' || charAtCursor === "'") {
-                        const matchPos = JsonBracketMatcher.findMatchingQuote(text, pos);
-                        if (matchPos >= 0) {
-                            highlightBracket(matchPos);
-                            return;
-                        }
-                    }
+                const matchPos = JsonBracketMatcher.findMatchingIndexAroundCursor(text, pos);
+                if (matchPos >= 0) {
+                    highlightBracket(matchPos);
+                    return;
                 }
 
                 removeHighlight();
