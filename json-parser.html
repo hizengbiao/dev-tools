@@ -3123,13 +3123,7 @@
 
                 const markerRect = marker.getBoundingClientRect();
                 const mirrorRect = mirror.getBoundingClientRect();
-
-                const position = {
-                    left: markerRect.left - mirrorRect.left,
-                    top: markerRect.top - mirrorRect.top,
-                    width: markerRect.width,
-                    height: markerRect.height
-                };
+                const position = JsonBracketMatcher.calculateRelativeMarkerPosition(markerRect, mirrorRect);
 
                 document.body.removeChild(mirror);
                 return position;

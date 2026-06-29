@@ -92,6 +92,19 @@ assert.deepStrictEqual(matcher.splitTextAroundIndex('abcdef', 6), {
     afterText: '',
 });
 
+assert.deepStrictEqual(
+    matcher.calculateRelativeMarkerPosition(
+        { left: 130, top: 260, width: 9, height: 18 },
+        { left: 100, top: 200 }
+    ),
+    {
+        left: 30,
+        top: 60,
+        width: 9,
+        height: 18,
+    }
+);
+
 assert.strictEqual(matcher.findMatchingOpenBracket('(]', 1), -1);
 assert.strictEqual(matcher.findMatchingCloseBracket('(]', 0), -1);
 assert.strictEqual(matcher.findMatchingQuote('abc', 1), -1);
@@ -102,11 +115,13 @@ assert.match(page, /JsonBracketMatcher\.findMatchingIndexAroundCursor\(text, pos
 assert.match(page, /JsonBracketMatcher\.calculateHighlightOverlayStyle\(/);
 assert.match(page, /JsonBracketMatcher\.buildTextMirrorStyle\(/);
 assert.match(page, /JsonBracketMatcher\.splitTextAroundIndex\(fullText, charIndex\)/);
+assert.match(page, /JsonBracketMatcher\.calculateRelativeMarkerPosition\(markerRect, mirrorRect\)/);
 assert.doesNotMatch(page, /function findMatchingOpenBracket\(text, closeBracketPos\)/);
 assert.doesNotMatch(page, /function findMatchingCloseBracket\(text, openBracketPos\)/);
 assert.doesNotMatch(page, /function findMatchingQuote\(text, quotePos\)/);
 assert.doesNotMatch(page, /mirror\.style\.fontFamily = computedStyle\.fontFamily/);
 assert.doesNotMatch(page, /const beforeText = fullText\.substring\(0, charIndex\)/);
+assert.doesNotMatch(page, /left: markerRect\.left - mirrorRect\.left/);
 assert.doesNotMatch(page, /const openingBrackets = new Set/);
 assert.doesNotMatch(page, /const closingBrackets = new Set/);
 

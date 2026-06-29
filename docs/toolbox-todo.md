@@ -137,6 +137,7 @@
   - 2026-06-29 已继续将括号高亮覆盖层的样式计算抽取到 `JsonBracketMatcher.calculateHighlightOverlayStyle`，减少 `json-parser.html` 中 DOM 高亮定位的内联计算。
   - 2026-06-29 已继续将括号位置测量用的镜像节点样式构造抽取到 `JsonBracketMatcher.buildTextMirrorStyle`，进一步压缩 `setupBracketMatching` 内联 DOM 样式代码。
   - 2026-06-29 已继续将括号位置测量中的文本前后切分抽取到 `JsonBracketMatcher.splitTextAroundIndex`，让 `getTextPosition` 只保留 DOM 测量职责。
+  - 2026-06-29 已继续将括号位置测量中的 marker 相对坐标计算抽取到 `JsonBracketMatcher.calculateRelativeMarkerPosition`，减少 `getTextPosition` 中的手写矩形差值逻辑。
 
 ## JSON 格式化工具
 

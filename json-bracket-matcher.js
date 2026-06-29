@@ -220,6 +220,15 @@
         };
     }
 
+    function calculateRelativeMarkerPosition(markerRect, mirrorRect) {
+        return {
+            left: markerRect.left - mirrorRect.left,
+            top: markerRect.top - mirrorRect.top,
+            width: markerRect.width,
+            height: markerRect.height,
+        };
+    }
+
     return {
         findMatchingOpenBracket,
         findMatchingCloseBracket,
@@ -228,5 +237,6 @@
         calculateHighlightOverlayStyle,
         buildTextMirrorStyle,
         splitTextAroundIndex,
+        calculateRelativeMarkerPosition,
     };
 });
