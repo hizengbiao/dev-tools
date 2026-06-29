@@ -136,6 +136,7 @@
   - 2026-06-29 已继续将光标前后括号/引号匹配入口收敛到 `JsonBracketMatcher.findMatchingIndexAroundCursor`，页面只负责高亮匹配位置，减少 `json-parser.html` 内联分支逻辑。
   - 2026-06-29 已继续将括号高亮覆盖层的样式计算抽取到 `JsonBracketMatcher.calculateHighlightOverlayStyle`，减少 `json-parser.html` 中 DOM 高亮定位的内联计算。
   - 2026-06-29 已继续将括号位置测量用的镜像节点样式构造抽取到 `JsonBracketMatcher.buildTextMirrorStyle`，进一步压缩 `setupBracketMatching` 内联 DOM 样式代码。
+  - 2026-06-29 已继续将括号位置测量中的文本前后切分抽取到 `JsonBracketMatcher.splitTextAroundIndex`，让 `getTextPosition` 只保留 DOM 测量职责。
 
 ## JSON 格式化工具
 

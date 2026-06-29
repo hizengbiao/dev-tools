@@ -212,6 +212,14 @@
         };
     }
 
+    function splitTextAroundIndex(text, charIndex) {
+        return {
+            beforeText: text.substring(0, charIndex),
+            targetChar: text[charIndex] || '',
+            afterText: text.substring(charIndex + 1),
+        };
+    }
+
     return {
         findMatchingOpenBracket,
         findMatchingCloseBracket,
@@ -219,5 +227,6 @@
         findMatchingIndexAroundCursor,
         calculateHighlightOverlayStyle,
         buildTextMirrorStyle,
+        splitTextAroundIndex,
     };
 });

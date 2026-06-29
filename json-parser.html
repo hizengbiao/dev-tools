@@ -3106,16 +3106,14 @@
                 Object.assign(mirror.style, JsonBracketMatcher.buildTextMirrorStyle(computedStyle, textarea.clientWidth));
 
                 // Build content with marker span wrapping the target character
-                const beforeText = fullText.substring(0, charIndex);
-                const targetChar = fullText[charIndex] || '';
-                const afterText = fullText.substring(charIndex + 1);
+                const textParts = JsonBracketMatcher.splitTextAroundIndex(fullText, charIndex);
 
                 // Create text nodes and marker span
-                const beforeNode = document.createTextNode(beforeText);
+                const beforeNode = document.createTextNode(textParts.beforeText);
                 const marker = document.createElement('span');
-                marker.textContent = targetChar;
+                marker.textContent = textParts.targetChar;
                 marker.style.backgroundColor = 'transparent'; // Just for measurement
-                const afterNode = document.createTextNode(afterText);
+                const afterNode = document.createTextNode(textParts.afterText);
 
                 mirror.appendChild(beforeNode);
                 mirror.appendChild(marker);
