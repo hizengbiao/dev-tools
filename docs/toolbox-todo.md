@@ -132,6 +132,7 @@
   - 2026-06-28 已将 `json-parser.html` 中的 JSON 路径写入和对象 key 重命名逻辑抽取到 `json-path-editor.js`，新增 `tests/json-path-editor.test.cjs` 覆盖嵌套写入、根节点替换和 key 顺序保持。
   - 2026-06-28 已将 `json-parser.html` 中的 JSON 节点路径解析和前缀判断逻辑抽取到 `json-dom-path-utils.js`，新增 `tests/json-dom-path-utils.test.cjs` 覆盖路径解析容错、前缀判断和页面集成。
   - 2026-06-28 已继续将 `json-parser.html` 中折叠子树用到的 DOM 相对层级计算和折叠图标定位逻辑收敛到 `json-dom-path-utils.js`，补充测试覆盖断链节点和首行图标查找。
+  - 2026-06-29 已将 `json-parser.html` 中编辑器括号和引号匹配扫描逻辑抽取到 `json-bracket-matcher.js`，新增 `tests/json-bracket-matcher.test.cjs` 覆盖嵌套括号、字符串内括号跳过、转义引号和页面集成。
 
 ## JSON 格式化工具
 

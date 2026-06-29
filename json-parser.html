@@ -1205,6 +1205,7 @@
     <script src="json-sorter.js"></script>
     <script src="json-path-editor.js"></script>
     <script src="json-dom-path-utils.js"></script>
+    <script src="json-bracket-matcher.js"></script>
     <script src="json-java-converter.js"></script>
     <script>
         const inputArea = document.getElementById('json-input');
@@ -3086,11 +3087,6 @@
          * 当光标在右括号时，高亮对应的左括号
          */
         function setupBracketMatching(textarea) {
-            const bracketPairs = {
-                ')': '(',
-                ']': '[',
-                '}': '{'
-            };
             const openingBrackets = new Set(['(', '[', '{']);
             const closingBrackets = new Set([')', ']', '}']);
 
@@ -3101,151 +3097,6 @@
                     highlightOverlay.remove();
                     highlightOverlay = null;
                 }
-            }
-
-            function findMatchingOpenBracket(text, closeBracketPos) {
-                const closeBracket = text[closeBracketPos];
-                const openBracket = bracketPairs[closeBracket];
-                if (!openBracket) return -1;
-
-                let depth = 1;
-                let inString = false;
-                let stringChar = null;
-
-                // Scan backwards from the position before the close bracket
-                for (let i = closeBracketPos - 1; i >= 0; i--) {
-                    const char = text[i];
-                    const prevChar = i > 0 ? text[i - 1] : '';
-
-                    // Handle string boundaries (skip escaped quotes)
-                    if ((char === '"' || char === "'") && prevChar !== '\\') {
-                        if (inString && char === stringChar) {
-                            inString = false;
-                            stringChar = null;
-                        } else if (!inString) {
-                            inString = true;
-                            stringChar = char;
-                        }
-                        continue;
-                    }
-
-                    // Skip characters inside strings
-                    if (inString) continue;
-
-                    if (char === closeBracket) {
-                        depth++;
-                    } else if (char === openBracket) {
-                        depth--;
-                        if (depth === 0) {
-                            return i;
-                        }
-                    }
-                }
-                return -1; // No match found
-            }
-
-            function findMatchingCloseBracket(text, openBracketPos) {
-                const openBracket = text[openBracketPos];
-                const reversePairs = { '(': ')', '[': ']', '{': '}' };
-                const closeBracket = reversePairs[openBracket];
-                if (!closeBracket) return -1;
-
-                let depth = 1;
-                let inString = false;
-                let stringChar = null;
-
-                // Scan forwards from the position after the open bracket
-                for (let i = openBracketPos + 1; i < text.length; i++) {
-                    const char = text[i];
-                    const prevChar = i > 0 ? text[i - 1] : '';
-
-                    // Handle string boundaries (skip escaped quotes)
-                    if ((char === '"' || char === "'") && prevChar !== '\\') {
-                        if (inString && char === stringChar) {
-                            inString = false;
-                            stringChar = null;
-                        } else if (!inString) {
-                            inString = true;
-                            stringChar = char;
-                        }
-                        continue;
-                    }
-
-                    // Skip characters inside strings
-                    if (inString) continue;
-
-                    if (char === openBracket) {
-                        depth++;
-                    } else if (char === closeBracket) {
-                        depth--;
-                        if (depth === 0) {
-                            return i;
-                        }
-                    }
-                }
-                return -1; // No match found
-            }
-
-            /**
-             * Find matching quote for the quote at the given position
-             * If it's an opening quote (not preceded by \), find the closing quote
-             * If it's a closing quote, find the opening quote
-             */
-            function findMatchingQuote(text, quotePos) {
-                const quoteChar = text[quotePos];
-                if (quoteChar !== '"' && quoteChar !== "'") return -1;
-
-                // Check if this quote is escaped
-                let escapeCount = 0;
-                for (let i = quotePos - 1; i >= 0 && text[i] === '\\'; i--) {
-                    escapeCount++;
-                }
-                if (escapeCount % 2 === 1) return -1; // This quote is escaped
-
-                // Determine if this is an opening or closing quote by counting unescaped quotes before it
-                let quoteCount = 0;
-                for (let i = 0; i < quotePos; i++) {
-                    if (text[i] === quoteChar) {
-                        // Check if escaped
-                        let esc = 0;
-                        for (let j = i - 1; j >= 0 && text[j] === '\\'; j--) {
-                            esc++;
-                        }
-                        if (esc % 2 === 0) {
-                            quoteCount++;
-                        }
-                    }
-                }
-
-                // If quoteCount is even, this is an opening quote; if odd, it's a closing quote
-                if (quoteCount % 2 === 0) {
-                    // Opening quote - find closing quote forward
-                    for (let i = quotePos + 1; i < text.length; i++) {
-                        if (text[i] === quoteChar) {
-                            let esc = 0;
-                            for (let j = i - 1; j >= 0 && text[j] === '\\'; j--) {
-                                esc++;
-                            }
-                            if (esc % 2 === 0) {
-                                return i;
-                            }
-                        }
-                    }
-                } else {
-                    // Closing quote - find opening quote backward
-                    for (let i = quotePos - 1; i >= 0; i--) {
-                        if (text[i] === quoteChar) {
-                            let esc = 0;
-                            for (let j = i - 1; j >= 0 && text[j] === '\\'; j--) {
-                                esc++;
-                            }
-                            if (esc % 2 === 0) {
-                                return i;
-                            }
-                        }
-                    }
-                }
-                return -1;
             }
 
             function getTextPosition(textarea, charIndex) {
@@ -3344,7 +3195,7 @@
                     const charBeforeCursor = text[pos - 1];
                     // Closing bracket -> highlight opening bracket
                     if (closingBrackets.has(charBeforeCursor)) {
-                        const matchPos = findMatchingOpenBracket(text, pos - 1);
+                        const matchPos = JsonBracketMatcher.findMatchingOpenBracket(text, pos - 1);
                         if (matchPos >= 0) {
                             highlightBracket(matchPos);
                             return;
@@ -3352,7 +3203,7 @@
                     }
                     // Opening bracket -> highlight closing bracket
                     if (openingBrackets.has(charBeforeCursor)) {
-                        const matchPos = findMatchingCloseBracket(text, pos - 1);
+                        const matchPos = JsonBracketMatcher.findMatchingCloseBracket(text, pos - 1);
                         if (matchPos >= 0) {
                             highlightBracket(matchPos);
                             return;
@@ -3360,7 +3211,7 @@
                     }
                     // Quote -> highlight matching quote
                     if (charBeforeCursor === '"' || charBeforeCursor === "'") {
-                        const matchPos = findMatchingQuote(text, pos - 1);
+                        const matchPos = JsonBracketMatcher.findMatchingQuote(text, pos - 1);
                         if (matchPos >= 0) {
                             highlightBracket(matchPos);
                             return;
@@ -3373,7 +3224,7 @@
                     const charAtCursor = text[pos];
                     // Closing bracket -> highlight opening bracket
                     if (closingBrackets.has(charAtCursor)) {
-                        const matchPos = findMatchingOpenBracket(text, pos);
+                        const matchPos = JsonBracketMatcher.findMatchingOpenBracket(text, pos);
                         if (matchPos >= 0) {
                             highlightBracket(matchPos);
                             return;
@@ -3381,7 +3232,7 @@
                     }
                     // Opening bracket -> highlight closing bracket
                     if (openingBrackets.has(charAtCursor)) {
-                        const matchPos = findMatchingCloseBracket(text, pos);
+                        const matchPos = JsonBracketMatcher.findMatchingCloseBracket(text, pos);
                         if (matchPos >= 0) {
                             highlightBracket(matchPos);
                             return;
@@ -3389,7 +3240,7 @@
                     }
                     // Quote -> highlight matching quote
                     if (charAtCursor === '"' || charAtCursor === "'") {
-                        const matchPos = findMatchingQuote(text, pos);
+                        const matchPos = JsonBracketMatcher.findMatchingQuote(text, pos);
                         if (matchPos >= 0) {
                             highlightBracket(matchPos);
                             return;
