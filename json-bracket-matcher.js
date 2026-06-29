@@ -195,11 +195,29 @@
         };
     }
 
+    function buildTextMirrorStyle(computedStyle, clientWidth) {
+        return {
+            position: 'absolute',
+            visibility: 'hidden',
+            whiteSpace: 'pre-wrap',
+            wordWrap: 'break-word',
+            fontFamily: computedStyle.fontFamily,
+            fontSize: computedStyle.fontSize,
+            lineHeight: computedStyle.lineHeight,
+            padding: computedStyle.padding,
+            width: clientWidth + 'px',
+            boxSizing: 'border-box',
+            left: '0',
+            top: '0',
+        };
+    }
+
     return {
         findMatchingOpenBracket,
         findMatchingCloseBracket,
         findMatchingQuote,
         findMatchingIndexAroundCursor,
         calculateHighlightOverlayStyle,
+        buildTextMirrorStyle,
     };
 });

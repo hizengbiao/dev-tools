@@ -3103,19 +3103,7 @@
                 const mirror = document.createElement('div');
                 const computedStyle = window.getComputedStyle(textarea);
 
-                // Copy styles
-                mirror.style.position = 'absolute';
-                mirror.style.visibility = 'hidden';
-                mirror.style.whiteSpace = 'pre-wrap';
-                mirror.style.wordWrap = 'break-word';
-                mirror.style.fontFamily = computedStyle.fontFamily;
-                mirror.style.fontSize = computedStyle.fontSize;
-                mirror.style.lineHeight = computedStyle.lineHeight;
-                mirror.style.padding = computedStyle.padding;
-                mirror.style.width = textarea.clientWidth + 'px';
-                mirror.style.boxSizing = 'border-box';
-                mirror.style.left = '0';
-                mirror.style.top = '0';
+                Object.assign(mirror.style, JsonBracketMatcher.buildTextMirrorStyle(computedStyle, textarea.clientWidth));
 
                 // Build content with marker span wrapping the target character
                 const beforeText = fullText.substring(0, charIndex);

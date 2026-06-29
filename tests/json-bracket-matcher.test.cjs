@@ -55,6 +55,32 @@ assert.deepStrictEqual(
     }
 );
 
+assert.deepStrictEqual(
+    matcher.buildTextMirrorStyle(
+        {
+            fontFamily: 'Consolas',
+            fontSize: '13px',
+            lineHeight: '20px',
+            padding: '10px',
+        },
+        640
+    ),
+    {
+        position: 'absolute',
+        visibility: 'hidden',
+        whiteSpace: 'pre-wrap',
+        wordWrap: 'break-word',
+        fontFamily: 'Consolas',
+        fontSize: '13px',
+        lineHeight: '20px',
+        padding: '10px',
+        width: '640px',
+        boxSizing: 'border-box',
+        left: '0',
+        top: '0',
+    }
+);
+
 assert.strictEqual(matcher.findMatchingOpenBracket('(]', 1), -1);
 assert.strictEqual(matcher.findMatchingCloseBracket('(]', 0), -1);
 assert.strictEqual(matcher.findMatchingQuote('abc', 1), -1);
@@ -63,9 +89,11 @@ const page = fs.readFileSync(path.resolve(__dirname, '../json-parser.html'), 'ut
 assert.match(page, /<script src="json-bracket-matcher\.js"><\/script>/);
 assert.match(page, /JsonBracketMatcher\.findMatchingIndexAroundCursor\(text, pos\)/);
 assert.match(page, /JsonBracketMatcher\.calculateHighlightOverlayStyle\(/);
+assert.match(page, /JsonBracketMatcher\.buildTextMirrorStyle\(/);
 assert.doesNotMatch(page, /function findMatchingOpenBracket\(text, closeBracketPos\)/);
 assert.doesNotMatch(page, /function findMatchingCloseBracket\(text, openBracketPos\)/);
 assert.doesNotMatch(page, /function findMatchingQuote\(text, quotePos\)/);
+assert.doesNotMatch(page, /mirror\.style\.fontFamily = computedStyle\.fontFamily/);
 assert.doesNotMatch(page, /const openingBrackets = new Set/);
 assert.doesNotMatch(page, /const closingBrackets = new Set/);
 

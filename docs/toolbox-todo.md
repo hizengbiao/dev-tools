@@ -135,6 +135,7 @@
   - 2026-06-29 已将 `json-parser.html` 中编辑器括号和引号匹配扫描逻辑抽取到 `json-bracket-matcher.js`，新增 `tests/json-bracket-matcher.test.cjs` 覆盖嵌套括号、字符串内括号跳过、转义引号和页面集成。
   - 2026-06-29 已继续将光标前后括号/引号匹配入口收敛到 `JsonBracketMatcher.findMatchingIndexAroundCursor`，页面只负责高亮匹配位置，减少 `json-parser.html` 内联分支逻辑。
   - 2026-06-29 已继续将括号高亮覆盖层的样式计算抽取到 `JsonBracketMatcher.calculateHighlightOverlayStyle`，减少 `json-parser.html` 中 DOM 高亮定位的内联计算。
+  - 2026-06-29 已继续将括号位置测量用的镜像节点样式构造抽取到 `JsonBracketMatcher.buildTextMirrorStyle`，进一步压缩 `setupBracketMatching` 内联 DOM 样式代码。
 
 ## JSON 格式化工具
 
