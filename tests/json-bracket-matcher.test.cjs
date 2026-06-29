@@ -30,6 +30,31 @@ assert.strictEqual(matcher.findMatchingIndexAroundCursor(cursorText, cursorArray
 assert.strictEqual(matcher.findMatchingIndexAroundCursor('"abc"', 1), 4);
 assert.strictEqual(matcher.findMatchingIndexAroundCursor('abc', 1), -1);
 
+assert.deepStrictEqual(
+    matcher.calculateHighlightOverlayStyle(
+        { left: 20, top: 30, width: 3, height: 18 },
+        { offsetLeft: 12, offsetTop: 8, scrollLeft: 5, scrollTop: 7 }
+    ),
+    {
+        left: '27px',
+        top: '31px',
+        width: '8px',
+        height: '18px',
+    }
+);
+assert.deepStrictEqual(
+    matcher.calculateHighlightOverlayStyle(
+        { left: 2, top: 4, width: 16, height: 20 },
+        { offsetLeft: 1, offsetTop: 3, scrollLeft: 0, scrollTop: 2 }
+    ),
+    {
+        left: '3px',
+        top: '5px',
+        width: '16px',
+        height: '20px',
+    }
+);
+
 assert.strictEqual(matcher.findMatchingOpenBracket('(]', 1), -1);
 assert.strictEqual(matcher.findMatchingCloseBracket('(]', 0), -1);
 assert.strictEqual(matcher.findMatchingQuote('abc', 1), -1);
@@ -37,6 +62,7 @@ assert.strictEqual(matcher.findMatchingQuote('abc', 1), -1);
 const page = fs.readFileSync(path.resolve(__dirname, '../json-parser.html'), 'utf8');
 assert.match(page, /<script src="json-bracket-matcher\.js"><\/script>/);
 assert.match(page, /JsonBracketMatcher\.findMatchingIndexAroundCursor\(text, pos\)/);
+assert.match(page, /JsonBracketMatcher\.calculateHighlightOverlayStyle\(/);
 assert.doesNotMatch(page, /function findMatchingOpenBracket\(text, closeBracketPos\)/);
 assert.doesNotMatch(page, /function findMatchingCloseBracket\(text, openBracketPos\)/);
 assert.doesNotMatch(page, /function findMatchingQuote\(text, quotePos\)/);

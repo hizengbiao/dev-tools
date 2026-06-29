@@ -186,10 +186,20 @@
         return -1;
     }
 
+    function calculateHighlightOverlayStyle(position, textareaMetrics) {
+        return {
+            left: (textareaMetrics.offsetLeft + position.left - textareaMetrics.scrollLeft) + 'px',
+            top: (textareaMetrics.offsetTop + position.top - textareaMetrics.scrollTop) + 'px',
+            width: Math.max(position.width, 8) + 'px',
+            height: position.height + 'px',
+        };
+    }
+
     return {
         findMatchingOpenBracket,
         findMatchingCloseBracket,
         findMatchingQuote,
         findMatchingIndexAroundCursor,
+        calculateHighlightOverlayStyle,
     };
 });

@@ -3162,18 +3162,16 @@
                 }
 
                 const position = getTextPosition(textarea, charIndex);
-
-                // Account for textarea scroll
-                const textareaRect = textarea.getBoundingClientRect();
-                const containerRect = container.getBoundingClientRect();
+                const overlayStyle = JsonBracketMatcher.calculateHighlightOverlayStyle(position, {
+                    offsetLeft: textarea.offsetLeft,
+                    offsetTop: textarea.offsetTop,
+                    scrollLeft: textarea.scrollLeft,
+                    scrollTop: textarea.scrollTop
+                });
 
                 highlightOverlay = document.createElement('div');
                 highlightOverlay.className = 'bracket-highlight-overlay';
-                // position.left/top already includes padding from the mirror measurement
-                highlightOverlay.style.left = (textarea.offsetLeft + position.left - textarea.scrollLeft) + 'px';
-                highlightOverlay.style.top = (textarea.offsetTop + position.top - textarea.scrollTop) + 'px';
-                highlightOverlay.style.width = Math.max(position.width, 8) + 'px'; // Min width for visibility
-                highlightOverlay.style.height = position.height + 'px';
+                Object.assign(highlightOverlay.style, overlayStyle);
 
                 container.appendChild(highlightOverlay);
 

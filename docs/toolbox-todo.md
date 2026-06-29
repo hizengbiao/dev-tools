@@ -134,6 +134,7 @@
   - 2026-06-28 已继续将 `json-parser.html` 中折叠子树用到的 DOM 相对层级计算和折叠图标定位逻辑收敛到 `json-dom-path-utils.js`，补充测试覆盖断链节点和首行图标查找。
   - 2026-06-29 已将 `json-parser.html` 中编辑器括号和引号匹配扫描逻辑抽取到 `json-bracket-matcher.js`，新增 `tests/json-bracket-matcher.test.cjs` 覆盖嵌套括号、字符串内括号跳过、转义引号和页面集成。
   - 2026-06-29 已继续将光标前后括号/引号匹配入口收敛到 `JsonBracketMatcher.findMatchingIndexAroundCursor`，页面只负责高亮匹配位置，减少 `json-parser.html` 内联分支逻辑。
+  - 2026-06-29 已继续将括号高亮覆盖层的样式计算抽取到 `JsonBracketMatcher.calculateHighlightOverlayStyle`，减少 `json-parser.html` 中 DOM 高亮定位的内联计算。
 
 ## JSON 格式化工具
 
