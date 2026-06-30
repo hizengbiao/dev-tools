@@ -85,6 +85,33 @@
             color: #57606a;
         }
 
+        .json-key-paths-panel {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .json-key-paths-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .json-key-paths-result {
+            width: 100%;
+            min-height: 90px;
+            max-height: 160px;
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            box-sizing: border-box;
+            resize: vertical;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: 13px;
+            line-height: 1.45;
+            background: #f6f8fa;
+        }
+
         .btn {
             padding: 8px 16px;
             font-size: 14px;
@@ -826,7 +853,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V1.82</span>
+            <span>V1.83</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -837,6 +864,16 @@
         <button class="btn btn-primary" onclick="handleJsonPathQuery()">查询</button>
         <button class="btn btn-default" onclick="copyJsonPathResult()">复制结果</button>
         <span id="json-path-result" class="json-path-result"></span>
+    </div>
+
+    <div class="json-path-panel json-key-paths-panel">
+        <div class="json-key-paths-actions">
+            <label for="json-key-paths-result">字段路径</label>
+            <button class="btn btn-primary" onclick="handleExtractJsonKeyPaths()">提取字段路径</button>
+            <button class="btn btn-default" onclick="copyJsonKeyPaths()">复制全部路径</button>
+            <span id="json-key-paths-count" class="json-path-result"></span>
+        </div>
+        <textarea id="json-key-paths-result" class="json-key-paths-result" readonly placeholder="提取后会在这里显示字段路径，例如 items[].id"></textarea>
     </div>
 
     <div id="error-msg"></div>
@@ -867,6 +904,13 @@
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年7月1日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.83</div>
+                        <div class="changelog-desc">功能新增：新增字段路径提取入口，支持输出并复制 JSON 中的所有字段路径，数组字段统一显示为 items[].id 这类稳定格式。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月30日</div>
                     <div class="changelog-entry">
@@ -1260,6 +1304,7 @@
     <script src="json-sorter.js"></script>
     <script src="json-path-editor.js"></script>
     <script src="json-path-query.js"></script>
+    <script src="json-key-paths.js"></script>
     <script src="json-dom-path-utils.js"></script>
     <script src="json-bracket-matcher.js"></script>
     <script src="json-java-converter.js"></script>
@@ -1269,6 +1314,8 @@
         const errorMsg = document.getElementById('error-msg');
         const pathInput = document.getElementById('json-path-input');
         const pathResult = document.getElementById('json-path-result');
+        const keyPathsResult = document.getElementById('json-key-paths-result');
+        const keyPathsCount = document.getElementById('json-key-paths-count');
 
         const viewSource = document.getElementById('view-source');
         const viewTree = document.getElementById('view-tree');
@@ -1278,6 +1325,7 @@
         let isTreeMode = false;
         let sourceDirty = false; // Flag to defer expensive stringification
         let lastJsonPathResult = '';
+        let lastJsonKeyPaths = [];
 
         // Undo/Redo
         const historyStack = [];
@@ -2526,6 +2574,9 @@
             pathInput.value = '';
             pathResult.textContent = '';
             lastJsonPathResult = '';
+            keyPathsResult.value = '';
+            keyPathsCount.textContent = '';
+            lastJsonKeyPaths = [];
             currentObj = null;
             switchMode('source');
             errorMsg.style.display = 'none';
@@ -2621,6 +2672,34 @@
                 return;
             }
             copyText(lastJsonPathResult);
+        }
+
+        function getJsonKeyPathsTarget() {
+            if (currentObj !== null) {
+                return currentObj;
+            }
+            return JSON.parse(inputArea.value);
+        }
+
+        function handleExtractJsonKeyPaths() {
+            try {
+                const target = getJsonKeyPathsTarget();
+                lastJsonKeyPaths = JsonKeyPaths.extractJsonKeyPaths(target);
+                keyPathsResult.value = lastJsonKeyPaths.join('\n');
+                keyPathsCount.textContent = lastJsonKeyPaths.length ? `${lastJsonKeyPaths.length} 条路径` : '未提取到字段路径';
+            } catch (e) {
+                lastJsonKeyPaths = [];
+                keyPathsResult.value = '';
+                keyPathsCount.textContent = e.message;
+            }
+        }
+
+        function copyJsonKeyPaths() {
+            if (!lastJsonKeyPaths.length) {
+                showToast('没有可复制的字段路径');
+                return;
+            }
+            copyText(lastJsonKeyPaths.join('\n'));
         }
 
         // Sort/Order Logic (Operates on currentObj)
