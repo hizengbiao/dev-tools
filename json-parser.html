@@ -45,6 +45,46 @@
             flex-wrap: wrap;
         }
 
+        .json-path-panel {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 auto 12px;
+            width: min(980px, 100%);
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px 10px;
+            box-sizing: border-box;
+        }
+
+        .json-path-panel label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #57606a;
+            white-space: nowrap;
+        }
+
+        .json-path-panel input {
+            flex: 1;
+            min-width: 220px;
+            padding: 7px 9px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: 13px;
+        }
+
+        .json-path-result {
+            max-width: 360px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: 12px;
+            color: #57606a;
+        }
+
         .btn {
             padding: 8px 16px;
             font-size: 14px;
@@ -786,9 +826,17 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V1.81</span>
+            <span>V1.82</span>
             <span>ℹ️</span>
         </div>
+    </div>
+
+    <div class="json-path-panel">
+        <label for="json-path-input">JSON Path</label>
+        <input id="json-path-input" type="text" placeholder="例如 $.data[0].name 或 $[&quot;a.b&quot;].value">
+        <button class="btn btn-primary" onclick="handleJsonPathQuery()">查询</button>
+        <button class="btn btn-default" onclick="copyJsonPathResult()">复制结果</button>
+        <span id="json-path-result" class="json-path-result"></span>
     </div>
 
     <div id="error-msg"></div>
@@ -819,6 +867,13 @@
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年6月30日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.82</div>
+                        <div class="changelog-desc">功能新增：新增 JSON Path 查询入口，支持按对象属性和数组下标快速查询并复制对应值。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月25日</div>
                     <div class="changelog-entry">
@@ -1204,6 +1259,7 @@
     <script src="json-repair-guards.js"></script>
     <script src="json-sorter.js"></script>
     <script src="json-path-editor.js"></script>
+    <script src="json-path-query.js"></script>
     <script src="json-dom-path-utils.js"></script>
     <script src="json-bracket-matcher.js"></script>
     <script src="json-java-converter.js"></script>
@@ -1211,6 +1267,8 @@
         const inputArea = document.getElementById('json-input');
         const outputDiv = document.getElementById('json-output');
         const errorMsg = document.getElementById('error-msg');
+        const pathInput = document.getElementById('json-path-input');
+        const pathResult = document.getElementById('json-path-result');
 
         const viewSource = document.getElementById('view-source');
         const viewTree = document.getElementById('view-tree');
@@ -1219,6 +1277,7 @@
         let currentObj = null;
         let isTreeMode = false;
         let sourceDirty = false; // Flag to defer expensive stringification
+        let lastJsonPathResult = '';
 
         // Undo/Redo
         const historyStack = [];
@@ -2464,6 +2523,9 @@
         function clearAll() {
             inputArea.value = '';
             outputDiv.innerHTML = '';
+            pathInput.value = '';
+            pathResult.textContent = '';
+            lastJsonPathResult = '';
             currentObj = null;
             switchMode('source');
             errorMsg.style.display = 'none';
@@ -2514,6 +2576,52 @@
         }
 
 
+
+        function getJsonPathQueryTarget() {
+            if (currentObj !== null) {
+                return currentObj;
+            }
+            return JSON.parse(inputArea.value);
+        }
+
+        function formatJsonPathValue(value) {
+            if (value !== null && typeof value === 'object') {
+                return JSON.stringify(value, null, 4);
+            }
+            return String(value);
+        }
+
+        function handleJsonPathQuery() {
+            if (!pathInput.value.trim()) {
+                pathResult.textContent = '请输入 JSON Path';
+                lastJsonPathResult = '';
+                return;
+            }
+
+            try {
+                const target = getJsonPathQueryTarget();
+                const result = JsonPathQuery.queryJsonPath(target, pathInput.value);
+                if (!result.found) {
+                    pathResult.textContent = result.message;
+                    lastJsonPathResult = '';
+                    return;
+                }
+
+                lastJsonPathResult = formatJsonPathValue(result.value);
+                pathResult.textContent = lastJsonPathResult;
+            } catch (e) {
+                pathResult.textContent = e.message;
+                lastJsonPathResult = '';
+            }
+        }
+
+        function copyJsonPathResult() {
+            if (!lastJsonPathResult) {
+                showToast('没有可复制的查询结果');
+                return;
+            }
+            copyText(lastJsonPathResult);
+        }
 
         // Sort/Order Logic (Operates on currentObj)
         function sortJson(asc) {

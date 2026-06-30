@@ -9,12 +9,15 @@ const script = [...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>
     .map((match) => match[1])
     .join('\n');
 
-assert.match(page, /<span>V1\.81<\/span>/);
+assert.match(page, /<span>V1\.82<\/span>/);
+assert.match(page, /<div class="changelog-version">V1\.82<\/div>/);
+assert.match(page, /<div class="changelog-date">2026年6月30日<\/div>[\s\S]*?<div class="changelog-version">V1\.82<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.81<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年6月25日<\/div>[\s\S]*?<div class="changelog-version">V1\.81<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年6月11日<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.80<\/div>/);
 assert.match(page, /<script src="json-repair-guards\.js"><\/script>/);
+assert.match(page, /<script src="json-path-query\.js"><\/script>/);
 assert.match(page, /JsonRepairGuards\.shouldSkipJsonRepair\(raw\)/);
 assert.doesNotMatch(page, /function shouldSkipJsonRepair\(raw\)/);
 
@@ -77,6 +80,7 @@ function createHarness() {
             copyText: async () => true,
         },
         JsonRepairGuards: require(path.resolve(__dirname, '../json-repair-guards.js')),
+        JsonPathQuery: require(path.resolve(__dirname, '../json-path-query.js')),
         console,
         setTimeout,
         clearTimeout,
@@ -125,5 +129,11 @@ assert.equal(
     JSON.parse(repaired[0][0].data).attributes.database_name,
     'db-0.cn_30100,db-1.cn_30100,db-2.cn_30100/db'
 );
+
+const queryHarness = createHarness();
+queryHarness.elements.get('json-input').value = '{"data":[{"name":"alpha"},{"name":"beta"}]}';
+queryHarness.elements.get('json-path-input').value = '$.data[1].name';
+queryHarness.context.handleJsonPathQuery();
+assert.equal(queryHarness.elements.get('json-path-result').textContent, 'beta');
 
 console.log('json parser repair guards passed');
