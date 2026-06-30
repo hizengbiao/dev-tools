@@ -153,6 +153,8 @@
   - 找不到路径时给出明确提示。
   - 查询结果可复制。
 - 完成记录：待填写。
+- 进展记录：
+  - 2026-06-30 已新增 `json-path-query.js` 和 `tests/json-path-query.test.cjs`，先补齐 JSON Path 解析与查询核心能力，支持对象属性、数组下标、嵌套路径和 bracket 字符串 key，并在路径不存在时返回明确提示。
 
 ### TODO-JSON-002：提取所有 Key 路径
 
