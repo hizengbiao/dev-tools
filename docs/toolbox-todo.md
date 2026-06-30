@@ -168,6 +168,8 @@
   - 可复制全部路径。
   - 数组字段路径表达方式稳定，例如 `items[].id`。
 - 完成记录：待填写。
+- 进展记录：
+  - 2026-07-01 已新增 `json-key-paths.js` 和 `tests/json-key-paths.test.cjs`，先补齐字段路径提取核心能力，支持对象嵌套路径、数组字段 `items[].id` 稳定表达、数组原始值 `tags[]` 表达，以及包含特殊字符的 key bracket 表达。
 
 ### TODO-JSON-003：大 JSON 搜索结果面板
 
