@@ -899,8 +899,6 @@
         <button class="btn btn-default" onclick="handleMinify()" title="压缩 JSON">📦 压缩</button>
         <button class="btn btn-default" onclick="fixJson()" title="修复非标准 JSON">🔧 修复</button>
         <button class="btn btn-default" onclick="handleJavaConvert()" title="JSON 与 Java 代码互转">☕ Json/Java 互转</button>
-        <button class="btn btn-default" onclick="expandJsonStringFields()" title="将值为 JSON 文本的字段展开为对象或数组">🧩 展开 JSON 字符串</button>
-        <button class="btn btn-default" onclick="restoreJsonStringFields()" title="将已展开的 JSON 字符串字段恢复为原字符串">↩️ 恢复 JSON 字符串</button>
         <button class="btn btn-default" onclick="clearAll()" title="清空内容">🧹 清空</button>
         <div style="width: 15px;"></div>
         <button class="btn btn-default" onclick="undo()" title="撤销 (Ctrl+Z)">↩️ 撤销</button>
@@ -916,7 +914,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V1.85</span>
+            <span>V1.86</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -979,6 +977,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月1日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.86</div>
+                        <div class="changelog-desc">交互优化：JSON 字符串展开与恢复不再固定显示在顶部工具栏，仅在格式化结果中识别到对应字段时显示在字段附近，便于按字段就地操作。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.85</div>
                         <div class="changelog-desc">功能新增：支持一键展开值为 JSON 文本的字段为对象或数组，并可将本次展开的字段恢复为原字符串，方便查看嵌套日志内容。</div>
@@ -2808,36 +2810,54 @@
             switchMode('tree');
         }
 
-        function expandJsonStringFields() {
-            if (!ensureCurrentJsonObject()) {
-                return;
-            }
-
-            const result = JsonStringFields.expandStringifiedJsonFields(currentObj);
-            if (!result.expandedPaths.length) {
-                showToast('未识别到可展开的 JSON 字符串字段');
-                return;
-            }
-
-            expandedStringFieldPaths = result.expandedPaths;
-            applyJsonObjectChange(result.value);
-            showToast(`已展开 ${expandedStringFieldPaths.length} 个 JSON 字符串字段`);
+        function sameJsonPath(left, right) {
+            return JSON.stringify(left) === JSON.stringify(right);
         }
 
-        function restoreJsonStringFields() {
-            if (!expandedStringFieldPaths.length) {
-                showToast('没有可恢复的 JSON 字符串字段');
-                return;
-            }
+        function isExpandedJsonStringFieldPath(path) {
+            return expandedStringFieldPaths.some((item) => sameJsonPath(item, path));
+        }
 
+        function addExpandedJsonStringFieldPath(path) {
+            if (!isExpandedJsonStringFieldPath(path)) {
+                expandedStringFieldPaths.push(path);
+            }
+        }
+
+        function removeExpandedJsonStringFieldPath(path) {
+            expandedStringFieldPaths = expandedStringFieldPaths.filter((item) => !sameJsonPath(item, path));
+        }
+
+        function expandJsonStringFieldAtPath(path) {
             if (!ensureCurrentJsonObject()) {
                 return;
             }
 
-            const restored = JsonStringFields.restoreStringifiedJsonFields(currentObj, expandedStringFieldPaths);
-            expandedStringFieldPaths = [];
-            applyJsonObjectChange(restored);
-            showToast('已恢复 JSON 字符串字段');
+            const result = JsonStringFields.expandStringifiedJsonFieldAtPath(currentObj, path);
+            if (!result.expandedPath) {
+                showToast('当前字段不是可展开的 JSON 字符串');
+                return;
+            }
+
+            addExpandedJsonStringFieldPath(result.expandedPath);
+            applyJsonObjectChange(result.value);
+            showToast('已展开这个 JSON 字符串字段');
+        }
+
+        function restoreJsonStringFieldAtPath(path) {
+            if (!ensureCurrentJsonObject()) {
+                return;
+            }
+
+            const restored = JsonStringFields.restoreStringifiedJsonFieldAtPath(currentObj, path);
+            if (!restored.restoredPath) {
+                showToast('当前字段没有可恢复的 JSON 字符串内容');
+                return;
+            }
+
+            removeExpandedJsonStringFieldPath(restored.restoredPath);
+            applyJsonObjectChange(restored.value);
+            showToast('已恢复这个 JSON 字符串字段');
         }
 
         function getJsonSearchTarget() {
@@ -3191,6 +3211,30 @@
                 copyText(typeof data === 'string' ? data : JSON.stringify(data, null, 2));
             };
             actions.appendChild(btnVal);
+
+            if (typeof data === 'string' && JsonStringFields.collectStringifiedJsonFields({ value: data }).length > 0) {
+                const btnExpandString = document.createElement('button');
+                btnExpandString.className = 'tiny-btn';
+                btnExpandString.textContent = '展开 JSON 字符串';
+                btnExpandString.title = '展开这个 JSON 字符串字段';
+                btnExpandString.onclick = (e) => {
+                    e.stopPropagation();
+                    expandJsonStringFieldAtPath(path);
+                };
+                actions.appendChild(btnExpandString);
+            }
+
+            if (isObj && path.length > 0 && isExpandedJsonStringFieldPath(path)) {
+                const btnRestoreString = document.createElement('button');
+                btnRestoreString.className = 'tiny-btn';
+                btnRestoreString.textContent = '恢复 JSON 字符串';
+                btnRestoreString.title = '恢复这个 JSON 字符串字段';
+                btnRestoreString.onclick = (e) => {
+                    e.stopPropagation();
+                    restoreJsonStringFieldAtPath(path);
+                };
+                actions.appendChild(btnRestoreString);
+            }
 
             if (key !== null) {
                 const btnPair = document.createElement('button');

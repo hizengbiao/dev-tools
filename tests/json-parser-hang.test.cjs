@@ -9,12 +9,13 @@ const script = [...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>
     .map((match) => match[1])
     .join('\n');
 
-assert.match(page, /<span>V1\.85<\/span>/);
+assert.match(page, /<span>V1\.86<\/span>/);
+assert.match(page, /<div class="changelog-version">V1\.86<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.85<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.84<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.83<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.82<\/div>/);
-assert.match(page, /2026[\s\S]*?7[\s\S]*?1[\s\S]*?<div class="changelog-version">V1\.85<\/div>/);
+assert.match(page, /2026[\s\S]*?7[\s\S]*?1[\s\S]*?<div class="changelog-version">V1\.86<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.81<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年6月25日<\/div>[\s\S]*?<div class="changelog-version">V1\.81<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年6月11日<\/div>/);
@@ -24,10 +25,12 @@ assert.match(page, /<script src="json-path-query\.js"><\/script>/);
 assert.match(page, /<script src="json-key-paths\.js"><\/script>/);
 assert.match(page, /<script src="json-search-results\.js"><\/script>/);
 assert.match(page, /<script src="json-string-fields\.js"><\/script>/);
-assert.match(page, /function expandJsonStringFields\(\)/);
-assert.match(page, /function restoreJsonStringFields\(\)/);
-assert.match(page, /JsonStringFields\.expandStringifiedJsonFields\(currentObj\)/);
-assert.match(page, /JsonStringFields\.restoreStringifiedJsonFields\(currentObj, expandedStringFieldPaths\)/);
+assert.doesNotMatch(page, /<button[^>]+onclick="expandJsonStringFields\(\)"/);
+assert.doesNotMatch(page, /<button[^>]+onclick="restoreJsonStringFields\(\)"/);
+assert.match(page, /function expandJsonStringFieldAtPath\(path\)/);
+assert.match(page, /function restoreJsonStringFieldAtPath\(path\)/);
+assert.match(page, /JsonStringFields\.expandStringifiedJsonFieldAtPath\(currentObj, path\)/);
+assert.match(page, /JsonStringFields\.restoreStringifiedJsonFieldAtPath\(currentObj, path\)/);
 assert.match(page, /id="json-search-input"/);
 assert.match(page, /id="json-search-results"/);
 assert.match(page, /function handleJsonSearch\(\)/);
@@ -57,6 +60,7 @@ function createElementStub(id = '') {
         },
         addEventListener() {},
         appendChild(child) {
+            child.parentElement = this;
             this.children.push(child);
             return child;
         },
@@ -65,6 +69,18 @@ function createElementStub(id = '') {
         querySelector() { return null; },
         setAttribute() {},
     };
+}
+
+function collectElements(root, predicate, results = []) {
+    if (predicate(root)) {
+        results.push(root);
+    }
+
+    for (const child of root.children || []) {
+        collectElements(child, predicate, results);
+    }
+
+    return results;
 }
 
 function createHarness() {
@@ -174,12 +190,22 @@ assert.match(searchHarness.elements.get('json-search-results').innerHTML, /beta/
 const stringFieldHarness = createHarness();
 stringFieldHarness.elements.get('json-input').value = '{"payload":"{\\"name\\":\\"alpha\\"}","plain":"x"}';
 stringFieldHarness.context.handleFormat();
-stringFieldHarness.context.expandJsonStringFields();
+const inlineExpandButtons = collectElements(
+    stringFieldHarness.elements.get('json-output'),
+    (element) => element.title === '展开这个 JSON 字符串字段'
+);
+assert.equal(inlineExpandButtons.length, 1);
+inlineExpandButtons[0].onclick({ stopPropagation() {} });
 assert.deepStrictEqual(JSON.parse(stringFieldHarness.elements.get('json-input').value), {
     payload: { name: 'alpha' },
     plain: 'x',
 });
-stringFieldHarness.context.restoreJsonStringFields();
+const inlineRestoreButtons = collectElements(
+    stringFieldHarness.elements.get('json-output'),
+    (element) => element.title === '恢复这个 JSON 字符串字段'
+);
+assert.equal(inlineRestoreButtons.length, 1);
+inlineRestoreButtons[0].onclick({ stopPropagation() {} });
 assert.deepStrictEqual(JSON.parse(stringFieldHarness.elements.get('json-input').value), {
     payload: '{"name":"alpha"}',
     plain: 'x',

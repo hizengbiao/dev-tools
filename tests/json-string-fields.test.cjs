@@ -41,10 +41,24 @@ assert.equal(expanded.value.numberText, '123');
 assert.equal(expanded.value.nested.escaped, '{\\"bad\\":true}');
 assert.notEqual(expanded.value, data);
 
+const singleExpanded = stringFields.expandStringifiedJsonFieldAtPath(data, ['payload']);
+assert.deepStrictEqual(singleExpanded.expandedPath, ['payload']);
+assert.deepStrictEqual(singleExpanded.value.payload, { name: 'alpha', meta: { enabled: true } });
+assert.equal(singleExpanded.value.listText, '[{"id":1},{"id":2}]');
+
+const skippedSingleExpanded = stringFields.expandStringifiedJsonFieldAtPath(data, ['plain']);
+assert.equal(skippedSingleExpanded.expandedPath, null);
+assert.deepStrictEqual(skippedSingleExpanded.value, data);
+
 const restored = stringFields.restoreStringifiedJsonFields(expanded.value, expanded.expandedPaths);
 assert.equal(restored.payload, '{"name":"alpha","meta":{"enabled":true}}');
 assert.equal(restored.listText, '[{"id":1},{"id":2}]');
 assert.equal(restored.plain, 'not json');
+
+const singleRestored = stringFields.restoreStringifiedJsonFieldAtPath(expanded.value, ['payload']);
+assert.deepStrictEqual(singleRestored.restoredPath, ['payload']);
+assert.equal(singleRestored.value.payload, '{"name":"alpha","meta":{"enabled":true}}');
+assert.deepStrictEqual(singleRestored.value.listText, [{ id: 1 }, { id: 2 }]);
 
 assert.deepStrictEqual(stringFields.collectStringifiedJsonFields([{ data: '{"ok":true}' }]), [
     {

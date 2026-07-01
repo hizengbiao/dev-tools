@@ -67,6 +67,17 @@
         current[path[path.length - 1]] = value;
     }
 
+    function getAtPath(root, path) {
+        let current = root;
+        for (const key of path) {
+            if (current == null) {
+                return undefined;
+            }
+            current = current[key];
+        }
+        return current;
+    }
+
     function walk(value, path, pathText, visitor) {
         if (!isObject(value)) {
             return;
@@ -122,6 +133,24 @@
         };
     }
 
+    function expandStringifiedJsonFieldAtPath(root, path) {
+        const parsed = parseStringifiedJson(getAtPath(root, path));
+        if (!parsed) {
+            return {
+                value: root,
+                expandedPath: null,
+            };
+        }
+
+        const value = clone(root);
+        setAtPath(value, path, clone(parsed));
+
+        return {
+            value,
+            expandedPath: path,
+        };
+    }
+
     function restoreStringifiedJsonFields(root, paths) {
         const value = clone(root);
 
@@ -143,9 +172,29 @@
         return value;
     }
 
+    function restoreStringifiedJsonFieldAtPath(root, path) {
+        const valueAtPath = getAtPath(root, path);
+        if (!isObject(valueAtPath)) {
+            return {
+                value: root,
+                restoredPath: null,
+            };
+        }
+
+        const value = clone(root);
+        setAtPath(value, path, JSON.stringify(valueAtPath));
+
+        return {
+            value,
+            restoredPath: path,
+        };
+    }
+
     return {
         collectStringifiedJsonFields,
         expandStringifiedJsonFields,
         restoreStringifiedJsonFields,
+        expandStringifiedJsonFieldAtPath,
+        restoreStringifiedJsonFieldAtPath,
     };
 });
