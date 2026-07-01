@@ -1046,7 +1046,7 @@
         <div class="tool-title">
             <h1>正则表达式测试</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.08</span>
+                <span>V1.09</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -1214,6 +1214,13 @@
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年7月2日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.09</div>
+                        <div class="changelog-desc">修复高亮预览和匹配结果中调用正则构造工具时的命名空间问题，避免出现 <code>getRegexWithFlags is not defined</code> 错误。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月27日</div>
                     <div class="changelog-entry">
@@ -1824,9 +1831,9 @@
             let globalRegex;
 
             try {
-                globalRegex = getRegexWithFlags(regex.source, flags.includes('d') ? flags : `${flags}d`);
+                globalRegex = RegexRuntimeUtils.getRegexWithFlags(regex.source, flags.includes('d') ? flags : `${flags}d`);
             } catch (error) {
-                globalRegex = getRegexWithFlags(regex.source, flags);
+                globalRegex = RegexRuntimeUtils.getRegexWithFlags(regex.source, flags);
             }
 
             const matches = [];
