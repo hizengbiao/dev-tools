@@ -183,6 +183,8 @@
   - 显示路径、行号、预览。
   - 大 JSON 搜索不卡死。
 - 完成记录：待填写。
+- 进展记录：
+  - 2026-07-01 已新增 `json-search-results.js` 和 `tests/json-search-results.test.cjs`，先补齐 JSON 搜索结果核心能力，支持 key/value 搜索、稳定路径输出、格式化 JSON 行号估算和值预览。
 
 ### TODO-JSON-004：字符串化 JSON 字段展开/收起
 
