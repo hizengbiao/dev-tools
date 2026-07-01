@@ -17,6 +17,8 @@ const data = {
 assert.deepStrictEqual(query.parseJsonPath('$.data[0].name'), ['data', 0, 'name']);
 assert.deepStrictEqual(query.parseJsonPath('data[1].meta.enabled'), ['data', 1, 'meta', 'enabled']);
 assert.deepStrictEqual(query.parseJsonPath('$["a.b"].value'), ['a.b', 'value']);
+assert.equal(query.formatJsonPath(['items', 0, 'key']), '$.items[0].key');
+assert.equal(query.formatJsonPath(['items', 0, 'a.b']), '$.items[0]["a.b"]');
 
 assert.deepStrictEqual(query.queryJsonPath(data, '$.data[1].name'), {
     found: true,
@@ -40,7 +42,8 @@ assert.match(page, /id="json-path-result"/);
 assert.match(page, /function handleJsonPathQuery\(\)/);
 assert.match(page, /JsonPathQuery\.queryJsonPath\(target, pathInput\.value\)/);
 assert.match(page, /function copyJsonPathResult\(\)/);
-assert.match(page, /<span>V1\.86<\/span>/);
+assert.match(page, /<span>V1\.87<\/span>/);
+assert.match(page, /<div class="changelog-version">V1\.87<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.86<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.85<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.84<\/div>/);

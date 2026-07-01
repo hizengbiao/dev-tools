@@ -9,13 +9,14 @@ const script = [...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>
     .map((match) => match[1])
     .join('\n');
 
-assert.match(page, /<span>V1\.86<\/span>/);
+assert.match(page, /<span>V1\.87<\/span>/);
+assert.match(page, /<div class="changelog-version">V1\.87<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.86<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.85<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.84<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.83<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.82<\/div>/);
-assert.match(page, /2026[\s\S]*?7[\s\S]*?1[\s\S]*?<div class="changelog-version">V1\.86<\/div>/);
+assert.match(page, /2026[\s\S]*?7[\s\S]*?1[\s\S]*?<div class="changelog-version">V1\.87<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.81<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年6月25日<\/div>[\s\S]*?<div class="changelog-version">V1\.81<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年6月11日<\/div>/);
@@ -85,6 +86,7 @@ function collectElements(root, predicate, results = []) {
 
 function createHarness() {
     const elements = new Map();
+    let copiedText = '';
     const document = {
         getElementById(id) {
             if (!elements.has(id)) {
@@ -111,7 +113,10 @@ function createHarness() {
         navigator: { clipboard: { readText: async () => '', writeText: async () => {} } },
         ClipboardUtils: {
             showToast() {},
-            copyText: async () => true,
+            copyText: async (text) => {
+                copiedText = text;
+                return true;
+            },
         },
         JsonRepairGuards: require(path.resolve(__dirname, '../json-repair-guards.js')),
         JsonPathQuery: require(path.resolve(__dirname, '../json-path-query.js')),
@@ -126,7 +131,7 @@ function createHarness() {
     context.window = context;
 
     vm.runInNewContext(script, context, { timeout: 1000 });
-    return { context, elements };
+    return { context, elements, getCopiedText: () => copiedText };
 }
 
 const nonJsonRegexSnippet = String.raw`"(jdbc:mysql://[^,\\s]+|jdbc:postgresql://[^,\\s]+|jdbc:tdsql-mysql://[^,\\s]+|jdbc:postgresql://[^,\\s]+" 
@@ -210,5 +215,23 @@ assert.deepStrictEqual(JSON.parse(stringFieldHarness.elements.get('json-input').
     payload: '{"name":"alpha"}',
     plain: 'x',
 });
+
+const tooltipPathHarness = createHarness();
+tooltipPathHarness.elements.get('json-input').value = '{"items":[{"key":"host","a.b":1}]}';
+tooltipPathHarness.context.handleFormat();
+const keySpans = collectElements(
+    tooltipPathHarness.elements.get('json-output'),
+    (element) => element.className === 'key'
+);
+const targetKey = keySpans.find((element) => element.textContent === '"key"');
+assert.ok(targetKey, 'tree should render the object key');
+targetKey.onmouseenter({ clientX: 0, clientY: 0 });
+const copyPathButton = collectElements(
+    tooltipPathHarness.elements.get('path-tooltip'),
+    (element) => element.className === 'path-copy-btn'
+)[0];
+assert.ok(copyPathButton, 'tooltip should render a full path copy button');
+copyPathButton.onclick({ stopPropagation() {} });
+assert.equal(tooltipPathHarness.getCopiedText(), '$.items[0].key');
 
 console.log('json parser repair guards passed');

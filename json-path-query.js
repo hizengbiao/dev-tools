@@ -118,6 +118,7 @@
 
     return {
         parseJsonPath,
+        formatJsonPath,
         queryJsonPath,
     };
 });
