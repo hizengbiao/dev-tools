@@ -9,10 +9,11 @@ const script = [...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>
     .map((match) => match[1])
     .join('\n');
 
-assert.match(page, /<span>V1\.83<\/span>/);
+assert.match(page, /<span>V1\.84<\/span>/);
+assert.match(page, /<div class="changelog-version">V1\.84<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.83<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.82<\/div>/);
-assert.match(page, /2026[\s\S]*?7[\s\S]*?1[\s\S]*?<div class="changelog-version">V1\.83<\/div>/);
+assert.match(page, /2026[\s\S]*?7[\s\S]*?1[\s\S]*?<div class="changelog-version">V1\.84<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.81<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年6月25日<\/div>[\s\S]*?<div class="changelog-version">V1\.81<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年6月11日<\/div>/);
@@ -20,6 +21,11 @@ assert.match(page, /<div class="changelog-version">V1\.80<\/div>/);
 assert.match(page, /<script src="json-repair-guards\.js"><\/script>/);
 assert.match(page, /<script src="json-path-query\.js"><\/script>/);
 assert.match(page, /<script src="json-key-paths\.js"><\/script>/);
+assert.match(page, /<script src="json-search-results\.js"><\/script>/);
+assert.match(page, /id="json-search-input"/);
+assert.match(page, /id="json-search-results"/);
+assert.match(page, /function handleJsonSearch\(\)/);
+assert.match(page, /JsonSearchResults\.searchJsonTree\(target, jsonSearchInput\.value/);
 assert.match(page, /id="json-key-paths-result"/);
 assert.match(page, /function handleExtractJsonKeyPaths\(\)/);
 assert.match(page, /JsonKeyPaths\.extractJsonKeyPaths\(target\)/);
@@ -88,6 +94,7 @@ function createHarness() {
         JsonRepairGuards: require(path.resolve(__dirname, '../json-repair-guards.js')),
         JsonPathQuery: require(path.resolve(__dirname, '../json-path-query.js')),
         JsonKeyPaths: require(path.resolve(__dirname, '../json-key-paths.js')),
+        JsonSearchResults: require(path.resolve(__dirname, '../json-search-results.js')),
         console,
         setTimeout,
         clearTimeout,
@@ -148,5 +155,13 @@ keyPathsHarness.elements.get('json-input').value = '{"items":[{"id":1},{"name":"
 keyPathsHarness.context.handleExtractJsonKeyPaths();
 assert.equal(keyPathsHarness.elements.get('json-key-paths-result').value, 'items\nitems[].id\nitems[].name\ntags\ntags[]');
 assert.match(keyPathsHarness.elements.get('json-key-paths-count').textContent, /5/);
+
+const searchHarness = createHarness();
+searchHarness.elements.get('json-input').value = '{"items":[{"id":1,"name":"alpha"},{"id":2,"name":"beta"}]}';
+searchHarness.elements.get('json-search-input').value = 'beta';
+searchHarness.context.handleJsonSearch();
+assert.match(searchHarness.elements.get('json-search-summary').textContent, /1/);
+assert.match(searchHarness.elements.get('json-search-results').innerHTML, /items\[1\]\.name/);
+assert.match(searchHarness.elements.get('json-search-results').innerHTML, /beta/);
 
 console.log('json parser repair guards passed');

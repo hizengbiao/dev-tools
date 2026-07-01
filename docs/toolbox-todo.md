@@ -173,7 +173,7 @@
 
 ### TODO-JSON-003：大 JSON 搜索结果面板
 
-- 状态：`[ ]`
+- 状态：`[x]`
 - 优先级：`P1`
 - 类型：交互增强
 - 目标：搜索 key/value 后列出路径、行号、值预览，点击结果定位到源码或树节点。
@@ -182,7 +182,7 @@
   - 支持 key 和 value 搜索。
   - 显示路径、行号、预览。
   - 大 JSON 搜索不卡死。
-- 完成记录：待填写。
+- 完成记录：2026-07-01 已在 `json-parser.html` 中新增 JSON 搜索结果面板，支持按 key/value 搜索，展示命中路径、格式化行号和值预览；点击结果可带入 JSON Path 查询定位；已更新 JSON 格式化工具版本至 V1.84。
 - 进展记录：
   - 2026-07-01 已新增 `json-search-results.js` 和 `tests/json-search-results.test.cjs`，先补齐 JSON 搜索结果核心能力，支持 key/value 搜索、稳定路径输出、格式化 JSON 行号估算和值预览。
 
