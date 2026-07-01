@@ -9,11 +9,12 @@ const script = [...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>
     .map((match) => match[1])
     .join('\n');
 
-assert.match(page, /<span>V1\.84<\/span>/);
+assert.match(page, /<span>V1\.85<\/span>/);
+assert.match(page, /<div class="changelog-version">V1\.85<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.84<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.83<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.82<\/div>/);
-assert.match(page, /2026[\s\S]*?7[\s\S]*?1[\s\S]*?<div class="changelog-version">V1\.84<\/div>/);
+assert.match(page, /2026[\s\S]*?7[\s\S]*?1[\s\S]*?<div class="changelog-version">V1\.85<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.81<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年6月25日<\/div>[\s\S]*?<div class="changelog-version">V1\.81<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年6月11日<\/div>/);
@@ -22,6 +23,11 @@ assert.match(page, /<script src="json-repair-guards\.js"><\/script>/);
 assert.match(page, /<script src="json-path-query\.js"><\/script>/);
 assert.match(page, /<script src="json-key-paths\.js"><\/script>/);
 assert.match(page, /<script src="json-search-results\.js"><\/script>/);
+assert.match(page, /<script src="json-string-fields\.js"><\/script>/);
+assert.match(page, /function expandJsonStringFields\(\)/);
+assert.match(page, /function restoreJsonStringFields\(\)/);
+assert.match(page, /JsonStringFields\.expandStringifiedJsonFields\(currentObj\)/);
+assert.match(page, /JsonStringFields\.restoreStringifiedJsonFields\(currentObj, expandedStringFieldPaths\)/);
 assert.match(page, /id="json-search-input"/);
 assert.match(page, /id="json-search-results"/);
 assert.match(page, /function handleJsonSearch\(\)/);
@@ -95,6 +101,7 @@ function createHarness() {
         JsonPathQuery: require(path.resolve(__dirname, '../json-path-query.js')),
         JsonKeyPaths: require(path.resolve(__dirname, '../json-key-paths.js')),
         JsonSearchResults: require(path.resolve(__dirname, '../json-search-results.js')),
+        JsonStringFields: require(path.resolve(__dirname, '../json-string-fields.js')),
         console,
         setTimeout,
         clearTimeout,
@@ -163,5 +170,19 @@ searchHarness.context.handleJsonSearch();
 assert.match(searchHarness.elements.get('json-search-summary').textContent, /1/);
 assert.match(searchHarness.elements.get('json-search-results').innerHTML, /items\[1\]\.name/);
 assert.match(searchHarness.elements.get('json-search-results').innerHTML, /beta/);
+
+const stringFieldHarness = createHarness();
+stringFieldHarness.elements.get('json-input').value = '{"payload":"{\\"name\\":\\"alpha\\"}","plain":"x"}';
+stringFieldHarness.context.handleFormat();
+stringFieldHarness.context.expandJsonStringFields();
+assert.deepStrictEqual(JSON.parse(stringFieldHarness.elements.get('json-input').value), {
+    payload: { name: 'alpha' },
+    plain: 'x',
+});
+stringFieldHarness.context.restoreJsonStringFields();
+assert.deepStrictEqual(JSON.parse(stringFieldHarness.elements.get('json-input').value), {
+    payload: '{"name":"alpha"}',
+    plain: 'x',
+});
 
 console.log('json parser repair guards passed');

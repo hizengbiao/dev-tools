@@ -899,6 +899,8 @@
         <button class="btn btn-default" onclick="handleMinify()" title="压缩 JSON">📦 压缩</button>
         <button class="btn btn-default" onclick="fixJson()" title="修复非标准 JSON">🔧 修复</button>
         <button class="btn btn-default" onclick="handleJavaConvert()" title="JSON 与 Java 代码互转">☕ Json/Java 互转</button>
+        <button class="btn btn-default" onclick="expandJsonStringFields()" title="将值为 JSON 文本的字段展开为对象或数组">🧩 展开 JSON 字符串</button>
+        <button class="btn btn-default" onclick="restoreJsonStringFields()" title="将已展开的 JSON 字符串字段恢复为原字符串">↩️ 恢复 JSON 字符串</button>
         <button class="btn btn-default" onclick="clearAll()" title="清空内容">🧹 清空</button>
         <div style="width: 15px;"></div>
         <button class="btn btn-default" onclick="undo()" title="撤销 (Ctrl+Z)">↩️ 撤销</button>
@@ -914,7 +916,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V1.84</span>
+            <span>V1.85</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -977,6 +979,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月1日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.85</div>
+                        <div class="changelog-desc">功能新增：支持一键展开值为 JSON 文本的字段为对象或数组，并可将本次展开的字段恢复为原字符串，方便查看嵌套日志内容。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.84</div>
                         <div class="changelog-desc">功能新增：新增 JSON 搜索结果面板，支持按 key/value 搜索并展示命中路径、格式化行号和值预览，点击结果可带入 JSON Path 查询定位。</div>
@@ -1381,6 +1387,7 @@
     <script src="json-path-query.js"></script>
     <script src="json-key-paths.js"></script>
     <script src="json-search-results.js"></script>
+    <script src="json-string-fields.js"></script>
     <script src="json-dom-path-utils.js"></script>
     <script src="json-bracket-matcher.js"></script>
     <script src="json-java-converter.js"></script>
@@ -1405,6 +1412,7 @@
         let sourceDirty = false; // Flag to defer expensive stringification
         let lastJsonPathResult = '';
         let lastJsonKeyPaths = [];
+        let expandedStringFieldPaths = [];
 
         // Undo/Redo
         const historyStack = [];
@@ -2659,6 +2667,7 @@
             jsonSearchInput.value = '';
             jsonSearchSummary.textContent = '';
             jsonSearchResults.innerHTML = '';
+            expandedStringFieldPaths = [];
             currentObj = null;
             switchMode('source');
             errorMsg.style.display = 'none';
@@ -2782,6 +2791,53 @@
                 return;
             }
             copyText(lastJsonKeyPaths.join('\n'));
+        }
+
+        function ensureCurrentJsonObject() {
+            if (currentObj !== null) {
+                return true;
+            }
+            return parseAndRender();
+        }
+
+        function applyJsonObjectChange(nextObj) {
+            currentObj = nextObj;
+            syncToInput();
+            saveState();
+            reRenderTree();
+            switchMode('tree');
+        }
+
+        function expandJsonStringFields() {
+            if (!ensureCurrentJsonObject()) {
+                return;
+            }
+
+            const result = JsonStringFields.expandStringifiedJsonFields(currentObj);
+            if (!result.expandedPaths.length) {
+                showToast('未识别到可展开的 JSON 字符串字段');
+                return;
+            }
+
+            expandedStringFieldPaths = result.expandedPaths;
+            applyJsonObjectChange(result.value);
+            showToast(`已展开 ${expandedStringFieldPaths.length} 个 JSON 字符串字段`);
+        }
+
+        function restoreJsonStringFields() {
+            if (!expandedStringFieldPaths.length) {
+                showToast('没有可恢复的 JSON 字符串字段');
+                return;
+            }
+
+            if (!ensureCurrentJsonObject()) {
+                return;
+            }
+
+            const restored = JsonStringFields.restoreStringifiedJsonFields(currentObj, expandedStringFieldPaths);
+            expandedStringFieldPaths = [];
+            applyJsonObjectChange(restored);
+            showToast('已恢复 JSON 字符串字段');
         }
 
         function getJsonSearchTarget() {
