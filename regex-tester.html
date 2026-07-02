@@ -1074,7 +1074,7 @@
         <div class="tool-title">
             <h1>正则表达式测试</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.10</span>
+                <span>V1.11</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -1173,7 +1173,12 @@
                     <div class="field">
                         <div class="result-header">
                             <label for="matchResult">匹配结果</label>
-                            <button class="btn" id="copyMatchBtn" type="button">复制匹配结果</button>
+                            <div class="actions">
+                                <button class="btn" id="copyMatchBtn" type="button">复制匹配结果</button>
+                                <button class="btn" id="copyMatchJsonBtn" type="button">复制JSON</button>
+                                <button class="btn" id="copyMatchCsvBtn" type="button">复制CSV</button>
+                                <button class="btn" id="copyMatchGroupsBtn" type="button">复制分组列</button>
+                            </div>
                         </div>
                         <textarea id="matchResult" readonly placeholder="匹配列表、索引和分组详情会显示在这里。"></textarea>
                     </div>
@@ -1246,6 +1251,10 @@
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月2日</div>
                     <div class="changelog-entry">
+                        <div class="changelog-version">V1.11</div>
+                        <div class="changelog-desc">新增匹配结果导出能力，支持复制 JSON、CSV 和按捕获分组展开的列式结果，包含匹配文本、起始位置、行列位置和分组内容。</div>
+                    </div>
+                    <div class="changelog-entry">
                         <div class="changelog-version">V1.10</div>
                         <div class="changelog-desc">新增正则性能风险提示，可识别嵌套量词和重复分组内互相重叠的分支，测试前提示潜在灾难性回溯风险。</div>
                     </div>
@@ -1315,6 +1324,7 @@
     <script src="regex-flow-layout.js"></script>
     <script src="regex-risk-analyzer.js"></script>
     <script src="regex-runtime-utils.js"></script>
+    <script src="regex-match-exporter.js"></script>
     <script>
         const testText = document.getElementById('testText');
         const testLineNumbers = document.getElementById('testLineNumbers');
@@ -1349,6 +1359,7 @@
         let visualizerRefreshTimer = null;
         let activeVisualizerView = 'flowDiagram';
         let visualizerReturnFocus = null;
+        let lastMatches = [];
 
         const flagControls = {
             g: document.getElementById('flagGlobal'),
@@ -2011,6 +2022,7 @@
             statusText.textContent = '错误';
             statusText.className = 'error-text';
             matchCount.textContent = '0';
+            lastMatches = [];
             matchResult.value = message;
             highlightPreview.className = 'result-box highlight-preview error-text';
             highlightPreview.textContent = message;
@@ -2022,6 +2034,7 @@
                 const regex = buildRegex();
                 const text = testText.value;
                 const matches = collectMatches(regex, text);
+                lastMatches = matches;
 
                 matchCount.textContent = String(matches.length);
                 statusText.textContent = matches.length ? '已匹配' : '无匹配';
@@ -2067,6 +2080,20 @@
             });
         }
 
+        function copyMatchExport(format) {
+            if (format === 'csv') {
+                copyToClipboard(RegexMatchExporter.exportMatchesAsCsv(lastMatches, testText.value));
+                return;
+            }
+
+            if (format === 'groups') {
+                copyToClipboard(RegexMatchExporter.exportMatchesAsGroupColumns(lastMatches, testText.value));
+                return;
+            }
+
+            copyToClipboard(RegexMatchExporter.exportMatchesAsJson(lastMatches, testText.value));
+        }
+
         function showToast(message) {
             ClipboardUtils.showToast(message, { toastElement: toast });
         }
@@ -2075,6 +2102,9 @@
         document.getElementById('visualizeBtn').addEventListener('click', openRegexVisualizer);
         document.getElementById('closeVisualizerBtn').addEventListener('click', closeRegexVisualizer);
         document.getElementById('copyMatchBtn').addEventListener('click', () => copyToClipboard(matchResult.value));
+        document.getElementById('copyMatchJsonBtn').addEventListener('click', () => copyMatchExport('json'));
+        document.getElementById('copyMatchCsvBtn').addEventListener('click', () => copyMatchExport('csv'));
+        document.getElementById('copyMatchGroupsBtn').addEventListener('click', () => copyMatchExport('groups'));
         document.getElementById('copyReplaceBtn').addEventListener('click', () => copyToClipboard(replaceResult.value));
         document.getElementById('clearBtn').addEventListener('click', () => {
             testText.value = '';
@@ -2082,6 +2112,7 @@
             replaceInput.value = '';
             matchResult.value = '';
             replaceResult.value = '';
+            lastMatches = [];
             matchCount.textContent = '0';
             statusText.textContent = '待测试';
             statusText.className = '';
