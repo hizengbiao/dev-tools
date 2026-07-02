@@ -303,6 +303,34 @@
             color: #5c3b00;
         }
 
+        .risk-warning {
+            display: none;
+            border: 1px solid #f0c36d;
+            border-radius: 6px;
+            background: var(--warning-bg);
+            color: #5c3b00;
+            padding: 10px 12px;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .risk-warning.show {
+            display: block;
+        }
+
+        .risk-warning strong {
+            display: block;
+            margin-bottom: 4px;
+            color: #7d4e00;
+        }
+
+        .risk-warning code {
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(92, 59, 0, 0.15);
+            border-radius: 4px;
+            padding: 1px 4px;
+        }
+
         .btn {
             padding: 9px 14px;
             font-size: 14px;
@@ -1046,7 +1074,7 @@
         <div class="tool-title">
             <h1>正则表达式测试</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.09</span>
+                <span>V1.10</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -1094,6 +1122,7 @@
                                 <button class="btn" id="visualizeBtn" type="button">正则可视化</button>
                             </div>
                         </div>
+                        <div id="riskWarning" class="risk-warning" role="status" aria-live="polite"></div>
                     </div>
 
                     <div class="field">
@@ -1217,6 +1246,10 @@
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月2日</div>
                     <div class="changelog-entry">
+                        <div class="changelog-version">V1.10</div>
+                        <div class="changelog-desc">新增正则性能风险提示，可识别嵌套量词和重复分组内互相重叠的分支，测试前提示潜在灾难性回溯风险。</div>
+                    </div>
+                    <div class="changelog-entry">
                         <div class="changelog-version">V1.09</div>
                         <div class="changelog-desc">修复高亮预览和匹配结果中调用正则构造工具时的命名空间问题，避免出现 <code>getRegexWithFlags is not defined</code> 错误。</div>
                     </div>
@@ -1280,6 +1313,7 @@
     <script src="regex-visualizer.js"></script>
     <script src="regex-display-model.js"></script>
     <script src="regex-flow-layout.js"></script>
+    <script src="regex-risk-analyzer.js"></script>
     <script src="regex-runtime-utils.js"></script>
     <script>
         const testText = document.getElementById('testText');
@@ -1289,6 +1323,7 @@
         const matchResult = document.getElementById('matchResult');
         const replaceResult = document.getElementById('replaceResult');
         const replaceHint = document.getElementById('replaceHint');
+        const riskWarning = document.getElementById('riskWarning');
         const highlightPreview = document.getElementById('highlightPreview');
         const matchCount = document.getElementById('matchCount');
         const statusText = document.getElementById('statusText');
@@ -1804,6 +1839,42 @@
             return missingGroups;
         }
 
+        function describeRiskType(type) {
+            if (type === 'nested-quantifier') {
+                return '嵌套量词';
+            }
+
+            if (type === 'overlapping-alternation') {
+                return '重叠分支';
+            }
+
+            return '潜在风险';
+        }
+
+        function updateRiskWarning() {
+            const parsedPattern = getFlagsForPattern(patternInput.value);
+            const risks = RegexRiskAnalyzer.analyzeRegexRisks(parsedPattern.source);
+
+            if (!risks.length) {
+                riskWarning.className = 'risk-warning';
+                riskWarning.innerHTML = '';
+                return [];
+            }
+
+            riskWarning.className = 'risk-warning show';
+            riskWarning.innerHTML = [
+                '<strong>检测到高风险正则结构，可能在长文本或接近匹配失败的输入上变慢：</strong>',
+                ...risks.map((risk) => {
+                    const reason = risk.type === 'nested-quantifier'
+                        ? '分组内部已经有重复，再对整个分组重复，会产生大量回溯路径。'
+                        : '重复分组里的多个分支可以匹配相同前缀，匹配失败时可能反复尝试。';
+                    return `<div><code>${escapeHtml(risk.fragment)}</code>：${describeRiskType(risk.type)}，${reason}</div>`;
+                })
+            ].join('');
+
+            return risks;
+        }
+
         function moveFlagTooltip(event) {
             const gapX = 16;
             const gapY = 14;
@@ -1947,6 +2018,7 @@
 
         function runMatch() {
             try {
+                updateRiskWarning();
                 const regex = buildRegex();
                 const text = testText.value;
                 const matches = collectMatches(regex, text);
@@ -2015,6 +2087,8 @@
             statusText.className = '';
             replaceHint.className = 'field-note warning';
             replaceHint.innerHTML = '';
+            riskWarning.className = 'risk-warning';
+            riskWarning.innerHTML = '';
             templateSelect.value = '';
             templateDescription.textContent = '模板只在选择或点击应用时覆盖内容，手动输入不会被自动改写。';
             highlightPreview.className = 'result-box highlight-preview empty-state';
@@ -2030,7 +2104,10 @@
             runMatch();
         });
         testText.addEventListener('scroll', syncLineNumberScroll);
-        patternInput.addEventListener('input', updateReplaceHint);
+        patternInput.addEventListener('input', () => {
+            updateReplaceHint();
+            updateRiskWarning();
+        });
         patternInput.addEventListener('input', scheduleVisualizerRefresh);
         replaceInput.addEventListener('input', updateReplaceHint);
 
