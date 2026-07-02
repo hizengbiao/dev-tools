@@ -9,7 +9,9 @@ const script = [...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>
     .map((match) => match[1])
     .join('\n');
 
-assert.match(page, /<span>V1\.88<\/span>/);
+assert.match(page, /<span>V1\.89<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月2日<\/div>[\s\S]*?<div class="changelog-version">V1\.89<\/div>/);
+assert.match(page, /<div class="changelog-version">V1\.89<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.88<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.87<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.86<\/div>/);
@@ -174,6 +176,21 @@ assert.equal(
     JSON.parse(repaired[0][0].data).attributes.database_name,
     'db-0.cn_30100,db-1.cn_30100,db-2.cn_30100/db'
 );
+
+const bracketPrefixedParamsLog = '[b3d7e0c5433eda2b3460][FeignRequest][DaFeignService][docail]params={"cluster":"tc-jht03","productId":"L03","appName":"cta","artifactId":"cmata","serviceUuid":"L.03@cata_UAT_UAT"}';
+
+const bracketPrefixHarness = createHarness();
+bracketPrefixHarness.elements.get('json-input').value = bracketPrefixedParamsLog;
+bracketPrefixHarness.context.fixJson();
+
+assert.equal(bracketPrefixHarness.elements.get('error-msg').style.display, 'none');
+assert.deepStrictEqual(JSON.parse(bracketPrefixHarness.elements.get('json-input').value), {
+    cluster: 'tc-jht03',
+    productId: 'L03',
+    appName: 'cta',
+    artifactId: 'cmata',
+    serviceUuid: 'L.03@cata_UAT_UAT',
+});
 
 const stringFieldHarness = createHarness();
 stringFieldHarness.elements.get('json-input').value = '{"payload":"{\\"name\\":\\"alpha\\"}","plain":"x"}';
