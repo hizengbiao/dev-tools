@@ -17,8 +17,9 @@ assert.match(page, /<script src="text-escape-core\.js"><\/script>/);
 assert.match(page, /<div class="container">/);
 assert.match(page, /<div class="tool-title">/);
 assert.match(page, /class="version-info" onclick="showChangelog\(\)"/);
-assert.match(page, /<span>V1\.12<\/span>/);
-assert.match(page, /<div class="changelog-date">2026年7月4日<\/div>[\s\S]*?<div class="changelog-version">V1\.12<\/div>[\s\S]*?<div class="changelog-version">V1\.11<\/div>[\s\S]*?<div class="changelog-version">V1\.10<\/div>/);
+assert.match(page, /<span>V1\.13<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月4日<\/div>[\s\S]*?<div class="changelog-version">V1\.13<\/div>[\s\S]*?<div class="changelog-version">V1\.12<\/div>[\s\S]*?<div class="changelog-version">V1\.11<\/div>[\s\S]*?<div class="changelog-version">V1\.10<\/div>/);
+assert.match(page, /<div class="changelog-version">V1\.13<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.12<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.11<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.10<\/div>/);
@@ -44,6 +45,8 @@ assert.match(page, /data-mode-tooltip="JavaScript/);
 assert.match(page, /data-mode-tooltip="SQL/);
 assert.match(page, /id="mappingList"/);
 assert.match(page, /id="addMappingBtn"/);
+assert.match(page, /id="exportMappingsBtn"/);
+assert.match(page, /id="importMappingsBtn"/);
 assert.match(page, /id="inputLineNumbers"/);
 assert.match(page, /id="outputLineNumbers"/);
 assert.match(page, /id="inputHighlight"/);
@@ -62,6 +65,8 @@ assert.match(page, /function getReadableDecodeSource\(raw\)/);
 assert.match(page, /function formatQuotedCopyText\(text\)/);
 assert.match(page, /function mergeConcatenatedStrings\(raw, mappings = \[\]\)/);
 assert.match(page, /function normalizeMappingPairs\(pairs\)/);
+assert.match(page, /function exportMappingPairs\(pairs\)/);
+assert.match(page, /function importMappingPairs\(existing, raw, options = \{\}\)/);
 assert.match(page, /function restoreMappedVariables\(raw, mappings\)/);
 assert.match(page, /function refreshLineNumbers\(textarea, lineNumbers\)/);
 assert.match(page, /function syncLineNumberScroll\(textarea, lineNumbers\)/);
@@ -305,6 +310,28 @@ assert.deepStrictEqual(
         { left: 'SERVICE_NAME', right: 'SVNM.getName()' },
         { left: 'environment.getName()', right: 'ENV_NAME' }
     ]
+);
+
+assert.strictEqual(
+    context.exportMappingPairs(mappings),
+    '[\n  {\n    "left": "SERVICE_NAME",\n    "right": "SVNM.getName()"\n  },\n  {\n    "left": "environment.getName()",\n    "right": "ENV_NAME"\n  }\n]'
+);
+
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(context.importMappingPairs(
+        mappings,
+        '[{"left":"SERVICE_NAME","right":"SVNM.getName()"},{"left":"REGION","right":"context.region()"}]'
+    ))),
+    {
+        mappings: [
+            { left: 'SERVICE_NAME', right: 'SVNM.getName()' },
+            { left: 'environment.getName()', right: 'ENV_NAME' },
+            { left: 'REGION', right: 'context.region()' }
+        ],
+        importedCount: 1,
+        skippedCount: 1,
+        mode: 'merge'
+    }
 );
 
 assert.strictEqual(

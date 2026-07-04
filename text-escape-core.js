@@ -362,6 +362,35 @@
         return lookup;
     }
 
+    function exportMappingPairs(pairs) {
+        return JSON.stringify(normalizeMappingPairs(pairs), null, 2);
+    }
+
+    function importMappingPairs(existing, raw, options = {}) {
+        let parsed;
+        try {
+            parsed = JSON.parse(String(raw || ''));
+        } catch (error) {
+            throw new Error('映射 JSON 格式不正确。');
+        }
+
+        if (!Array.isArray(parsed)) {
+            throw new Error('映射 JSON 必须是数组。');
+        }
+
+        const incoming = normalizeMappingPairs(parsed);
+        const base = options.replace ? [] : normalizeMappingPairs(existing);
+        const beforeCount = base.length;
+        const merged = normalizeMappingPairs(base.concat(incoming));
+
+        return {
+            mappings: merged,
+            importedCount: merged.length - beforeCount,
+            skippedCount: incoming.length - (merged.length - beforeCount),
+            mode: options.replace ? 'replace' : 'merge'
+        };
+    }
+
     function mergeConcatenatedStrings(raw, mappings = []) {
         const expressionMappings = getBidirectionalLookup(mappings);
         const tokens = tokenizeStringExpression(raw).map((token) => {
@@ -516,7 +545,9 @@
         getReadableDecodeSource,
         cleanStackLog,
         convertMultilineToCodeString,
+        exportMappingPairs,
         formatQuotedCopyText,
+        importMappingPairs,
         mergeConcatenatedStrings,
         normalizeMappingPairs,
         parseLegacyMappings,

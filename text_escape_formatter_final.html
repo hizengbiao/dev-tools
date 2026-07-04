@@ -772,7 +772,7 @@
         <div class="tool-title">
             <h1>文本转义转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.12</span>
+                <span>V1.13</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -872,6 +872,8 @@ java.lang.RuntimeException: test
                 <div>
                     <div class="mapping-editor-header">
                         <span>示例：SERVICE_NAME ↔ SVNM.getName()</span>
+                        <button class="btn mapping-add" id="exportMappingsBtn" type="button">导出映射</button>
+                        <button class="btn mapping-add" id="importMappingsBtn" type="button">导入映射</button>
                         <button class="btn mapping-add" id="addMappingBtn" type="button">＋ 新增映射</button>
                         <span id="mappingStatus">已配置 0 组</span>
                     </div>
@@ -902,6 +904,10 @@ java.lang.RuntimeException: test
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月4日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.13</div>
+                        <div class="changelog-desc">变量映射配置支持导出为 JSON 和从 JSON 导入；导入时默认合并已有配置，只有确认后才覆盖当前映射。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.12</div>
                         <div class="changelog-desc">新增堆栈日志清理功能，支持去除常见日志前缀、统一 Java 堆栈缩进、保留 Caused by，并可选择保留非堆栈原始行。</div>
@@ -1003,6 +1009,8 @@ java.lang.RuntimeException: test
         const restoreVariablesBtn = document.getElementById('restoreVariablesBtn');
         const mappingList = document.getElementById('mappingList');
         const addMappingBtn = document.getElementById('addMappingBtn');
+        const exportMappingsBtn = document.getElementById('exportMappingsBtn');
+        const importMappingsBtn = document.getElementById('importMappingsBtn');
         const mappingStatus = document.getElementById('mappingStatus');
         const swapBtn = document.getElementById('swapBtn');
         const copyInputTextBtn = document.getElementById('copyInputTextBtn');
@@ -1168,6 +1176,14 @@ java.lang.RuntimeException: test
             return TextEscapeCore.normalizeMappingPairs(pairs);
         }
 
+        function exportMappingPairs(pairs) {
+            return TextEscapeCore.exportMappingPairs(pairs);
+        }
+
+        function importMappingPairs(existing, raw, options = {}) {
+            return TextEscapeCore.importMappingPairs(existing, raw, options);
+        }
+
         function parseLegacyMappings(raw) {
             return TextEscapeCore.parseLegacyMappings(raw);
         }
@@ -1309,8 +1325,41 @@ java.lang.RuntimeException: test
             refreshStats();
             showToast('已恢复变量拼接。');
         }
+
+        function exportMappingsAction() {
+            const exported = exportMappingPairs(mappingRows);
+            outputText.value = exported;
+            refreshStats();
+            copyToClipboard(exported);
+            showToast('已导出映射 JSON。');
+        }
+
+        function importMappingsAction() {
+            const raw = inputText.value.trim();
+            if (!raw) {
+                showToast('请先在输入区粘贴映射 JSON。', true);
+                return;
+            }
+
+            const shouldReplace = getConfiguredMappings().length > 0
+                && window.confirm
+                && window.confirm('是否覆盖当前映射配置？选择“取消”将合并导入，不会覆盖已有配置。');
+            try {
+                const result = importMappingPairs(mappingRows, raw, { replace: shouldReplace });
+                mappingRows = result.mappings;
+                renderMappingRows();
+                saveVariableMappings();
+                showToast(result.mode === 'replace'
+                    ? `已覆盖导入 ${result.importedCount} 组映射。`
+                    : `已合并导入 ${result.importedCount} 组映射，跳过 ${result.skippedCount} 组重复或无效映射。`);
+            } catch (error) {
+                showToast(error.message || '导入映射失败，请检查 JSON 格式。', true);
+            }
+        }
         window.mergeConcatenatedStrings = mergeConcatenatedStrings;
         window.normalizeMappingPairs = normalizeMappingPairs;
+        window.exportMappingPairs = exportMappingPairs;
+        window.importMappingPairs = importMappingPairs;
         window.restoreMappedVariables = restoreMappedVariables;
 
         decodeBtn.addEventListener('click', decodeAction);
@@ -1320,6 +1369,8 @@ java.lang.RuntimeException: test
         languageMode.addEventListener('change', refreshLanguageModeHelp);
         mergeStringsBtn.addEventListener('click', mergeStringsAction);
         restoreVariablesBtn.addEventListener('click', restoreVariablesAction);
+        exportMappingsBtn.addEventListener('click', exportMappingsAction);
+        importMappingsBtn.addEventListener('click', importMappingsAction);
         addMappingBtn.addEventListener('click', () => {
             mappingRows.push({ left: '', right: '' });
             renderMappingRows();

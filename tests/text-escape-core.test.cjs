@@ -12,6 +12,8 @@ assert.match(page, /TextEscapeCore\.restoreMappedVariables/);
 assert.match(page, /TextEscapeCore\.formatQuotedCopyText/);
 assert.match(page, /TextEscapeCore\.convertMultilineToCodeString/);
 assert.match(page, /TextEscapeCore\.cleanStackLog/);
+assert.match(page, /TextEscapeCore\.exportMappingPairs/);
+assert.match(page, /TextEscapeCore\.importMappingPairs/);
 
 assert.strictEqual(
     core.decodeToReadableText('"SQ#at com.huawei\\n"\n                + "\\tat com.mysql.ConnectionFactoryImpl\\n"'),
@@ -126,6 +128,43 @@ assert.deepStrictEqual(mappings, [
     { left: 'SERVICE_NAME', right: 'SVNM.getName()' },
     { left: 'environment.getName()', right: 'ENV_NAME' }
 ]);
+
+assert.strictEqual(
+    core.exportMappingPairs(mappings),
+    '[\n  {\n    "left": "SERVICE_NAME",\n    "right": "SVNM.getName()"\n  },\n  {\n    "left": "environment.getName()",\n    "right": "ENV_NAME"\n  }\n]'
+);
+
+assert.deepStrictEqual(
+    core.importMappingPairs(
+        mappings,
+        '[{"left":"SERVICE_NAME","right":"SVNM.getName()"},{"left":"REGION","right":"context.region()"}]'
+    ),
+    {
+        mappings: [
+            { left: 'SERVICE_NAME', right: 'SVNM.getName()' },
+            { left: 'environment.getName()', right: 'ENV_NAME' },
+            { left: 'REGION', right: 'context.region()' }
+        ],
+        importedCount: 1,
+        skippedCount: 1,
+        mode: 'merge'
+    }
+);
+
+assert.deepStrictEqual(
+    core.importMappingPairs(mappings, '[{"left":"REGION","right":"context.region()"}]', { replace: true }),
+    {
+        mappings: [{ left: 'REGION', right: 'context.region()' }],
+        importedCount: 1,
+        skippedCount: 0,
+        mode: 'replace'
+    }
+);
+
+assert.throws(
+    () => core.importMappingPairs(mappings, '{"left":"REGION"}'),
+    /映射 JSON 必须是数组/
+);
 
 assert.strictEqual(
     core.mergeConcatenatedStrings(
