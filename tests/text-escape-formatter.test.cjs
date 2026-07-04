@@ -17,7 +17,9 @@ assert.match(page, /<script src="text-escape-core\.js"><\/script>/);
 assert.match(page, /<div class="container">/);
 assert.match(page, /<div class="tool-title">/);
 assert.match(page, /class="version-info" onclick="showChangelog\(\)"/);
-assert.match(page, /<span>V1\.09<\/span>/);
+assert.match(page, /<span>V1\.10<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月4日<\/div>[\s\S]*?<div class="changelog-version">V1\.10<\/div>/);
+assert.match(page, /<div class="changelog-version">V1\.10<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.09<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.08<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.07<\/div>/);
@@ -31,6 +33,9 @@ assert.match(page, /id="decodeBtn"/);
 assert.match(page, /id="encodeBtn"/);
 assert.match(page, /id="mergeStringsBtn"/);
 assert.match(page, /id="restoreVariablesBtn"/);
+assert.match(page, /id="languageMode"/);
+assert.match(page, /data-mode-tooltip="JavaScript/);
+assert.match(page, /data-mode-tooltip="SQL/);
 assert.match(page, /id="mappingList"/);
 assert.match(page, /id="addMappingBtn"/);
 assert.match(page, /id="inputLineNumbers"/);
@@ -41,8 +46,9 @@ assert.match(page, /id="diffSummary"/);
 assert.match(page, /class="editor-shell"/);
 assert.match(page, /class="editor-stage"/);
 assert.match(page, /data-tooltip=/);
-assert.match(page, /function decodeToReadableText\(raw\)/);
-assert.match(page, /function encodeToEscapedString\(raw\)/);
+assert.match(page, /function decodeToReadableText\(raw, options = \{\}\)/);
+assert.match(page, /function encodeToEscapedString\(raw, options = \{\}\)/);
+assert.match(page, /function getSelectedLanguageMode\(\)/);
 assert.match(page, /function decodeStringLiteralForMerge\(text\)/);
 assert.match(page, /function getReadableDecodeSource\(raw\)/);
 assert.match(page, /function formatQuotedCopyText\(text\)/);
@@ -169,6 +175,26 @@ assert.deepStrictEqual(
 assert.strictEqual(
     context.decodeToReadableText('"SQ#at com.huawei\\n"\n                + "\\tat com.mysql.ConnectionFactoryImpl\\n"'),
     'SQ#at com.huawei\n\tat com.mysql.ConnectionFactoryImpl\n'
+);
+
+assert.strictEqual(
+    context.decodeToReadableText('\\x48\\x69 \\u{4e2d}', { languageMode: 'javascript' }),
+    'Hi 中'
+);
+
+assert.strictEqual(
+    context.decodeToReadableText('\\x48\\x69 \\U00004e2d', { languageMode: 'python' }),
+    'Hi 中'
+);
+
+assert.strictEqual(
+    context.decodeToReadableText("O''Reilly\\n", { languageMode: 'sql' }),
+    "O'Reilly\\n"
+);
+
+assert.strictEqual(
+    context.encodeToEscapedString("O'Reilly\\path\n", { languageMode: 'sql' }),
+    "O''Reilly\\path\n"
 );
 
 assert.strictEqual(

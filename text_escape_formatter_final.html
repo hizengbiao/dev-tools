@@ -242,6 +242,45 @@
             padding-top: 34px;
         }
 
+        .mode-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 10px;
+            border: 1px solid #d8dee4;
+            border-radius: 6px;
+            background: #f6f8fa;
+        }
+
+        .mode-selector label {
+            color: #24292f;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .mode-selector select {
+            width: 100%;
+            padding: 7px 8px;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            background: #fff;
+            color: #24292f;
+            font-size: 13px;
+            outline: none;
+        }
+
+        .mode-selector select:focus {
+            border-color: #0969da;
+            box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
+        }
+
+        .mode-help {
+            min-height: 58px;
+            color: var(--muted-color);
+            font-size: 12px;
+            line-height: 1.55;
+        }
+
         .diff-summary {
             min-height: 38px;
             color: var(--muted-color);
@@ -716,7 +755,7 @@
         <div class="tool-title">
             <h1>文本转义转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.09</span>
+                <span>V1.10</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -746,6 +785,17 @@ java.lang.RuntimeException: test
                 </section>
 
                 <section class="actions" aria-label="转换操作">
+                    <div class="mode-selector">
+                        <label for="languageMode">字符串模式</label>
+                        <select id="languageMode" aria-describedby="languageModeHelp">
+                            <option value="default" data-mode-tooltip="默认：保持原有规则，适合普通日志、JSON 字符串和 Java 双引号字符串。示例：a\nb 会展开成两行。">默认兼容</option>
+                            <option value="java" data-mode-tooltip="Java：按常见 Java 双引号字符串处理，支持 \n、\t、\u4e2d、\" 和 \\。适合 Java 代码里的字符串内容。">Java</option>
+                            <option value="javascript" data-mode-tooltip="JavaScript：在默认规则基础上支持 \x48 和 \u{4e2d}。适合 JS/TS 字符串字面量。">JavaScript</option>
+                            <option value="python" data-mode-tooltip="Python：在默认规则基础上支持 \x48、\u4e2d 和 \U00004e2d。适合 Python 字符串字面量。">Python</option>
+                            <option value="sql" data-mode-tooltip="SQL：只处理单引号转义，O''Reilly 会还原为 O'Reilly；转义输出会把单引号写成两个单引号。不会把 \n 展开成换行。">SQL</option>
+                        </select>
+                        <div class="mode-help" id="languageModeHelp"></div>
+                    </div>
                     <button class="btn btn-primary" id="decodeBtn" type="button"
                         data-tooltip="把转义内容还原成可读文本。&#10;示例：a\nb 会展开成两行；\t 会变成制表符；\u4e2d 会变成中文。&#10;适合处理日志字段、异常堆栈、JSON 字符串里的转义文本。">转为可读文本</button>
                     <button class="btn btn-primary" id="encodeBtn" type="button"
@@ -802,7 +852,7 @@ java.lang.RuntimeException: test
 
             <div class="hint">
                 <strong>说明：</strong>
-                “转为可读文本”适合把一行转义字符串展开为正常多行内容；“转为转义字符串”适合把多行文本转换成可直接复制到
+                “字符串模式”用于指定 Java、JavaScript、Python、SQL 等不同字面量规则；“转为可读文本”适合把一行转义字符串展开为正常多行内容；“转为转义字符串”适合把多行文本转换成可直接复制到
                 Java、JSON、配置文件或日志字段里的字符串；“合并拼接字符串”可结合变量映射把代码中的字符串和指定变量合并成普通文本；
                 “恢复变量拼接”可将普通文本中的映射内容重新转换成变量表达式拼接，未配置的变量仍会保留边界。
                 快捷键：<kbd>Ctrl</kbd> + <kbd>Enter</kbd> 转为可读文本，<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd> 转为转义字符串。
@@ -819,6 +869,13 @@ java.lang.RuntimeException: test
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年7月4日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.10</div>
+                        <div class="changelog-desc">新增字符串模式选择，支持 Java、JavaScript、Python、SQL 等字面量规则，并补充每种模式的悬停说明和示例。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月24日</div>
                     <div class="changelog-entry">
@@ -893,6 +950,8 @@ java.lang.RuntimeException: test
         const inputHighlight = document.getElementById('inputHighlight');
         const outputHighlight = document.getElementById('outputHighlight');
         const diffSummary = document.getElementById('diffSummary');
+        const languageMode = document.getElementById('languageMode');
+        const languageModeHelp = document.getElementById('languageModeHelp');
         const toast = document.getElementById('toast');
 
         const decodeBtn = document.getElementById('decodeBtn');
@@ -1013,12 +1072,36 @@ java.lang.RuntimeException: test
             return TextEscapeCore.getReadableDecodeSource(raw);
         }
 
-        function decodeToReadableText(raw) {
-            return TextEscapeCore.decodeToReadableText(raw);
+        function getSelectedLanguageMode() {
+            return languageMode ? languageMode.value : 'default';
         }
 
-        function encodeToEscapedString(raw) {
-            return TextEscapeCore.encodeToEscapedString(raw);
+        function getLanguageOptions(options = {}) {
+            return {
+                languageMode: options.languageMode || getSelectedLanguageMode()
+            };
+        }
+
+        function refreshLanguageModeHelp() {
+            if (!languageMode || !languageModeHelp) {
+                return;
+            }
+
+            if (!languageMode.options) {
+                languageModeHelp.textContent = '';
+                return;
+            }
+
+            const selected = languageMode.options[languageMode.selectedIndex];
+            languageModeHelp.textContent = selected ? selected.dataset.modeTooltip || '' : '';
+        }
+
+        function decodeToReadableText(raw, options = {}) {
+            return TextEscapeCore.decodeToReadableText(raw, getLanguageOptions(options));
+        }
+
+        function encodeToEscapedString(raw, options = {}) {
+            return TextEscapeCore.encodeToEscapedString(raw, getLanguageOptions(options));
         }
 
         function readQuotedString(raw, start) {
@@ -1164,6 +1247,7 @@ java.lang.RuntimeException: test
 
         decodeBtn.addEventListener('click', decodeAction);
         encodeBtn.addEventListener('click', encodeAction);
+        languageMode.addEventListener('change', refreshLanguageModeHelp);
         mergeStringsBtn.addEventListener('click', mergeStringsAction);
         restoreVariablesBtn.addEventListener('click', restoreVariablesAction);
         addMappingBtn.addEventListener('click', () => {
@@ -1244,6 +1328,7 @@ java.lang.RuntimeException: test
         });
 
         loadVariableMappings();
+        refreshLanguageModeHelp();
         refreshStats();
     </script>
 </body>

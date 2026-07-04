@@ -42,15 +42,59 @@
         return text;
     }
 
-    function decodeUnicodeEscapes(text) {
-        return text.replace(/\\u([0-9a-fA-F]{4})/g, (_, code) => {
-            return String.fromCharCode(parseInt(code, 16));
-        });
+    function normalizeLanguageMode(options) {
+        if (typeof options === 'string') {
+            return options;
+        }
+
+        return options && options.languageMode || 'default';
     }
 
-    function decodeCommonEscapes(text) {
+    function fromCodePoint(hex) {
+        const codePoint = parseInt(hex, 16);
+        if (!Number.isFinite(codePoint)) {
+            return '';
+        }
+
+        try {
+            return String.fromCodePoint(codePoint);
+        } catch (error) {
+            return '';
+        }
+    }
+
+    function decodeUnicodeEscapes(text, mode = 'default') {
+        let decoded = text.replace(/\\u([0-9a-fA-F]{4})/g, (_, code) => {
+            return String.fromCharCode(parseInt(code, 16));
+        });
+
+        if (mode === 'javascript') {
+            decoded = decoded.replace(/\\u\{([0-9a-fA-F]{1,6})\}/g, (_, code) => fromCodePoint(code));
+        }
+
+        if (mode === 'python') {
+            decoded = decoded
+                .replace(/\\U([0-9a-fA-F]{8})/g, (_, code) => fromCodePoint(code))
+                .replace(/\\u([0-9a-fA-F]{4})/g, (_, code) => String.fromCharCode(parseInt(code, 16)));
+        }
+
+        if (mode === 'javascript' || mode === 'python') {
+            decoded = decoded.replace(/\\x([0-9a-fA-F]{2})/g, (_, code) => {
+                return String.fromCharCode(parseInt(code, 16));
+            });
+        }
+
+        return decoded;
+    }
+
+    function decodeCommonEscapes(text, options = {}) {
+        const mode = normalizeLanguageMode(options);
         const withoutQuotes = stripWrappedQuote(text);
-        const withUnicode = decodeUnicodeEscapes(withoutQuotes);
+        if (mode === 'sql') {
+            return withoutQuotes.replace(/''/g, "'");
+        }
+
+        const withUnicode = decodeUnicodeEscapes(withoutQuotes, mode);
 
         return withUnicode
             .replace(/\\\\/g, '\u0000')
@@ -163,12 +207,17 @@
         return hasString && !expectString ? value : raw;
     }
 
-    function decodeToReadableText(raw) {
-        const decoded = decodeCommonEscapes(getReadableDecodeSource(raw));
+    function decodeToReadableText(raw, options = {}) {
+        const decoded = decodeCommonEscapes(getReadableDecodeSource(raw), options);
         return improveStackLikeLineBreaks(decoded);
     }
 
-    function encodeToEscapedString(raw) {
+    function encodeToEscapedString(raw, options = {}) {
+        const mode = normalizeLanguageMode(options);
+        if (mode === 'sql') {
+            return raw.replace(/'/g, "''");
+        }
+
         return raw
             .replace(/\\/g, '\\\\')
             .replace(/\r\n/g, '\\n')

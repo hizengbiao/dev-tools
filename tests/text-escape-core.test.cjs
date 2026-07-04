@@ -17,6 +17,31 @@ assert.strictEqual(
 );
 
 assert.strictEqual(
+    core.decodeToReadableText('\\x48\\x69 \\u{4e2d}', { languageMode: 'javascript' }),
+    'Hi 中'
+);
+
+assert.strictEqual(
+    core.decodeToReadableText('\\x48\\x69 \\U00004e2d', { languageMode: 'python' }),
+    'Hi 中'
+);
+
+assert.strictEqual(
+    core.decodeToReadableText("O''Reilly\\n", { languageMode: 'sql' }),
+    "O'Reilly\\n"
+);
+
+assert.strictEqual(
+    core.encodeToEscapedString("O'Reilly\\path\n"),
+    "O'Reilly\\\\path\\n"
+);
+
+assert.strictEqual(
+    core.encodeToEscapedString("O'Reilly\\path\n", { languageMode: 'sql' }),
+    "O''Reilly\\path\n"
+);
+
+assert.strictEqual(
     core.decodeToReadableText('"SQ#at com.huawei\\n" + stackLine + "\\tat com.mysql.ConnectionFactoryImpl\\n"'),
     '"SQ#at com.huawei\n" + stackLine + "\tat com.mysql.ConnectionFactoryImpl\n"'
 );
