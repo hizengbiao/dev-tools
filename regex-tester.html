@@ -331,6 +331,66 @@
             padding: 1px 4px;
         }
 
+        .replacement-helper {
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            background: #f6f8fa;
+            padding: 10px;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #57606a;
+        }
+
+        .replacement-helper-title {
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: #24292f;
+        }
+
+        .replacement-helper-grid {
+            display: grid;
+            gap: 8px;
+        }
+
+        .replacement-helper-row {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            gap: 8px;
+            align-items: start;
+            padding: 8px;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            background: #fff;
+        }
+
+        .group-token-btn {
+            border: 1px solid #0969da;
+            border-radius: 999px;
+            background: #ddf4ff;
+            color: #0969da;
+            padding: 3px 8px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .group-token-btn:hover {
+            background: #b6e3ff;
+        }
+
+        .replacement-helper-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+
+        .replacement-helper-sample {
+            color: #24292f;
+            word-break: break-all;
+        }
+
         .btn {
             padding: 9px 14px;
             font-size: 14px;
@@ -1074,7 +1134,7 @@
         <div class="tool-title">
             <h1>正则表达式测试</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.11</span>
+                <span>V1.12</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -1147,6 +1207,9 @@
                             <div class="actions">
                                 <button class="btn btn-primary" id="replaceBtn" type="button">执行替换</button>
                             </div>
+                        </div>
+                        <div id="replacementGroupHelper" class="replacement-helper" aria-live="polite">
+                            没有可用的捕获分组。先添加括号分组并执行匹配，例如 <code>(\d+)</code> 会生成 <code>$1</code>。
                         </div>
                     </div>
 
@@ -1249,6 +1312,13 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date-group">
+                    <div class="changelog-date">2026年7月4日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.12</div>
+                        <div class="changelog-desc">新增替换分组辅助面板，匹配后展示可用于替换文本的捕获分组、命名分组、示例值和来源位置，并支持点击分组 token 快速插入。</div>
+                    </div>
+                </div>
+                <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月2日</div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.11</div>
@@ -1325,6 +1395,7 @@
     <script src="regex-risk-analyzer.js"></script>
     <script src="regex-runtime-utils.js"></script>
     <script src="regex-match-exporter.js"></script>
+    <script src="regex-replacement-helper.js"></script>
     <script>
         const testText = document.getElementById('testText');
         const testLineNumbers = document.getElementById('testLineNumbers');
@@ -1333,6 +1404,7 @@
         const matchResult = document.getElementById('matchResult');
         const replaceResult = document.getElementById('replaceResult');
         const replaceHint = document.getElementById('replaceHint');
+        const replacementGroupHelper = document.getElementById('replacementGroupHelper');
         const riskWarning = document.getElementById('riskWarning');
         const highlightPreview = document.getElementById('highlightPreview');
         const matchCount = document.getElementById('matchCount');
@@ -2018,11 +2090,37 @@
             }).join('\n\n');
         }
 
+        function renderReplacementGroupHelper(matches) {
+            const groups = RegexReplacementHelper.buildReplacementGroups(matches, testText.value);
+
+            if (!groups.length) {
+                replacementGroupHelper.textContent = RegexReplacementHelper.renderReplacementGroupsText(matches, testText.value);
+                return;
+            }
+
+            const rows = groups.map((group) => `
+                <div class="replacement-helper-row">
+                    <button class="group-token-btn" type="button" data-token="${escapeHtml(group.token)}">${escapeHtml(group.token)}</button>
+                    <div class="replacement-helper-meta">
+                        <strong>${escapeHtml(group.label)}</strong>
+                        <span class="replacement-helper-sample">示例值：${escapeHtml(group.sample)}</span>
+                        <span>来源：第 ${group.line} 行第 ${group.column} 列 ${escapeHtml(group.source)}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            replacementGroupHelper.innerHTML = `
+                <div class="replacement-helper-title">可用于替换文本的分组</div>
+                <div class="replacement-helper-grid">${rows}</div>
+            `;
+        }
+
         function setError(message) {
             statusText.textContent = '错误';
             statusText.className = 'error-text';
             matchCount.textContent = '0';
             lastMatches = [];
+            renderReplacementGroupHelper([]);
             matchResult.value = message;
             highlightPreview.className = 'result-box highlight-preview error-text';
             highlightPreview.textContent = message;
@@ -2040,6 +2138,7 @@
                 statusText.textContent = matches.length ? '已匹配' : '无匹配';
                 statusText.className = matches.length ? 'success-text' : '';
                 matchResult.value = formatMatches(matches);
+                renderReplacementGroupHelper(matches);
                 renderHighlightedText(text, matches);
                 return matches;
             } catch (error) {
@@ -2113,6 +2212,7 @@
             matchResult.value = '';
             replaceResult.value = '';
             lastMatches = [];
+            renderReplacementGroupHelper([]);
             matchCount.textContent = '0';
             statusText.textContent = '待测试';
             statusText.className = '';
@@ -2141,6 +2241,18 @@
         });
         patternInput.addEventListener('input', scheduleVisualizerRefresh);
         replaceInput.addEventListener('input', updateReplaceHint);
+        replacementGroupHelper.addEventListener('click', (event) => {
+            const button = event.target.closest('.group-token-btn');
+            if (!button) return;
+
+            const start = replaceInput.selectionStart ?? replaceInput.value.length;
+            const end = replaceInput.selectionEnd ?? start;
+            const token = button.dataset.token || '';
+            replaceInput.value = `${replaceInput.value.slice(0, start)}${token}${replaceInput.value.slice(end)}`;
+            replaceInput.focus();
+            replaceInput.setSelectionRange(start + token.length, start + token.length);
+            updateReplaceHint();
+        });
 
         Object.values(flagControls).forEach((control) => {
             control.addEventListener('change', runMatch);
