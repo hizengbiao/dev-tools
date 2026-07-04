@@ -17,8 +17,9 @@ assert.match(page, /<script src="text-escape-core\.js"><\/script>/);
 assert.match(page, /<div class="container">/);
 assert.match(page, /<div class="tool-title">/);
 assert.match(page, /class="version-info" onclick="showChangelog\(\)"/);
-assert.match(page, /<span>V1\.11<\/span>/);
-assert.match(page, /<div class="changelog-date">2026年7月4日<\/div>[\s\S]*?<div class="changelog-version">V1\.11<\/div>[\s\S]*?<div class="changelog-version">V1\.10<\/div>/);
+assert.match(page, /<span>V1\.12<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月4日<\/div>[\s\S]*?<div class="changelog-version">V1\.12<\/div>[\s\S]*?<div class="changelog-version">V1\.11<\/div>[\s\S]*?<div class="changelog-version">V1\.10<\/div>/);
+assert.match(page, /<div class="changelog-version">V1\.12<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.11<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.10<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.09<\/div>/);
@@ -36,6 +37,8 @@ assert.match(page, /id="mergeStringsBtn"/);
 assert.match(page, /id="restoreVariablesBtn"/);
 assert.match(page, /id="codeStringBtn"/);
 assert.match(page, /id="keepTrailingNewline"/);
+assert.match(page, /id="cleanStackBtn"/);
+assert.match(page, /id="keepOriginalStackLines"/);
 assert.match(page, /id="languageMode"/);
 assert.match(page, /data-mode-tooltip="JavaScript/);
 assert.match(page, /data-mode-tooltip="SQL/);
@@ -53,6 +56,7 @@ assert.match(page, /function decodeToReadableText\(raw, options = \{\}\)/);
 assert.match(page, /function encodeToEscapedString\(raw, options = \{\}\)/);
 assert.match(page, /function getSelectedLanguageMode\(\)/);
 assert.match(page, /function convertMultilineToCodeString\(raw, options = \{\}\)/);
+assert.match(page, /function cleanStackLog\(raw, options = \{\}\)/);
 assert.match(page, /function decodeStringLiteralForMerge\(text\)/);
 assert.match(page, /function getReadableDecodeSource\(raw\)/);
 assert.match(page, /function formatQuotedCopyText\(text\)/);
@@ -209,6 +213,25 @@ assert.strictEqual(
 assert.strictEqual(
     context.convertMultilineToCodeString('alpha\nbeta\n', { languageMode: 'java', keepTrailingNewline: false }),
     '"alpha"\n        + "beta"'
+);
+
+const noisyStack = [
+    '2026-07-04 10:00:00 ERROR [main] com.demo.App - java.lang.RuntimeException: boom',
+    '',
+    '2026-07-04 10:00:00 ERROR [main] com.demo.App -     at com.example.Service.run(Service.java:10)',
+    'requestId=abc',
+    '2026-07-04 10:00:00 ERROR [main] com.demo.App - Caused by: java.lang.IllegalStateException: bad',
+    '        at com.example.Dao.query(Dao.java:22)',
+].join('\n');
+
+assert.strictEqual(
+    context.cleanStackLog(noisyStack, { keepOriginalLines: false }),
+    [
+        'java.lang.RuntimeException: boom',
+        '\tat com.example.Service.run(Service.java:10)',
+        'Caused by: java.lang.IllegalStateException: bad',
+        '\tat com.example.Dao.query(Dao.java:22)',
+    ].join('\n')
 );
 
 assert.strictEqual(

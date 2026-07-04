@@ -772,7 +772,7 @@
         <div class="tool-title">
             <h1>文本转义转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.11</span>
+                <span>V1.12</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -822,6 +822,12 @@ java.lang.RuntimeException: test
                     <label class="option-toggle" for="keepTrailingNewline">
                         <input id="keepTrailingNewline" type="checkbox" checked>
                         <span>保留每行末尾换行，生成的每段字符串会追加 <code>\n</code></span>
+                    </label>
+                    <button class="btn btn-primary" id="cleanStackBtn" type="button"
+                        data-tooltip="清理 Java 堆栈或日志堆栈。&#10;会去掉常见时间、日志级别、线程和类名前缀；统一 at 行缩进；保留 Caused by 和 Suppressed。&#10;示例：ERROR app - at demo.Service.run(...) 会整理为制表符缩进的 at demo.Service.run(...)。">清理堆栈日志</button>
+                    <label class="option-toggle" for="keepOriginalStackLines">
+                        <input id="keepOriginalStackLines" type="checkbox">
+                        <span>保留无法识别为堆栈的原始行，例如 requestId、traceId 或业务日志上下文</span>
                     </label>
                     <button class="btn btn-primary" id="mergeStringsBtn" type="button"
                         data-tooltip="合并代码里多段引号字符串，已配置的映射可跨变量继续合并。&#10;示例：配置 SERVICE_NAME ↔ SVNM.getName() 后，&#10;&quot;数据库${objectName}的&quot; + SVNM.getName() + &quot;不在已知服务列表里&quot;&#10;会转换为：数据库${objectName}的SERVICE_NAME不在已知服务列表里。&#10;映射左右顺序可以互换，未配置的变量仍会保留拼接边界。">合并拼接字符串</button>
@@ -877,6 +883,7 @@ java.lang.RuntimeException: test
                 <strong>说明：</strong>
                 “字符串模式”用于指定 Java、JavaScript、Python、SQL 等不同字面量规则；“转为可读文本”适合把一行转义字符串展开为正常多行内容；
                 “转为转义字符串”适合把多行文本转换成可直接复制到 Java、JSON、配置文件或日志字段里的字符串；“多行转代码字符串”适合把普通多行文本转换成 Java 风格的字符串拼接代码；
+                “清理堆栈日志”适合去除日志前缀、统一 Java 堆栈缩进并清理多余空行；
                 “合并拼接字符串”可结合变量映射把代码中的字符串和指定变量合并成普通文本；
                 “恢复变量拼接”可将普通文本中的映射内容重新转换成变量表达式拼接，未配置的变量仍会保留边界。
                 快捷键：<kbd>Ctrl</kbd> + <kbd>Enter</kbd> 转为可读文本，<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd> 转为转义字符串。
@@ -895,6 +902,10 @@ java.lang.RuntimeException: test
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月4日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.12</div>
+                        <div class="changelog-desc">新增堆栈日志清理功能，支持去除常见日志前缀、统一 Java 堆栈缩进、保留 Caused by，并可选择保留非堆栈原始行。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.11</div>
                         <div class="changelog-desc">新增多行转代码字符串功能，可将普通多行文本转换为 Java 风格字符串拼接，并支持选择是否保留行尾换行。</div>
@@ -986,6 +997,8 @@ java.lang.RuntimeException: test
         const encodeBtn = document.getElementById('encodeBtn');
         const codeStringBtn = document.getElementById('codeStringBtn');
         const keepTrailingNewline = document.getElementById('keepTrailingNewline');
+        const cleanStackBtn = document.getElementById('cleanStackBtn');
+        const keepOriginalStackLines = document.getElementById('keepOriginalStackLines');
         const mergeStringsBtn = document.getElementById('mergeStringsBtn');
         const restoreVariablesBtn = document.getElementById('restoreVariablesBtn');
         const mappingList = document.getElementById('mappingList');
@@ -1141,6 +1154,12 @@ java.lang.RuntimeException: test
             });
         }
 
+        function cleanStackLog(raw, options = {}) {
+            return TextEscapeCore.cleanStackLog(raw, {
+                keepOriginalLines: options.keepOriginalLines ?? keepOriginalStackLines.checked
+            });
+        }
+
         function readQuotedString(raw, start) {
             return TextEscapeCore.readQuotedString(raw, start);
         }
@@ -1267,6 +1286,12 @@ java.lang.RuntimeException: test
             showToast('已转为代码字符串。');
         }
 
+        function cleanStackAction() {
+            outputText.value = cleanStackLog(inputText.value);
+            refreshStats();
+            showToast('已清理堆栈日志。');
+        }
+
         function mergeStringsAction() {
             outputText.value = mergeConcatenatedStrings(inputText.value, getConfiguredMappings());
             refreshStats();
@@ -1291,6 +1316,7 @@ java.lang.RuntimeException: test
         decodeBtn.addEventListener('click', decodeAction);
         encodeBtn.addEventListener('click', encodeAction);
         codeStringBtn.addEventListener('click', codeStringAction);
+        cleanStackBtn.addEventListener('click', cleanStackAction);
         languageMode.addEventListener('change', refreshLanguageModeHelp);
         mergeStringsBtn.addEventListener('click', mergeStringsAction);
         restoreVariablesBtn.addEventListener('click', restoreVariablesAction);

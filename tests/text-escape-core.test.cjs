@@ -11,6 +11,7 @@ assert.match(page, /TextEscapeCore\.mergeConcatenatedStrings/);
 assert.match(page, /TextEscapeCore\.restoreMappedVariables/);
 assert.match(page, /TextEscapeCore\.formatQuotedCopyText/);
 assert.match(page, /TextEscapeCore\.convertMultilineToCodeString/);
+assert.match(page, /TextEscapeCore\.cleanStackLog/);
 
 assert.strictEqual(
     core.decodeToReadableText('"SQ#at com.huawei\\n"\n                + "\\tat com.mysql.ConnectionFactoryImpl\\n"'),
@@ -60,6 +61,36 @@ assert.strictEqual(
 assert.strictEqual(
     core.convertMultilineToCodeString('He said "Hi"\nC:\\temp', { languageMode: 'java', keepTrailingNewline: true }),
     '"He said \\"Hi\\"\\n"\n        + "C:\\\\temp"'
+);
+
+const noisyStack = [
+    '2026-07-04 10:00:00 ERROR [main] com.demo.App - java.lang.RuntimeException: boom',
+    '',
+    '2026-07-04 10:00:00 ERROR [main] com.demo.App -     at com.example.Service.run(Service.java:10)',
+    'requestId=abc',
+    '2026-07-04 10:00:00 ERROR [main] com.demo.App - Caused by: java.lang.IllegalStateException: bad',
+    '        at com.example.Dao.query(Dao.java:22)',
+].join('\n');
+
+assert.strictEqual(
+    core.cleanStackLog(noisyStack, { keepOriginalLines: false }),
+    [
+        'java.lang.RuntimeException: boom',
+        '\tat com.example.Service.run(Service.java:10)',
+        'Caused by: java.lang.IllegalStateException: bad',
+        '\tat com.example.Dao.query(Dao.java:22)',
+    ].join('\n')
+);
+
+assert.strictEqual(
+    core.cleanStackLog(noisyStack, { keepOriginalLines: true }),
+    [
+        'java.lang.RuntimeException: boom',
+        '\tat com.example.Service.run(Service.java:10)',
+        'requestId=abc',
+        'Caused by: java.lang.IllegalStateException: bad',
+        '\tat com.example.Dao.query(Dao.java:22)',
+    ].join('\n')
 );
 
 assert.strictEqual(
