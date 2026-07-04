@@ -786,7 +786,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V1.89</span>
+            <span>V1.90</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -819,6 +819,13 @@
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年7月4日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.90</div>
+                        <div class="changelog-desc">交互优化：树状视图 key 悬浮路径补充根节点 <code>$</code> 层级，并支持点击 <code>$</code> 定位到 JSON 起始位置。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月2日</div>
                     <div class="changelog-entry">
@@ -2897,35 +2904,42 @@
                         const jsonPathText = JsonPathQuery.formatJsonPath(normalizeJsonPathForQuery(path));
                         let ref = currentObj;
 
+                        const displaySegments = [{ text: '$', targetPath: [] }];
+
                         path.forEach((p, idx) => {
                             const isArr = Array.isArray(ref);
                             const segmentText = isArr ? `[${p}]` : p;
+                            displaySegments.push({
+                                text: segmentText,
+                                targetPath: path.slice(0, idx + 1)
+                            });
+                            ref = ref[p];
+                        });
 
+                        displaySegments.forEach((segment, idx) => {
                             const segmentSpan = document.createElement('span');
                             segmentSpan.className = 'path-segment';
-                            segmentSpan.textContent = segmentText;
+                            segmentSpan.textContent = segment.text;
 
                             // Highlight the current leaf node slightly differently but still blue
-                            if (idx === path.length - 1) {
+                            if (idx === displaySegments.length - 1) {
                                 segmentSpan.style.fontWeight = 'bold';
                             }
 
                             // Click segment to scroll to that element
                             segmentSpan.onclick = (event) => {
                                 event.stopPropagation();
-                                const targetPath = path.slice(0, idx + 1);
-                                scrollToPath(targetPath);
+                                scrollToPath(segment.targetPath);
                             };
 
                             tooltip.appendChild(segmentSpan);
 
-                            if (idx < path.length - 1) {
+                            if (idx < displaySegments.length - 1) {
                                 const sep = document.createElement('span');
                                 sep.className = 'separator';
                                 sep.textContent = '>';
                                 tooltip.appendChild(sep);
                             }
-                            ref = ref[p];
                         });
 
                         const copyBtn = document.createElement('span');

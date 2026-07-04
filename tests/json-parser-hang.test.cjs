@@ -9,8 +9,9 @@ const script = [...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>
     .map((match) => match[1])
     .join('\n');
 
-assert.match(page, /<span>V1\.89<\/span>/);
-assert.match(page, /<div class="changelog-date">2026年7月2日<\/div>[\s\S]*?<div class="changelog-version">V1\.89<\/div>/);
+assert.match(page, /<span>V1\.90<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月4日<\/div>[\s\S]*?<div class="changelog-version">V1\.90<\/div>/);
+assert.match(page, /<div class="changelog-version">V1\.90<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.89<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.88<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.87<\/div>/);
@@ -51,7 +52,7 @@ assert.match(page, /JsonRepairGuards\.shouldSkipJsonRepair\(raw\)/);
 assert.doesNotMatch(page, /function shouldSkipJsonRepair\(raw\)/);
 
 function createElementStub(id = '') {
-    return {
+    const element = {
         id,
         value: '',
         textContent: '',
@@ -61,10 +62,22 @@ function createElementStub(id = '') {
         disabled: false,
         className: '',
         children: [],
+        scrollIntoViewCallCount: 0,
         classList: {
-            add() {},
-            remove() {},
-            contains() { return false; },
+            add(className) {
+                if (!this.owner.className.split(/\s+/).includes(className)) {
+                    this.owner.className = `${this.owner.className} ${className}`.trim();
+                }
+            },
+            remove(className) {
+                this.owner.className = this.owner.className
+                    .split(/\s+/)
+                    .filter((item) => item && item !== className)
+                    .join(' ');
+            },
+            contains(className) {
+                return this.owner.className.split(/\s+/).includes(className);
+            },
         },
         addEventListener() {},
         appendChild(child) {
@@ -73,10 +86,25 @@ function createElementStub(id = '') {
             return child;
         },
         remove() {},
-        querySelectorAll() { return []; },
-        querySelector() { return null; },
+        querySelectorAll(selector) {
+            if (selector === '.json-node') {
+                return collectElements(this, (element) => element.className.split(/\s+/).includes('json-node'));
+            }
+            return [];
+        },
+        querySelector(selector) {
+            if (selector === '.json-row') {
+                return collectElements(this, (element) => element.className.split(/\s+/).includes('json-row'))[0] || null;
+            }
+            return null;
+        },
         setAttribute() {},
+        scrollIntoView() {
+            this.scrollIntoViewCallCount += 1;
+        },
     };
+    element.classList.owner = element;
+    return element;
 }
 
 function collectElements(root, predicate, results = []) {
@@ -109,10 +137,16 @@ function createHarness() {
         createTextNode(text) {
             return { textContent: text };
         },
-        querySelectorAll() { return []; },
+        querySelectorAll(selector) {
+            if (selector === '.json-node') {
+                return Array.from(elements.values()).flatMap((element) => element.querySelectorAll(selector));
+            }
+            return [];
+        },
         addEventListener() {},
         body: createElementStub('body'),
     };
+    document.body.classList.owner = document.body;
 
     const context = {
         document,
@@ -129,7 +163,10 @@ function createHarness() {
         JsonPathQuery: require(path.resolve(__dirname, '../json-path-query.js')),
         JsonStringFields: require(path.resolve(__dirname, '../json-string-fields.js')),
         console,
-        setTimeout,
+        setTimeout: (fn) => {
+            fn();
+            return 0;
+        },
         clearTimeout,
         prompt: () => null,
     };
@@ -226,6 +263,21 @@ const keySpans = collectElements(
 const targetKey = keySpans.find((element) => element.textContent === '"key"');
 assert.ok(targetKey, 'tree should render the object key');
 targetKey.onmouseenter({ clientX: 0, clientY: 0 });
+const pathSegments = collectElements(
+    tooltipPathHarness.elements.get('path-tooltip'),
+    (element) => element.className === 'path-segment'
+);
+assert.deepEqual(
+    pathSegments.map((element) => element.textContent),
+    ['$', 'items', '[0]', 'key']
+);
+const rootNode = collectElements(
+    tooltipPathHarness.elements.get('json-output'),
+    (element) => element.className.split(/\s+/).includes('json-node') && element.dataset.path === '[]'
+)[0];
+assert.ok(rootNode, 'tree should render a root node with empty path');
+pathSegments[0].onclick({ stopPropagation() {} });
+assert.equal(rootNode.scrollIntoViewCallCount, 1, 'clicking $ should locate the JSON root node');
 const copyPathButton = collectElements(
     tooltipPathHarness.elements.get('path-tooltip'),
     (element) => element.className === 'path-copy-btn'
