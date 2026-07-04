@@ -27,6 +27,7 @@ assert.match(page, /<div class="changelog-date">2026年6月11日<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.80<\/div>/);
 assert.match(page, /<script src="json-repair-guards\.js"><\/script>/);
 assert.match(page, /<script src="json-assignment-extractor\.js"><\/script>/);
+assert.match(page, /<script src="json-java-style-normalizer\.js"><\/script>/);
 assert.match(page, /<script src="json-path-query\.js"><\/script>/);
 assert.doesNotMatch(page, /<script src="json-key-paths\.js"><\/script>/);
 assert.doesNotMatch(page, /<script src="json-search-results\.js"><\/script>/);
@@ -51,8 +52,10 @@ assert.doesNotMatch(page, /JsonKeyPaths\.extractJsonKeyPaths\(target\)/);
 assert.doesNotMatch(page, /function copyJsonKeyPaths\(\)/);
 assert.match(page, /JsonRepairGuards\.shouldSkipJsonRepair\(raw\)/);
 assert.match(page, /JsonAssignmentExtractor\.extractJsonValueFromAssignmentLog\(raw\)/);
+assert.match(page, /JsonJavaStyleNormalizer\.normalizeJavaStyleObject\(raw\)/);
 assert.doesNotMatch(page, /function shouldSkipJsonRepair\(raw\)/);
 assert.doesNotMatch(page, /function extractJsonValueFromAssignmentLog\(raw\)/);
+assert.doesNotMatch(page, /function normalizeJavaStyleObject\(raw\)/);
 
 function createElementStub(id = '') {
     const element = {
@@ -164,6 +167,7 @@ function createHarness() {
         },
         JsonRepairGuards: require(path.resolve(__dirname, '../json-repair-guards.js')),
         JsonAssignmentExtractor: require(path.resolve(__dirname, '../json-assignment-extractor.js')),
+        JsonJavaStyleNormalizer: require(path.resolve(__dirname, '../json-java-style-normalizer.js')),
         JsonPathQuery: require(path.resolve(__dirname, '../json-path-query.js')),
         JsonStringFields: require(path.resolve(__dirname, '../json-string-fields.js')),
         console,
