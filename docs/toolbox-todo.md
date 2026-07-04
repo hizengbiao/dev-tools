@@ -142,6 +142,7 @@
   - 2026-06-29 已继续将括号位置测量用的镜像节点样式构造抽取到 `JsonBracketMatcher.buildTextMirrorStyle`，进一步压缩 `setupBracketMatching` 内联 DOM 样式代码。
   - 2026-06-29 已继续将括号位置测量中的文本前后切分抽取到 `JsonBracketMatcher.splitTextAroundIndex`，让 `getTextPosition` 只保留 DOM 测量职责。
   - 2026-06-29 已继续将括号位置测量中的 marker 相对坐标计算抽取到 `JsonBracketMatcher.calculateRelativeMarkerPosition`，减少 `getTextPosition` 中的手写矩形差值逻辑。
+  - 2026-07-04 已将 `json-parser.html` 中从日志/赋值文本提取 JSON 值的纯逻辑抽取到 `json-assignment-extractor.js`，新增 `tests/json-assignment-extractor.test.cjs` 覆盖括号前缀日志、数组赋值、字符串内等号和不完整 JSON 边界。
 
 ## JSON 格式化工具
 
