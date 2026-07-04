@@ -227,6 +227,35 @@
             .replace(/"/g, '\\"');
     }
 
+    function encodeCodeLineForJava(raw) {
+        return raw
+            .replace(/\\/g, '\\\\')
+            .replace(/\t/g, '\\t')
+            .replace(/"/g, '\\"');
+    }
+
+    function convertMultilineToCodeString(raw, options = {}) {
+        const mode = normalizeLanguageMode(options);
+        const keepTrailingNewline = options.keepTrailingNewline !== false;
+        const normalized = String(raw || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+        const source = keepTrailingNewline ? normalized : normalized.replace(/\n$/, '');
+        const segments = source.split('\n');
+        const trailingNewline = source.endsWith('\n');
+        if (trailingNewline) {
+            segments.pop();
+        }
+
+        const literalLines = segments.map((line, index) => {
+            const shouldAppendNewline = keepTrailingNewline && (index < segments.length - 1 || trailingNewline);
+            const value = mode === 'sql'
+                ? line.replace(/'/g, "''")
+                : encodeCodeLineForJava(line);
+            return `"${value}${shouldAppendNewline ? '\\n' : ''}"`;
+        });
+
+        return literalLines.length ? literalLines.join('\n        + ') : '""';
+    }
+
     function normalizeMappingPairs(pairs) {
         if (!Array.isArray(pairs)) {
             return [];
@@ -423,6 +452,7 @@
         encodeToEscapedString,
         decodeStringLiteralForMerge,
         getReadableDecodeSource,
+        convertMultilineToCodeString,
         formatQuotedCopyText,
         mergeConcatenatedStrings,
         normalizeMappingPairs,

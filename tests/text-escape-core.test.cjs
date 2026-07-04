@@ -10,6 +10,7 @@ assert.match(page, /TextEscapeCore\.decodeToReadableText/);
 assert.match(page, /TextEscapeCore\.mergeConcatenatedStrings/);
 assert.match(page, /TextEscapeCore\.restoreMappedVariables/);
 assert.match(page, /TextEscapeCore\.formatQuotedCopyText/);
+assert.match(page, /TextEscapeCore\.convertMultilineToCodeString/);
 
 assert.strictEqual(
     core.decodeToReadableText('"SQ#at com.huawei\\n"\n                + "\\tat com.mysql.ConnectionFactoryImpl\\n"'),
@@ -39,6 +40,26 @@ assert.strictEqual(
 assert.strictEqual(
     core.encodeToEscapedString("O'Reilly\\path\n", { languageMode: 'sql' }),
     "O''Reilly\\path\n"
+);
+
+assert.strictEqual(
+    core.convertMultilineToCodeString('alpha\nbeta', { languageMode: 'java', keepTrailingNewline: true }),
+    '"alpha\\n"\n        + "beta"'
+);
+
+assert.strictEqual(
+    core.convertMultilineToCodeString('alpha\nbeta\n', { languageMode: 'java', keepTrailingNewline: true }),
+    '"alpha\\n"\n        + "beta\\n"'
+);
+
+assert.strictEqual(
+    core.convertMultilineToCodeString('alpha\nbeta\n', { languageMode: 'java', keepTrailingNewline: false }),
+    '"alpha"\n        + "beta"'
+);
+
+assert.strictEqual(
+    core.convertMultilineToCodeString('He said "Hi"\nC:\\temp', { languageMode: 'java', keepTrailingNewline: true }),
+    '"He said \\"Hi\\"\\n"\n        + "C:\\\\temp"'
 );
 
 assert.strictEqual(

@@ -281,6 +281,23 @@
             line-height: 1.55;
         }
 
+        .option-toggle {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 8px 10px;
+            border: 1px solid #d8dee4;
+            border-radius: 6px;
+            background: #f6f8fa;
+            color: #57606a;
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        .option-toggle input {
+            margin-top: 2px;
+        }
+
         .diff-summary {
             min-height: 38px;
             color: var(--muted-color);
@@ -755,7 +772,7 @@
         <div class="tool-title">
             <h1>文本转义转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.10</span>
+                <span>V1.11</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -800,6 +817,12 @@ java.lang.RuntimeException: test
                         data-tooltip="把转义内容还原成可读文本。&#10;示例：a\nb 会展开成两行；\t 会变成制表符；\u4e2d 会变成中文。&#10;适合处理日志字段、异常堆栈、JSON 字符串里的转义文本。">转为可读文本</button>
                     <button class="btn btn-primary" id="encodeBtn" type="button"
                         data-tooltip="把普通多行文本转换成可复制进代码或配置里的转义字符串。&#10;示例：两行文本会变成 a\nb，双引号会变成 \&quot;。&#10;适合放入 Java、JSON、配置字段或日志模板。">转为转义字符串</button>
+                    <button class="btn btn-primary" id="codeStringBtn" type="button"
+                        data-tooltip="把普通多行文本转换成代码里的字符串拼接形式。&#10;示例：alpha 换行 beta 会转换为 &quot;alpha\n&quot; + &quot;beta&quot;。&#10;适合把多行提示、SQL、日志片段复制到 Java 代码中。">多行转代码字符串</button>
+                    <label class="option-toggle" for="keepTrailingNewline">
+                        <input id="keepTrailingNewline" type="checkbox" checked>
+                        <span>保留每行末尾换行，生成的每段字符串会追加 <code>\n</code></span>
+                    </label>
                     <button class="btn btn-primary" id="mergeStringsBtn" type="button"
                         data-tooltip="合并代码里多段引号字符串，已配置的映射可跨变量继续合并。&#10;示例：配置 SERVICE_NAME ↔ SVNM.getName() 后，&#10;&quot;数据库${objectName}的&quot; + SVNM.getName() + &quot;不在已知服务列表里&quot;&#10;会转换为：数据库${objectName}的SERVICE_NAME不在已知服务列表里。&#10;映射左右顺序可以互换，未配置的变量仍会保留拼接边界。">合并拼接字符串</button>
                     <button class="btn btn-primary" id="restoreVariablesBtn" type="button"
@@ -852,8 +875,9 @@ java.lang.RuntimeException: test
 
             <div class="hint">
                 <strong>说明：</strong>
-                “字符串模式”用于指定 Java、JavaScript、Python、SQL 等不同字面量规则；“转为可读文本”适合把一行转义字符串展开为正常多行内容；“转为转义字符串”适合把多行文本转换成可直接复制到
-                Java、JSON、配置文件或日志字段里的字符串；“合并拼接字符串”可结合变量映射把代码中的字符串和指定变量合并成普通文本；
+                “字符串模式”用于指定 Java、JavaScript、Python、SQL 等不同字面量规则；“转为可读文本”适合把一行转义字符串展开为正常多行内容；
+                “转为转义字符串”适合把多行文本转换成可直接复制到 Java、JSON、配置文件或日志字段里的字符串；“多行转代码字符串”适合把普通多行文本转换成 Java 风格的字符串拼接代码；
+                “合并拼接字符串”可结合变量映射把代码中的字符串和指定变量合并成普通文本；
                 “恢复变量拼接”可将普通文本中的映射内容重新转换成变量表达式拼接，未配置的变量仍会保留边界。
                 快捷键：<kbd>Ctrl</kbd> + <kbd>Enter</kbd> 转为可读文本，<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd> 转为转义字符串。
             </div>
@@ -871,6 +895,10 @@ java.lang.RuntimeException: test
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月4日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.11</div>
+                        <div class="changelog-desc">新增多行转代码字符串功能，可将普通多行文本转换为 Java 风格字符串拼接，并支持选择是否保留行尾换行。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.10</div>
                         <div class="changelog-desc">新增字符串模式选择，支持 Java、JavaScript、Python、SQL 等字面量规则，并补充每种模式的悬停说明和示例。</div>
@@ -956,6 +984,8 @@ java.lang.RuntimeException: test
 
         const decodeBtn = document.getElementById('decodeBtn');
         const encodeBtn = document.getElementById('encodeBtn');
+        const codeStringBtn = document.getElementById('codeStringBtn');
+        const keepTrailingNewline = document.getElementById('keepTrailingNewline');
         const mergeStringsBtn = document.getElementById('mergeStringsBtn');
         const restoreVariablesBtn = document.getElementById('restoreVariablesBtn');
         const mappingList = document.getElementById('mappingList');
@@ -1104,6 +1134,13 @@ java.lang.RuntimeException: test
             return TextEscapeCore.encodeToEscapedString(raw, getLanguageOptions(options));
         }
 
+        function convertMultilineToCodeString(raw, options = {}) {
+            return TextEscapeCore.convertMultilineToCodeString(raw, {
+                ...getLanguageOptions(options),
+                keepTrailingNewline: options.keepTrailingNewline ?? keepTrailingNewline.checked
+            });
+        }
+
         function readQuotedString(raw, start) {
             return TextEscapeCore.readQuotedString(raw, start);
         }
@@ -1224,6 +1261,12 @@ java.lang.RuntimeException: test
             showToast('已转为转义字符串。');
         }
 
+        function codeStringAction() {
+            outputText.value = convertMultilineToCodeString(inputText.value);
+            refreshStats();
+            showToast('已转为代码字符串。');
+        }
+
         function mergeStringsAction() {
             outputText.value = mergeConcatenatedStrings(inputText.value, getConfiguredMappings());
             refreshStats();
@@ -1247,6 +1290,7 @@ java.lang.RuntimeException: test
 
         decodeBtn.addEventListener('click', decodeAction);
         encodeBtn.addEventListener('click', encodeAction);
+        codeStringBtn.addEventListener('click', codeStringAction);
         languageMode.addEventListener('change', refreshLanguageModeHelp);
         mergeStringsBtn.addEventListener('click', mergeStringsAction);
         restoreVariablesBtn.addEventListener('click', restoreVariablesAction);
