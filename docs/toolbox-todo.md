@@ -144,6 +144,7 @@
   - 2026-06-29 已继续将括号位置测量中的 marker 相对坐标计算抽取到 `JsonBracketMatcher.calculateRelativeMarkerPosition`，减少 `getTextPosition` 中的手写矩形差值逻辑。
   - 2026-07-04 已将 `json-parser.html` 中从日志/赋值文本提取 JSON 值的纯逻辑抽取到 `json-assignment-extractor.js`，新增 `tests/json-assignment-extractor.test.cjs` 覆盖括号前缀日志、数组赋值、字符串内等号和不完整 JSON 边界。
   - 2026-07-04 已将 `json-parser.html` 中 Java toString / Map 风格对象规范化逻辑抽取到 `json-java-style-normalizer.js`，新增 `tests/json-java-style-normalizer.test.cjs` 覆盖类名前缀、裸字符串值、嵌套 Map、字符串内等号和页面接入。
+  - 2026-07-05 已将 `json-parser.html` 中去注释、中文冒号修复、缺逗号补齐、未加引号 key/value 补齐逻辑抽取到 `json-repair-normalizer.js`，新增 `tests/json-repair-normalizer.test.cjs` 覆盖宽松 JSON 修复链路和页面接入。
 
 ## JSON 格式化工具
 
