@@ -382,6 +382,36 @@
             border-bottom: 0;
         }
 
+        .query-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .query-edit-input {
+            width: 100%;
+            min-width: 160px;
+            padding: 6px 8px;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 13px;
+        }
+
+        .query-edit-input:focus {
+            border-color: #0969da;
+            box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.18);
+            outline: none;
+        }
+
+        .btn-small {
+            padding: 5px 9px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
         @media (max-width: 900px) {
             .converter-workspace {
                 grid-template-columns: 1fr;
@@ -571,7 +601,7 @@
         <div class="tool-title">
             <h1>URL 编解码</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.03</span>
+                <span>V1.04</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -620,7 +650,11 @@
         <div id="urlAnalysisPanel" class="panel">
             <div class="panel-header">
                 <h3>URL 参数分析</h3>
-                <span id="urlAnalysisStatus" class="url-analysis-status">输入 URL 后自动解析</span>
+                <div class="query-actions">
+                    <button id="sortQueryParamsBtn" class="btn btn-secondary btn-small" onclick="sortCurrentQueryParams()">按参数名排序</button>
+                    <button id="buildUrlBtn" class="btn btn-primary btn-small" onclick="buildEditedUrl()">组装到输出</button>
+                    <span id="urlAnalysisStatus" class="url-analysis-status">输入 URL 后自动解析</span>
+                </div>
             </div>
             <div class="url-analysis-grid">
                 <div class="url-field">
@@ -653,11 +687,12 @@
                             <th>原始值</th>
                             <th>解码参数名</th>
                             <th>解码值</th>
+                            <th>操作</th>
                         </tr>
                     </thead>
                     <tbody id="queryParamTable">
                         <tr>
-                            <td colspan="5">暂无 Query 参数</td>
+                            <td colspan="6">暂无 Query 参数</td>
                         </tr>
                     </tbody>
                 </table>
@@ -674,6 +709,13 @@
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年7月5日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.04</div>
+                        <div class="changelog-desc">新增 Query 参数编辑、删除、按参数名排序和反向组装完整 URL 功能。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月26日</div>
                     <div class="changelog-entry">
@@ -722,6 +764,8 @@
         const urlFieldPathname = document.getElementById('urlFieldPathname');
         const urlFieldHash = document.getElementById('urlFieldHash');
         const queryParamTable = document.getElementById('queryParamTable');
+        let currentUrlInfo = null;
+        let currentQueryParams = [];
 
         function buildDiffSegments(original, result) {
             return DiffViewer.buildDiffSegments(original, result);
@@ -835,6 +879,7 @@
                 return {
                     ok: true,
                     isRelative,
+                    origin: isRelative ? '' : url.origin,
                     protocol: isRelative ? '相对路径' : url.protocol,
                     hostname: isRelative ? '-' : url.hostname,
                     port: url.port || '-',
@@ -847,6 +892,29 @@
             }
         }
 
+        function buildQueryString(params) {
+            return params
+                .filter(param => String(param.key || '').length > 0)
+                .map(param => `${param.key}=${param.value || ''}`)
+                .join('&');
+        }
+
+        function buildUrlFromParts(info, params) {
+            if (!info || !info.ok) return '';
+            const base = info.isRelative ? info.pathname : `${info.origin}${info.pathname}`;
+            const query = buildQueryString(params);
+            const hash = info.hash && info.hash !== '-' ? info.hash : '';
+            return `${base}${query ? '?' + query : ''}${hash}`;
+        }
+
+        function sortQueryParamsByKey(params) {
+            return [...params].sort((left, right) => {
+                const leftKey = String(left.key || '').toLocaleLowerCase();
+                const rightKey = String(right.key || '').toLocaleLowerCase();
+                return leftKey.localeCompare(rightKey) || String(left.key || '').localeCompare(String(right.key || ''));
+            });
+        }
+
         function setUrlField(element, value) {
             element.textContent = value || '-';
         }
@@ -855,7 +923,7 @@
             if (!params.length) {
                 const row = document.createElement('tr');
                 const cell = document.createElement('td');
-                cell.colSpan = 5;
+                cell.colSpan = 6;
                 cell.textContent = '暂无 Query 参数';
                 row.appendChild(cell);
                 queryParamTable.replaceChildren(row);
@@ -863,11 +931,44 @@
             }
             const rows = params.map((param, index) => {
                 const row = document.createElement('tr');
-                [index + 1, param.key, param.value, param.decodedKey, param.decodedValue].forEach((value) => {
+                const numberCell = document.createElement('td');
+                numberCell.textContent = String(index + 1);
+                row.appendChild(numberCell);
+
+                const keyCell = document.createElement('td');
+                const keyInput = document.createElement('input');
+                keyInput.className = 'query-edit-input';
+                keyInput.value = param.key;
+                keyInput.addEventListener('input', () => updateQueryParam(index, 'key', keyInput.value));
+                keyCell.appendChild(keyInput);
+                row.appendChild(keyCell);
+
+                const valueCell = document.createElement('td');
+                const valueInput = document.createElement('input');
+                valueInput.className = 'query-edit-input';
+                valueInput.value = param.value;
+                valueInput.addEventListener('input', () => updateQueryParam(index, 'value', valueInput.value));
+                valueCell.appendChild(valueInput);
+                row.appendChild(valueCell);
+
+                [param.decodedKey, param.decodedValue].forEach((value) => {
                     const cell = document.createElement('td');
                     cell.textContent = String(value);
                     row.appendChild(cell);
                 });
+
+                const actionCell = document.createElement('td');
+                const copyButton = document.createElement('button');
+                copyButton.className = 'btn btn-secondary btn-small';
+                copyButton.textContent = '复制';
+                copyButton.addEventListener('click', () => copyQueryParam(index));
+                actionCell.appendChild(copyButton);
+                const deleteButton = document.createElement('button');
+                deleteButton.className = 'btn btn-small';
+                deleteButton.textContent = '删除';
+                deleteButton.addEventListener('click', () => deleteQueryParam(index));
+                actionCell.appendChild(deleteButton);
+                row.appendChild(actionCell);
                 return row;
             });
             queryParamTable.replaceChildren(...rows);
@@ -876,6 +977,8 @@
         function renderUrlAnalysis() {
             const result = parseUrlInfo(inputArea.value);
             if (!result.ok) {
+                currentUrlInfo = null;
+                currentQueryParams = [];
                 urlAnalysisStatus.textContent = result.error;
                 [urlFieldProtocol, urlFieldHostname, urlFieldPort, urlFieldPathname, urlFieldHash].forEach((field) => {
                     field.textContent = '-';
@@ -883,15 +986,71 @@
                 renderQueryParams([]);
                 return;
             }
+            currentUrlInfo = result;
+            currentQueryParams = result.queryParams.map(param => ({ ...param }));
             setUrlField(urlFieldProtocol, result.protocol);
             setUrlField(urlFieldHostname, result.hostname);
             setUrlField(urlFieldPort, result.port);
             setUrlField(urlFieldPathname, result.pathname);
             setUrlField(urlFieldHash, result.hash);
-            renderQueryParams(result.queryParams);
-            urlAnalysisStatus.textContent = result.queryParams.length
-                ? `已解析 ${result.queryParams.length} 个 Query 参数`
+            renderQueryParams(currentQueryParams);
+            urlAnalysisStatus.textContent = currentQueryParams.length
+                ? `已解析 ${currentQueryParams.length} 个 Query 参数`
                 : 'URL 中没有 Query 参数';
+        }
+
+        function refreshEditedQueryTable(message) {
+            currentQueryParams = currentQueryParams.map((param) => ({
+                ...param,
+                decodedKey: safeDecodeQueryComponent(param.key),
+                decodedValue: safeDecodeQueryComponent(param.value),
+            }));
+            renderQueryParams(currentQueryParams);
+            urlAnalysisStatus.textContent = message || `已编辑 ${currentQueryParams.length} 个 Query 参数`;
+        }
+
+        function updateQueryParam(index, field, value) {
+            if (!currentQueryParams[index]) return;
+            currentQueryParams[index] = {
+                ...currentQueryParams[index],
+                [field]: value,
+            };
+            currentQueryParams[index].decodedKey = safeDecodeQueryComponent(currentQueryParams[index].key);
+            currentQueryParams[index].decodedValue = safeDecodeQueryComponent(currentQueryParams[index].value);
+            urlAnalysisStatus.textContent = 'Query 参数已修改，可组装到输出';
+        }
+
+        function deleteQueryParam(index) {
+            currentQueryParams.splice(index, 1);
+            refreshEditedQueryTable('已删除 Query 参数');
+        }
+
+        function sortCurrentQueryParams() {
+            if (!currentUrlInfo) {
+                showToast('请先输入有效 URL');
+                return;
+            }
+            currentQueryParams = sortQueryParamsByKey(currentQueryParams);
+            refreshEditedQueryTable('已按参数名排序');
+        }
+
+        function buildEditedUrl() {
+            if (!currentUrlInfo) {
+                showToast('请先输入有效 URL');
+                return;
+            }
+            outputArea.value = buildUrlFromParts(currentUrlInfo, currentQueryParams);
+            renderDiff();
+            showToast('已组装 URL 到输出');
+        }
+
+        function copyQueryParam(index) {
+            const param = currentQueryParams[index];
+            if (!param) return;
+            ClipboardUtils.copyText(`${param.key}=${param.value || ''}`, {
+                successMessage: '已复制参数',
+                errorMessage: '复制失败'
+            });
         }
 
         function doEncode() {

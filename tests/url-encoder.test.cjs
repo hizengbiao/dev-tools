@@ -22,8 +22,13 @@ assert.match(page, /function buildDiffSegments\(original, result\)/);
 assert.match(page, /function renderDiff\(\)/);
 assert.match(page, /function syncHighlightScroll\(textarea, highlight, lineNumbers\)/);
 assert.match(page, /function updateLineNumbers\(textarea, lineNumbers\)/);
-assert.match(page, /<span>V1\.03<\/span>/);
-assert.match(page, /<div class="changelog-date">2026年6月26日<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>/);
+assert.match(page, /<span>V1\.04<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月5日<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>/);
+assert.match(page, /id="sortQueryParamsBtn"/);
+assert.match(page, /id="buildUrlBtn"/);
+assert.match(page, /function buildQueryString\(params\)/);
+assert.match(page, /function buildUrlFromParts\(info, params\)/);
+assert.match(page, /function sortQueryParamsByKey\(params\)/);
 assert.match(page, /id="urlAnalysisPanel"/);
 assert.match(page, /id="urlAnalysisStatus"/);
 assert.match(page, /id="urlFieldProtocol"/);
@@ -193,6 +198,38 @@ assert.strictEqual(parsedRelativeUrl.queryParams[0].decodedValue, '1');
 
 const invalidUrl = context.parseUrlInfo('not a url with spaces');
 assert.strictEqual(invalidUrl.ok, false);
+
+assert.strictEqual(
+    context.buildQueryString([
+        { key: 'name', value: '%E5%BC%A0%E4%B8%89' },
+        { key: 'flag', value: '' },
+    ]),
+    'name=%E5%BC%A0%E4%B8%89&flag='
+);
+
+assert.strictEqual(
+    context.buildUrlFromParts(parsedUrl, [
+        { key: 'page', value: '2' },
+        { key: 'name', value: '%E6%9D%8E%E5%9B%9B' },
+    ]),
+    'https://example.com:8443/api/users?page=2&name=%E6%9D%8E%E5%9B%9B#top'
+);
+
+assert.strictEqual(
+    context.buildUrlFromParts(parsedRelativeUrl, [{ key: 'page', value: '2' }]),
+    '/api/users?page=2'
+);
+
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(context.sortQueryParamsByKey([
+        { key: 'z', value: '1' },
+        { key: 'a', value: '2' },
+    ]))),
+    [
+        { key: 'a', value: '2' },
+        { key: 'z', value: '1' },
+    ]
+);
 
 elements.get('input-text').value = 'left';
 elements.get('output-text').value = 'right';
