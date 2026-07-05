@@ -412,6 +412,18 @@
             white-space: nowrap;
         }
 
+        .query-insight {
+            color: #57606a;
+            font-size: 12px;
+            line-height: 1.5;
+            max-width: 360px;
+            white-space: pre-wrap;
+        }
+
+        .query-insight strong {
+            color: #0969da;
+        }
+
         @media (max-width: 900px) {
             .converter-workspace {
                 grid-template-columns: 1fr;
@@ -601,7 +613,7 @@
         <div class="tool-title">
             <h1>URL 编解码</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.04</span>
+                <span>V1.05</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -687,12 +699,13 @@
                             <th>原始值</th>
                             <th>解码参数名</th>
                             <th>解码值</th>
+                            <th>识别结果</th>
                             <th>操作</th>
                         </tr>
                     </thead>
                     <tbody id="queryParamTable">
                         <tr>
-                            <td colspan="6">暂无 Query 参数</td>
+                            <td colspan="7">暂无 Query 参数</td>
                         </tr>
                     </tbody>
                 </table>
@@ -711,6 +724,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月5日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.05</div>
+                        <div class="changelog-desc">Query 参数分析增加参数值自动识别，支持多层 URL 解码、Base64 尝试和 JSON 预览提示。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.04</div>
                         <div class="changelog-desc">新增 Query 参数编辑、删除、按参数名排序和反向组装完整 URL 功能。</div>
@@ -849,6 +866,84 @@
             }
         }
 
+        function decodeUrlRecursively(value, maxDepth = 3) {
+            const steps = [];
+            let current = String(value || '');
+
+            for (let i = 0; i < maxDepth; i++) {
+                const next = safeDecodeQueryComponent(current);
+                if (next === current) break;
+                steps.push(next);
+                current = next;
+            }
+
+            return {
+                value: current,
+                depth: steps.length,
+                steps,
+            };
+        }
+
+        function decodeBase64Text(value) {
+            const text = String(value || '').trim();
+            if (!text || text.length < 4 || text.length % 4 === 1 || !/^[A-Za-z0-9+/=_-]+$/.test(text)) {
+                return null;
+            }
+
+            const normalized = text.replace(/-/g, '+').replace(/_/g, '/');
+            const padded = normalized + '='.repeat((4 - normalized.length % 4) % 4);
+
+            try {
+                const binary = atob(padded);
+                const percentEncoded = Array.from(binary, char =>
+                    '%' + char.charCodeAt(0).toString(16).padStart(2, '0')
+                ).join('');
+                try {
+                    return decodeURIComponent(percentEncoded);
+                } catch (error) {
+                    return binary;
+                }
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function tryFormatJson(text) {
+            try {
+                return JSON.stringify(JSON.parse(text), null, 2);
+            } catch (error) {
+                return '';
+            }
+        }
+
+        function analyzeQueryParamValue(value) {
+            const urlDecode = decodeUrlRecursively(value);
+            const candidates = [String(value || ''), urlDecode.value];
+            const base64Decoded = decodeBase64Text(urlDecode.value) || decodeBase64Text(value) || '';
+            if (base64Decoded) {
+                candidates.push(base64Decoded);
+            }
+
+            const jsonPreview = candidates.map(tryFormatJson).find(Boolean) || '';
+            const summaryParts = [];
+            if (urlDecode.depth > 0) {
+                summaryParts.push(`URL解码 ${urlDecode.depth} 层`);
+            }
+            if (base64Decoded) {
+                summaryParts.push('Base64');
+            }
+            if (jsonPreview) {
+                summaryParts.push('JSON');
+            }
+
+            return {
+                urlDecode,
+                base64Decoded,
+                jsonPreview,
+                summary: summaryParts.length ? summaryParts.join(' / ') : '未识别到嵌套编码',
+            };
+        }
+
         function parseQueryParams(search) {
             const raw = search.startsWith('?') ? search.slice(1) : search;
             if (!raw) return [];
@@ -861,6 +956,7 @@
                     value,
                     decodedKey: safeDecodeQueryComponent(key),
                     decodedValue: safeDecodeQueryComponent(value),
+                    analysis: analyzeQueryParamValue(value),
                 };
             });
         }
@@ -923,7 +1019,7 @@
             if (!params.length) {
                 const row = document.createElement('tr');
                 const cell = document.createElement('td');
-                cell.colSpan = 6;
+                cell.colSpan = 7;
                 cell.textContent = '暂无 Query 参数';
                 row.appendChild(cell);
                 queryParamTable.replaceChildren(row);
@@ -956,6 +1052,24 @@
                     cell.textContent = String(value);
                     row.appendChild(cell);
                 });
+
+                const insightCell = document.createElement('td');
+                const insight = document.createElement('div');
+                insight.className = 'query-insight';
+                const analysis = param.analysis || analyzeQueryParamValue(param.value);
+                insight.textContent = analysis.summary;
+                if (analysis.jsonPreview) {
+                    insight.title = analysis.jsonPreview;
+                    insight.textContent += '\n悬停查看 JSON 预览';
+                } else if (analysis.base64Decoded) {
+                    insight.title = analysis.base64Decoded;
+                    insight.textContent += '\n悬停查看 Base64 解码结果';
+                } else if (analysis.urlDecode.depth > 0) {
+                    insight.title = analysis.urlDecode.value;
+                    insight.textContent += '\n悬停查看 URL 解码结果';
+                }
+                insightCell.appendChild(insight);
+                row.appendChild(insightCell);
 
                 const actionCell = document.createElement('td');
                 const copyButton = document.createElement('button');
@@ -1004,6 +1118,7 @@
                 ...param,
                 decodedKey: safeDecodeQueryComponent(param.key),
                 decodedValue: safeDecodeQueryComponent(param.value),
+                analysis: analyzeQueryParamValue(param.value),
             }));
             renderQueryParams(currentQueryParams);
             urlAnalysisStatus.textContent = message || `已编辑 ${currentQueryParams.length} 个 Query 参数`;
@@ -1017,6 +1132,7 @@
             };
             currentQueryParams[index].decodedKey = safeDecodeQueryComponent(currentQueryParams[index].key);
             currentQueryParams[index].decodedValue = safeDecodeQueryComponent(currentQueryParams[index].value);
+            currentQueryParams[index].analysis = analyzeQueryParamValue(currentQueryParams[index].value);
             urlAnalysisStatus.textContent = 'Query 参数已修改，可组装到输出';
         }
 

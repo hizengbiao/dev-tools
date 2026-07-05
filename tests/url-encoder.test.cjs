@@ -22,13 +22,16 @@ assert.match(page, /function buildDiffSegments\(original, result\)/);
 assert.match(page, /function renderDiff\(\)/);
 assert.match(page, /function syncHighlightScroll\(textarea, highlight, lineNumbers\)/);
 assert.match(page, /function updateLineNumbers\(textarea, lineNumbers\)/);
-assert.match(page, /<span>V1\.04<\/span>/);
-assert.match(page, /<div class="changelog-date">2026年7月5日<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>/);
+assert.match(page, /<span>V1\.05<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月5日<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>/);
 assert.match(page, /id="sortQueryParamsBtn"/);
 assert.match(page, /id="buildUrlBtn"/);
 assert.match(page, /function buildQueryString\(params\)/);
 assert.match(page, /function buildUrlFromParts\(info, params\)/);
 assert.match(page, /function sortQueryParamsByKey\(params\)/);
+assert.match(page, /function decodeUrlRecursively\(value/);
+assert.match(page, /function analyzeQueryParamValue\(value\)/);
+assert.match(page, />识别结果<\/th>/);
 assert.match(page, /id="urlAnalysisPanel"/);
 assert.match(page, /id="urlAnalysisStatus"/);
 assert.match(page, /id="urlFieldProtocol"/);
@@ -78,6 +81,9 @@ function element(id) {
 const context = {
     console,
     URL,
+    atob(value) {
+        return Buffer.from(value, 'base64').toString('binary');
+    },
     EditorLines: {
         buildLineNumbers(text) {
             return String(text || '').split('\n').map((_, index) => index + 1).join('\n');
@@ -184,7 +190,12 @@ assert.strictEqual(parsedUrl.hostname, 'example.com');
 assert.strictEqual(parsedUrl.port, '8443');
 assert.strictEqual(parsedUrl.pathname, '/api/users');
 assert.strictEqual(parsedUrl.hash, '#top');
-assert.deepStrictEqual(JSON.parse(JSON.stringify(parsedUrl.queryParams)), [
+assert.deepStrictEqual(JSON.parse(JSON.stringify(parsedUrl.queryParams.map((param) => ({
+    key: param.key,
+    value: param.value,
+    decodedKey: param.decodedKey,
+    decodedValue: param.decodedValue,
+})))), [
     { key: 'name', value: '%E5%BC%A0%E4%B8%89', decodedKey: 'name', decodedValue: '张三' },
     { key: 'empty', value: '', decodedKey: 'empty', decodedValue: '' },
     { key: 'flag', value: '', decodedKey: 'flag', decodedValue: '' },
@@ -230,6 +241,26 @@ assert.deepStrictEqual(
         { key: 'z', value: '1' },
     ]
 );
+
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(context.decodeUrlRecursively('%257B%2522a%2522%253A1%257D'))),
+    {
+        value: '{"a":1}',
+        depth: 2,
+        steps: ['%7B%22a%22%3A1%7D', '{"a":1}'],
+    }
+);
+
+const jsonAnalysis = context.analyzeQueryParamValue('%257B%2522a%2522%253A1%257D');
+assert.strictEqual(jsonAnalysis.urlDecode.depth, 2);
+assert.strictEqual(jsonAnalysis.jsonPreview, '{\n  "a": 1\n}');
+assert.strictEqual(jsonAnalysis.summary.includes('URL解码 2 层'), true);
+assert.strictEqual(jsonAnalysis.summary.includes('JSON'), true);
+
+const base64Analysis = context.analyzeQueryParamValue('eyJhIjoxfQ==');
+assert.strictEqual(base64Analysis.base64Decoded, '{"a":1}');
+assert.strictEqual(base64Analysis.jsonPreview, '{\n  "a": 1\n}');
+assert.strictEqual(base64Analysis.summary.includes('Base64'), true);
 
 elements.get('input-text').value = 'left';
 elements.get('output-text').value = 'right';
