@@ -173,6 +173,54 @@
             .join('\n\n');
     }
 
+    function normalizeRuleList(value) {
+        if (Array.isArray(value)) {
+            return value.map(item => String(item).trim()).filter(Boolean);
+        }
+        return String(value || '')
+            .split(/[,，\s]+/)
+            .map(item => item.trim())
+            .filter(Boolean);
+    }
+
+    function applyAffixRules(value, options = {}) {
+        const original = String(value || '').trim();
+        let next = original;
+        let removedPrefix = '';
+        let removedSuffix = '';
+        for (const prefix of normalizeRuleList(options.removePrefixes)) {
+            if (next.startsWith(prefix) && next.length > prefix.length) {
+                next = next.slice(prefix.length);
+                removedPrefix = prefix;
+                break;
+            }
+        }
+        for (const suffix of normalizeRuleList(options.removeSuffixes)) {
+            if (next.endsWith(suffix) && next.length > suffix.length) {
+                next = next.slice(0, -suffix.length);
+                removedSuffix = suffix;
+                break;
+            }
+        }
+        return {
+            original,
+            value: next,
+            removedPrefix,
+            removedSuffix
+        };
+    }
+
+    function convertWithAffixRules(value, converter, options = {}) {
+        return String(value || '')
+            .split(/\r?\n/)
+            .map(line => {
+                if (!line.trim()) return '';
+                const normalized = applyAffixRules(line, options).value;
+                return converter(normalized);
+            })
+            .join('\n');
+    }
+
     function swapText(input, output) {
         return {
             input: String(output || ''),
@@ -197,6 +245,9 @@
         convertExtractedFields,
         generateCodeNames,
         generateCodeNamesReport,
+        normalizeRuleList,
+        applyAffixRules,
+        convertWithAffixRules,
         swapText
     };
 

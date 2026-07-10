@@ -213,6 +213,40 @@
             gap: 12px;
         }
 
+        .affix-rules {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin: 12px 0 14px;
+            padding: 12px;
+            border: 1px solid #d0d7de;
+            border-radius: 8px;
+            background: #f6f8fa;
+        }
+
+        .affix-rules label {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            color: #57606a;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .affix-rules input[type="text"] {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .checkbox-label {
+            flex-direction: row !important;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
         .format-btn {
             background: linear-gradient(180deg, #ffffff 0%, #f6f8fa 100%);
             border: 1px solid #c8d7e8;
@@ -409,7 +443,7 @@
         <div class="tool-title">
             <h1>文本命名转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.06</span>
+                <span>V1.07</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -445,6 +479,20 @@
                         <p>选择目标命名格式或文本处理方式，结果会输出到右侧区域。支持每行一个变量名批量转换。</p>
                     </div>
                 </div>
+                <div class="affix-rules">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="enable-affix-rules">
+                        启用前后缀规则
+                    </label>
+                    <label>
+                        移除前缀
+                        <input type="text" id="prefix-rules" value="is,m" placeholder="例如 is,m">
+                    </label>
+                    <label>
+                        移除后缀
+                        <input type="text" id="suffix-rules" value="DTO,VO" placeholder="例如 DTO,VO">
+                    </label>
+                </div>
                 <div class="quick-actions format-actions">
                     <button class="btn format-btn" onclick="convertText('constant')">常量变量名</button>
                     <button class="btn format-btn" onclick="convertText('snake')">下划线命名</button>
@@ -475,6 +523,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月10日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.07</div>
+                        <div class="changelog-desc">新增前后缀规则，可按需移除 is、m、DTO、VO 等常见前后缀，再进行命名转换。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.06</div>
                         <div class="changelog-desc">新增代码命名生成，可根据输入生成常量名、枚举名、Getter 和 Setter，并对 isEnabled 这类布尔字段做合理处理。</div>
@@ -518,6 +570,9 @@
     <script>
         const inputText = document.getElementById('input-text');
         const outputText = document.getElementById('output-text');
+        const enableAffixRules = document.getElementById('enable-affix-rules');
+        const prefixRules = document.getElementById('prefix-rules');
+        const suffixRules = document.getElementById('suffix-rules');
 
         function convertText(type) {
             const value = inputText.value;
@@ -535,7 +590,16 @@
                 trim: converter.trimLines
             };
 
-            outputText.value = converter.convertLines(value, handlers[type]);
+            outputText.value = enableAffixRules.checked
+                ? converter.convertWithAffixRules(value, handlers[type], getAffixRuleOptions())
+                : converter.convertLines(value, handlers[type]);
+        }
+
+        function getAffixRuleOptions() {
+            return {
+                removePrefixes: prefixRules.value,
+                removeSuffixes: suffixRules.value
+            };
         }
 
         function convertExtractedFieldsText(targetType) {

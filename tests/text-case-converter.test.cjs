@@ -66,6 +66,31 @@ assert.strictEqual(
         '  Setter: setEnabled'
     ].join('\n')
 );
+assert.deepStrictEqual(converter.applyAffixRules('isEnabled', {
+    removePrefixes: ['is'],
+    removeSuffixes: []
+}), {
+    original: 'isEnabled',
+    value: 'Enabled',
+    removedPrefix: 'is',
+    removedSuffix: ''
+});
+assert.deepStrictEqual(converter.applyAffixRules('userDTO', {
+    removePrefixes: [],
+    removeSuffixes: ['DTO', 'VO']
+}), {
+    original: 'userDTO',
+    value: 'user',
+    removedPrefix: '',
+    removedSuffix: 'DTO'
+});
+assert.strictEqual(
+    converter.convertWithAffixRules('mUserName\norderDTO', converter.toCamelCase, {
+        removePrefixes: ['m'],
+        removeSuffixes: ['DTO']
+    }),
+    'userName\norder'
+);
 assert.strictEqual(converter.swapText('left', 'right').input, 'right');
 assert.strictEqual(converter.swapText('left', 'right').output, 'left');
 
@@ -87,7 +112,14 @@ assert.doesNotMatch(html, />Sentence case</);
 assert.doesNotMatch(html, />整理空格</);
 assert.doesNotMatch(html, /<div class="actions">[\s\S]*转换大小写[\s\S]*<\/div>/);
 assert.doesNotMatch(html, />转换驼峰</);
-assert.match(html, /<span>V1\.06<\/span>/);
+assert.match(html, /<span>V1\.07<\/span>/);
+assert.match(html, /<div class="changelog-date">2026年7月10日<\/div>[\s\S]*?<div class="changelog-version">V1\.07<\/div>[\s\S]*?<div class="changelog-version">V1\.06<\/div>/);
+assert.match(html, /前后缀规则/);
+assert.match(html, /id="prefix-rules"/);
+assert.match(html, /id="suffix-rules"/);
+assert.match(html, /getAffixRuleOptions\(\)/);
+assert.match(html, /convertWithAffixRules\(value, handlers\[type\], getAffixRuleOptions\(\)\)/);
+assert.match(html, /<div class="changelog-version">V1\.07<\/div>/);
 assert.match(html, /<div class="changelog-date">2026年7月10日<\/div>[\s\S]*?<div class="changelog-version">V1\.06<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>/);
 assert.match(html, /生成代码命名/);
 assert.match(html, /generateCodeNamesReport\(value\)/);
