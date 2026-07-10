@@ -14,12 +14,21 @@ assert.strictEqual(converter.toCamelCase(sample), 'characterSetIncompatible');
 assert.strictEqual(converter.toPascalCase(sample), 'CharacterSetIncompatible');
 assert.strictEqual(converter.toTitleCase('character_set incompatible'), 'Character Set Incompatible');
 assert.strictEqual(converter.toSentenceCase('CHARACTER_SET_INCOMPATIBLE'), 'Character set incompatible');
+assert.strictEqual(
+    converter.convertLines('user_name\norder-id\n\nURL value', converter.toCamelCase),
+    'userName\norderId\n\nurlValue'
+);
+assert.strictEqual(
+    converter.convertLines('USER_NAME\n\nORDER_ID', converter.toLowerCase).split('\n').length,
+    3
+);
 assert.strictEqual(converter.swapText('left', 'right').input, 'right');
 assert.strictEqual(converter.swapText('left', 'right').output, 'left');
 
 assert.match(html, /<section class="format-section">/);
 assert.match(html, /<h2>命名格式转换<\/h2>/);
 assert.match(html, /选择目标命名格式或文本处理方式，结果会输出到右侧区域/);
+assert.match(html, /支持每行一个变量名批量转换/);
 assert.match(html, /\.format-actions/);
 assert.match(html, /\.format-btn/);
 assert.match(html, /<div class="quick-actions format-actions">[\s\S]*常量变量名/);
@@ -34,7 +43,12 @@ assert.doesNotMatch(html, />Sentence case</);
 assert.doesNotMatch(html, />整理空格</);
 assert.doesNotMatch(html, /<div class="actions">[\s\S]*转换大小写[\s\S]*<\/div>/);
 assert.doesNotMatch(html, />转换驼峰</);
-assert.match(html, /<span>V1\.03<\/span>/);
+assert.match(html, /<span>V1\.04<\/span>/);
+assert.match(html, /<div class="changelog-date">2026年7月10日<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>/);
+assert.match(html, /批量变量名转换/);
+assert.match(html, /converter\.convertLines/);
+assert.match(html, /convertLines\(value, handlers\[type\]\)/);
+assert.match(html, /<div class="changelog-version">V1\.04<\/div>/);
 assert.match(html, /<div class="changelog-version">V1\.03<\/div>/);
 assert.match(html, /增加命名格式转换功能区说明，并优化下方功能按钮样式/);
 assert.match(html, /<div class="changelog-version">V1\.02<\/div>/);

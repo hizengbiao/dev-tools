@@ -63,6 +63,13 @@
             .trim();
     }
 
+    function convertLines(value, converter) {
+        return String(value || '')
+            .split(/\r?\n/)
+            .map(line => line.trim() ? converter(line) : '')
+            .join('\n');
+    }
+
     function swapText(input, output) {
         return {
             input: String(output || ''),
@@ -82,6 +89,7 @@
         toUpperCase,
         toLowerCase,
         trimLines,
+        convertLines,
         swapText
     };
 

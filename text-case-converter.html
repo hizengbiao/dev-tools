@@ -409,7 +409,7 @@
         <div class="tool-title">
             <h1>文本命名转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.03</span>
+                <span>V1.04</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -442,7 +442,7 @@
                 <div class="format-header">
                     <div>
                         <h2>命名格式转换</h2>
-                        <p>选择目标命名格式或文本处理方式，结果会输出到右侧区域。</p>
+                        <p>选择目标命名格式或文本处理方式，结果会输出到右侧区域。支持每行一个变量名批量转换。</p>
                     </div>
                 </div>
                 <div class="quick-actions format-actions">
@@ -470,6 +470,13 @@
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年7月10日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.04</div>
+                        <div class="changelog-desc">新增批量变量名转换，输入多行变量名时按行转换并保持空行与输出行数一致。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月9日</div>
                     <div class="changelog-entry">
@@ -517,7 +524,7 @@
                 trim: converter.trimLines
             };
 
-            outputText.value = handlers[type](value);
+            outputText.value = converter.convertLines(value, handlers[type]);
         }
 
         function swapAreas() {
