@@ -489,7 +489,7 @@
         <div class="tool-title">
             <h1>时间戳转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.01</span>
+                <span>V1.02</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -567,6 +567,36 @@
                     </div>
                 </div>
 
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;">
+
+                <!-- Relative Time -->
+                <div class="io-group">
+                    <label>⏱️ 相对时间计算</label>
+                    <div class="input-wrapper" style="flex: 2;">
+                        <input type="text" id="relative-input" placeholder="now-7d、+3h、-30m">
+                    </div>
+                    <div class="select-wrapper">
+                        <select id="relative-timezone">
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+                    <button class="action-btn" onclick="convertRelativeTime()">计算</button>
+                    <div class="input-wrapper" style="flex: 2;">
+                        <input type="text" id="relative-date-output" placeholder="日期时间结果" readonly
+                            style="background-color: #f6f8fa;">
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="text" id="relative-ts-output" placeholder="时间戳结果" readonly
+                            style="background-color: #f6f8fa;">
+                    </div>
+                    <div class="select-wrapper" style="width: 100px;">
+                        <select id="relative-unit">
+                            <option value="s">秒(s)</option>
+                            <option value="ms">毫秒(ms)</option>
+                        </select>
+                    </div>
+                </div>
+
             </div>
 
             <div id="panel-batch" class="panel hidden">
@@ -620,6 +650,13 @@
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年7月10日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.02</div>
+                        <div class="changelog-desc">新增相对时间计算，支持 now-7d、+3h、-30m 等表达式，并同时输出日期时间和时间戳。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月26日</div>
                     <div class="changelog-entry">
@@ -675,13 +712,18 @@
         const elBatchInput = document.getElementById('batch-input');
         const elBatchOutput = document.getElementById('batch-output');
         const elBatchSummary = document.getElementById('batch-summary');
+        const elRelativeInput = document.getElementById('relative-input');
+        const elRelativeTz = document.getElementById('relative-timezone');
+        const elRelativeDateOutput = document.getElementById('relative-date-output');
+        const elRelativeTsOutput = document.getElementById('relative-ts-output');
+        const elRelativeUnit = document.getElementById('relative-unit');
 
         // --- Init ---
         function init() {
             // Populate Timezones
             const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-            [elTz1, elTz2, elBatchTz].forEach(select => {
+            [elTz1, elTz2, elBatchTz, elRelativeTz].forEach(select => {
                 timezones.forEach(tz => {
                     const opt = document.createElement('option');
                     opt.value = tz.value;
@@ -700,6 +742,7 @@
             const now = new Date();
             elTsInput.value = Math.floor(now.getTime() / 1000);
             elDateInput.value = formatDate(now, 'Asia/Shanghai');
+            elRelativeInput.value = 'now-7d';
         }
 
         function switchConversionTab(tab) {
@@ -779,6 +822,20 @@
                 return;
             }
             elTsOutput.value = result.value;
+        }
+
+        function convertRelativeTime() {
+            const result = convertRelativeTimeExpression(
+                elRelativeInput.value,
+                elRelativeUnit.value,
+                elRelativeTz.value
+            );
+            if (!result.ok) {
+                showToast(result.error);
+                return;
+            }
+            elRelativeDateOutput.value = result.dateText;
+            elRelativeTsOutput.value = result.timestamp;
         }
 
         function outputResult(ms) {
@@ -898,6 +955,48 @@
             return {
                 ok: true,
                 value: unit === 's' ? String(Math.floor(utcMs / 1000)) : String(utcMs)
+            };
+        }
+
+        function parseRelativeTimeExpression(value, baseDate = new Date()) {
+            const raw = String(value || '').trim().toLowerCase();
+            if (raw === 'now') {
+                return { ok: true, date: new Date(baseDate.getTime()) };
+            }
+
+            const match = raw.match(/^(?:now)?\s*([+-])\s*(\d+)\s*([dhms])$/);
+            if (!match) {
+                return {
+                    ok: false,
+                    error: '无效的相对时间表达式，请使用 now-7d、+3h、-30m 等格式'
+                };
+            }
+
+            const [, sign, amountText, unit] = match;
+            const amount = Number(amountText);
+            const unitMs = {
+                d: 24 * 60 * 60 * 1000,
+                h: 60 * 60 * 1000,
+                m: 60 * 1000,
+                s: 1000
+            }[unit];
+            const direction = sign === '-' ? -1 : 1;
+            return {
+                ok: true,
+                date: new Date(baseDate.getTime() + direction * amount * unitMs)
+            };
+        }
+
+        function convertRelativeTimeExpression(value, unit, timezone, baseDate = new Date()) {
+            const parsed = parseRelativeTimeExpression(value, baseDate);
+            if (!parsed.ok) {
+                return parsed;
+            }
+            const timestampMs = parsed.date.getTime();
+            return {
+                ok: true,
+                dateText: formatDate(parsed.date, timezone),
+                timestamp: unit === 's' ? String(Math.floor(timestampMs / 1000)) : String(timestampMs)
             };
         }
 

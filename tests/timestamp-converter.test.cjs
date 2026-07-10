@@ -6,7 +6,8 @@ const vm = require('node:vm');
 const pagePath = path.resolve(__dirname, '../timestamp-converter.html');
 const page = fs.readFileSync(pagePath, 'utf8');
 
-assert.match(page, /<span>V1\.01<\/span>/);
+assert.match(page, /<span>V1\.02<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月10日<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年6月26日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
 assert.match(page, /id="tab-single"/);
 assert.match(page, /id="tab-batch"/);
@@ -14,10 +15,16 @@ assert.match(page, /id="panel-single"/);
 assert.match(page, /id="panel-batch"/);
 assert.match(page, /id="batch-input"/);
 assert.match(page, /id="batch-output"/);
+assert.match(page, /id="relative-input"/);
+assert.match(page, /id="relative-date-output"/);
+assert.match(page, /id="relative-ts-output"/);
 assert.match(page, /function switchConversionTab\(tab\)/);
 assert.match(page, /function convertBatchLines\(raw, converter\)/);
 assert.match(page, /function convertBatchTimestampsToDates\(raw, unit, timezone\)/);
 assert.match(page, /function convertBatchDatesToTimestamps\(raw, unit, timezone\)/);
+assert.match(page, /function parseRelativeTimeExpression\(value, baseDate = new Date\(\)\)/);
+assert.match(page, /function convertRelativeTimeExpression\(value, unit, timezone, baseDate = new Date\(\)\)/);
+assert.match(page, /function convertRelativeTime\(\)/);
 
 function createElement(id = '') {
     return {
@@ -90,5 +97,31 @@ assert.match(dateToTsSeconds.text, /2\. 错误：无效的日期时间格式/);
 
 const dateToTsMs = context.convertBatchDatesToTimestamps('2024-03-09 16:00:01', 'ms', 'UTC');
 assert.equal(dateToTsMs.text.trim(), '1. 1710000001000');
+
+const baseDate = new Date(Date.UTC(2024, 2, 10, 0, 0, 0));
+const minusSevenDays = context.parseRelativeTimeExpression('now-7d', baseDate);
+assert.equal(minusSevenDays.ok, true);
+assert.equal(minusSevenDays.date.getTime(), Date.UTC(2024, 2, 3, 0, 0, 0));
+const plusThreeHours = context.parseRelativeTimeExpression('+3h', baseDate);
+assert.equal(plusThreeHours.ok, true);
+assert.equal(plusThreeHours.date.getTime(), Date.UTC(2024, 2, 10, 3, 0, 0));
+const minusThirtyMinutes = context.parseRelativeTimeExpression('-30m', baseDate);
+assert.equal(minusThirtyMinutes.ok, true);
+assert.equal(minusThirtyMinutes.date.getTime(), Date.UTC(2024, 2, 9, 23, 30, 0));
+assert.deepEqual(JSON.parse(JSON.stringify(context.parseRelativeTimeExpression('bad', baseDate))), {
+    ok: false,
+    error: '无效的相对时间表达式，请使用 now-7d、+3h、-30m 等格式'
+});
+
+assert.deepEqual(JSON.parse(JSON.stringify(context.convertRelativeTimeExpression('+3h', 's', 'UTC', baseDate))), {
+    ok: true,
+    dateText: '2024-03-10 03:00:00',
+    timestamp: '1710039600'
+});
+assert.deepEqual(JSON.parse(JSON.stringify(context.convertRelativeTimeExpression('-30m', 'ms', 'UTC', baseDate))), {
+    ok: true,
+    dateText: '2024-03-09 23:30:00',
+    timestamp: '1710027000000'
+});
 
 console.log('timestamp converter batch behavior passed');
