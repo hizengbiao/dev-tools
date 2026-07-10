@@ -22,6 +22,22 @@ assert.strictEqual(
     converter.convertLines('USER_NAME\n\nORDER_ID', converter.toLowerCase).split('\n').length,
     3
 );
+assert.deepStrictEqual(
+    converter.extractFieldNames(`select user_id, user_name as userName, count(*) total_count from users`),
+    ['user_id', 'user_name', 'total_count']
+);
+assert.deepStrictEqual(
+    converter.extractFieldNames(`private String userName;\n@Column(name = "order_id")\nprivate Long orderId;`),
+    ['userName', 'orderId']
+);
+assert.deepStrictEqual(
+    converter.extractFieldNames(`{"user_id": 1, "userName": "A", "nested": {"order_id": 2}}`),
+    ['user_id', 'userName', 'nested', 'order_id']
+);
+assert.strictEqual(
+    converter.convertExtractedFields(`select user_id, user_name as userName from users`, converter.toCamelCase),
+    'userId\nuserName'
+);
 assert.strictEqual(converter.swapText('left', 'right').input, 'right');
 assert.strictEqual(converter.swapText('left', 'right').output, 'left');
 
@@ -43,7 +59,12 @@ assert.doesNotMatch(html, />Sentence case</);
 assert.doesNotMatch(html, />整理空格</);
 assert.doesNotMatch(html, /<div class="actions">[\s\S]*转换大小写[\s\S]*<\/div>/);
 assert.doesNotMatch(html, />转换驼峰</);
-assert.match(html, /<span>V1\.04<\/span>/);
+assert.match(html, /<span>V1\.05<\/span>/);
+assert.match(html, /<div class="changelog-date">2026年7月10日<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>/);
+assert.match(html, /提取字段并转小驼峰/);
+assert.match(html, /提取字段并转下划线/);
+assert.match(html, /convertExtractedFields\(value, handlers\[targetType\]\)/);
+assert.match(html, /<div class="changelog-version">V1\.05<\/div>/);
 assert.match(html, /<div class="changelog-date">2026年7月10日<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>/);
 assert.match(html, /批量变量名转换/);
 assert.match(html, /converter\.convertLines/);

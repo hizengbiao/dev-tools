@@ -70,6 +70,79 @@
             .join('\n');
     }
 
+    function uniquePush(list, value) {
+        if (value && !list.includes(value)) {
+            list.push(value);
+        }
+    }
+
+    function extractJsonKeys(value) {
+        const keys = [];
+        function walk(node) {
+            if (Array.isArray(node)) {
+                node.forEach(walk);
+                return;
+            }
+            if (!node || typeof node !== 'object') return;
+            Object.keys(node).forEach(key => {
+                uniquePush(keys, key);
+                walk(node[key]);
+            });
+        }
+        try {
+            walk(JSON.parse(value));
+        } catch (error) {
+            return [];
+        }
+        return keys;
+    }
+
+    function extractSqlSelectFields(value) {
+        const text = String(value || '');
+        const match = text.match(/\bselect\b([\s\S]+?)\bfrom\b/i);
+        if (!match) return [];
+        return match[1]
+            .split(',')
+            .map(part => part.trim())
+            .map(part => {
+                const alias = part.match(/\bas\s+([A-Za-z_$][\w$]*)\s*$/i);
+                if (alias) return part.replace(/\bas\s+[A-Za-z_$][\w$]*\s*$/i, '').trim();
+                const trailingAlias = part.match(/(.+?)\s+([A-Za-z_$][\w$]*)$/);
+                if (trailingAlias && /[()]/.test(trailingAlias[1])) return trailingAlias[2];
+                return part;
+            })
+            .map(part => part.replace(/^[`"'[]|[`"'\]]$/g, ''))
+            .map(part => {
+                const dotIndex = part.lastIndexOf('.');
+                return dotIndex >= 0 ? part.slice(dotIndex + 1) : part;
+            })
+            .filter(part => /^[A-Za-z_$][\w$]*$/.test(part));
+    }
+
+    function extractJavaFields(value) {
+        const fields = [];
+        String(value || '').split(/\r?\n/).forEach(line => {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith('@') || trimmed.includes('(')) return;
+            const match = trimmed.match(/^(?:public|private|protected)?\s*(?:static\s+)?(?:final\s+)?[\w<>\[\].?,\s]+\s+([A-Za-z_$][\w$]*)\s*(?:=[^;]*)?;$/);
+            if (match) uniquePush(fields, match[1]);
+        });
+        return fields;
+    }
+
+    function extractFieldNames(value) {
+        const text = String(value || '');
+        const fields = [];
+        extractJsonKeys(text).forEach(field => uniquePush(fields, field));
+        extractSqlSelectFields(text).forEach(field => uniquePush(fields, field));
+        extractJavaFields(text).forEach(field => uniquePush(fields, field));
+        return fields;
+    }
+
+    function convertExtractedFields(value, converter) {
+        return extractFieldNames(value).map(converter).join('\n');
+    }
+
     function swapText(input, output) {
         return {
             input: String(output || ''),
@@ -90,6 +163,8 @@
         toLowerCase,
         trimLines,
         convertLines,
+        extractFieldNames,
+        convertExtractedFields,
         swapText
     };
 
