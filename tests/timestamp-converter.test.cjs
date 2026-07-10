@@ -6,8 +6,8 @@ const vm = require('node:vm');
 const pagePath = path.resolve(__dirname, '../timestamp-converter.html');
 const page = fs.readFileSync(pagePath, 'utf8');
 
-assert.match(page, /<span>V1\.02<\/span>/);
-assert.match(page, /<div class="changelog-date">2026年7月10日<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>/);
+assert.match(page, /<span>V1\.03<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月10日<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年6月26日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
 assert.match(page, /id="tab-single"/);
 assert.match(page, /id="tab-batch"/);
@@ -18,6 +18,8 @@ assert.match(page, /id="batch-output"/);
 assert.match(page, /id="relative-input"/);
 assert.match(page, /id="relative-date-output"/);
 assert.match(page, /id="relative-ts-output"/);
+assert.match(page, /id="timezone-compare-input"/);
+assert.match(page, /id="timezone-compare-list"/);
 assert.match(page, /function switchConversionTab\(tab\)/);
 assert.match(page, /function convertBatchLines\(raw, converter\)/);
 assert.match(page, /function convertBatchTimestampsToDates\(raw, unit, timezone\)/);
@@ -25,6 +27,8 @@ assert.match(page, /function convertBatchDatesToTimestamps\(raw, unit, timezone\
 assert.match(page, /function parseRelativeTimeExpression\(value, baseDate = new Date\(\)\)/);
 assert.match(page, /function convertRelativeTimeExpression\(value, unit, timezone, baseDate = new Date\(\)\)/);
 assert.match(page, /function convertRelativeTime\(\)/);
+assert.match(page, /function buildTimezoneComparison\(timestampValue, unit, zones\)/);
+assert.match(page, /function renderTimezoneComparison\(\)/);
 
 function createElement(id = '') {
     return {
@@ -122,6 +126,23 @@ assert.deepEqual(JSON.parse(JSON.stringify(context.convertRelativeTimeExpression
     ok: true,
     dateText: '2024-03-09 23:30:00',
     timestamp: '1710027000000'
+});
+
+const comparison = JSON.parse(JSON.stringify(context.buildTimezoneComparison('1710000000', 's', [
+    { label: 'UTC', value: 'UTC' },
+    { label: 'Asia/Shanghai', value: 'Asia/Shanghai' },
+])));
+assert.deepEqual(comparison, {
+    ok: true,
+    rows: [
+        { label: 'UTC', timezone: 'UTC', dateText: '2024-03-09 16:00:00', timestamp: '1710000000' },
+        { label: 'Asia/Shanghai', timezone: 'Asia/Shanghai', dateText: '2024-03-10 00:00:00', timestamp: '1710000000' }
+    ]
+});
+
+assert.deepEqual(JSON.parse(JSON.stringify(context.buildTimezoneComparison('abc', 's', []))), {
+    ok: false,
+    error: '无效的数字时间戳'
 });
 
 console.log('timestamp converter batch behavior passed');

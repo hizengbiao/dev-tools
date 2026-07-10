@@ -303,6 +303,39 @@
             font-size: 13px;
         }
 
+        .timezone-list {
+            width: 100%;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .timezone-row {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr 1fr auto;
+            gap: 10px;
+            align-items: center;
+            padding: 10px 12px;
+            border-bottom: 1px solid #eaeef2;
+            font-size: 13px;
+        }
+
+        .timezone-row:last-child {
+            border-bottom: none;
+        }
+
+        .timezone-name {
+            font-weight: 600;
+            color: #24292f;
+        }
+
+        .timezone-value {
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            color: #57606a;
+            word-break: break-all;
+        }
+
         .action-btn {
             background-color: #24292f;
             color: white;
@@ -489,7 +522,7 @@
         <div class="tool-title">
             <h1>时间戳转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.02</span>
+                <span>V1.03</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -597,6 +630,24 @@
                     </div>
                 </div>
 
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;">
+
+                <!-- Timezone Comparison -->
+                <div class="io-group">
+                    <label>🌐 常用时区对比</label>
+                    <div class="input-wrapper" style="flex: 2;">
+                        <input type="text" id="timezone-compare-input" placeholder="输入时间戳">
+                    </div>
+                    <div class="select-wrapper" style="width: 100px;">
+                        <select id="timezone-compare-unit">
+                            <option value="s">秒(s)</option>
+                            <option value="ms">毫秒(ms)</option>
+                        </select>
+                    </div>
+                    <button class="action-btn" onclick="renderTimezoneComparison()">对比</button>
+                    <div id="timezone-compare-list" class="timezone-list"></div>
+                </div>
+
             </div>
 
             <div id="panel-batch" class="panel hidden">
@@ -652,6 +703,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月10日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.03</div>
+                        <div class="changelog-desc">新增常用时区对比，同一个时间戳可同时查看本地、UTC、上海和纽约时间，并复制单个时区结果。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.02</div>
                         <div class="changelog-desc">新增相对时间计算，支持 now-7d、+3h、-30m 等表达式，并同时输出日期时间和时间戳。</div>
@@ -717,6 +772,9 @@
         const elRelativeDateOutput = document.getElementById('relative-date-output');
         const elRelativeTsOutput = document.getElementById('relative-ts-output');
         const elRelativeUnit = document.getElementById('relative-unit');
+        const elTimezoneCompareInput = document.getElementById('timezone-compare-input');
+        const elTimezoneCompareUnit = document.getElementById('timezone-compare-unit');
+        const elTimezoneCompareList = document.getElementById('timezone-compare-list');
 
         // --- Init ---
         function init() {
@@ -743,6 +801,8 @@
             elTsInput.value = Math.floor(now.getTime() / 1000);
             elDateInput.value = formatDate(now, 'Asia/Shanghai');
             elRelativeInput.value = 'now-7d';
+            elTimezoneCompareInput.value = Math.floor(now.getTime() / 1000);
+            renderTimezoneComparison();
         }
 
         function switchConversionTab(tab) {
@@ -998,6 +1058,79 @@
                 dateText: formatDate(parsed.date, timezone),
                 timestamp: unit === 's' ? String(Math.floor(timestampMs / 1000)) : String(timestampMs)
             };
+        }
+
+        function getCommonComparisonZones() {
+            const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+            return [
+                { label: `本地 (${localTz})`, value: localTz },
+                { label: 'UTC', value: 'UTC' },
+                { label: 'Asia/Shanghai', value: 'Asia/Shanghai' },
+                { label: 'America/New_York', value: 'America/New_York' }
+            ];
+        }
+
+        function buildTimezoneComparison(timestampValue, unit, zones) {
+            const raw = String(timestampValue || '').trim();
+            const converted = convertTimestampLineToDate(raw, unit, 'UTC');
+            if (!converted.ok) {
+                return converted;
+            }
+
+            let timestampMs = Number(raw);
+            if (unit === 's') timestampMs *= 1000;
+            const date = new Date(timestampMs);
+            return {
+                ok: true,
+                rows: zones.map((zone) => ({
+                    label: zone.label,
+                    timezone: zone.value,
+                    dateText: formatDate(date, zone.value),
+                    timestamp: unit === 's' ? String(Math.floor(timestampMs / 1000)) : String(timestampMs)
+                }))
+            };
+        }
+
+        function escapeHtml(value) {
+            return String(value).replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[char]));
+        }
+
+        function renderTimezoneComparison() {
+            const result = buildTimezoneComparison(
+                elTimezoneCompareInput.value,
+                elTimezoneCompareUnit.value,
+                getCommonComparisonZones()
+            );
+            if (!result.ok) {
+                elTimezoneCompareList.innerHTML = `<div class="timezone-row"><span class="timezone-value">错误：${escapeHtml(result.error)}</span></div>`;
+                showToast(result.error);
+                return;
+            }
+            elTimezoneCompareList.innerHTML = result.rows.map((row, index) => {
+                const copyValue = `${row.label} ${row.dateText} (${row.timestamp})`;
+                return `
+                    <div class="timezone-row">
+                        <span class="timezone-name">${escapeHtml(row.label)}</span>
+                        <span class="timezone-value">${escapeHtml(row.dateText)}</span>
+                        <span class="timezone-value">${escapeHtml(row.timestamp)}</span>
+                        <button class="btn" onclick="copyTimezoneComparison(${index})">复制</button>
+                    </div>
+                    <span class="hidden" id="timezone-copy-${index}">${escapeHtml(copyValue)}</span>
+                `;
+            }).join('');
+        }
+
+        function copyTimezoneComparison(index) {
+            const node = document.getElementById(`timezone-copy-${index}`);
+            if (node) {
+                copyText(node.textContent);
+            }
         }
 
         function convertBatchLines(raw, converter) {
