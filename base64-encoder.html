@@ -252,6 +252,33 @@
             color: #116329;
         }
 
+        .content-analysis {
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 13px;
+            color: #57606a;
+            background: #f6f8fa;
+        }
+
+        .content-analysis.analysis-json {
+            border-color: #a371f7;
+            background: #fbefff;
+            color: #6639ba;
+        }
+
+        .content-analysis.analysis-image {
+            border-color: #54aeff;
+            background: #ddf4ff;
+            color: #0969da;
+        }
+
+        .content-analysis.analysis-binary {
+            border-color: #d0d7de;
+            background: #f6f8fa;
+            color: #57606a;
+        }
+
         #toast {
             visibility: hidden;
             min-width: 200px;
@@ -398,7 +425,7 @@
         <div class="tool-title">
             <h1>Base64 编解码</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.02</span>
+                <span>V1.03</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -416,6 +443,7 @@
             </div>
             <textarea id="input-text" placeholder="在此输入需要处理的文本..."></textarea>
             <div id="base64-recommendation" class="recommendation">等待输入：输入内容后会自动判断更适合编码还是解码</div>
+            <div id="decoded-content-analysis" class="content-analysis">解码内容识别：输入 Base64 后会提示 JSON、图片或二进制类型</div>
 
             <div class="actions">
                 <button class="btn btn-primary" onclick="doTextEncode()">编码 (Encode)</button>
@@ -461,6 +489,10 @@
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月10日</div>
                     <div class="changelog-entry">
+                        <div class="changelog-version">V1.03</div>
+                        <div class="changelog-desc">新增解码内容类型识别，可提示 JSON、图片和二进制内容，避免二进制误按普通文本输出。</div>
+                    </div>
+                    <div class="changelog-entry">
                         <div class="changelog-version">V1.02</div>
                         <div class="changelog-desc">新增 Base64URL 支持，可将标准 Base64 转为 URL 安全格式，并支持省略 padding 的 Base64URL 解码。</div>
                     </div>
@@ -487,6 +519,7 @@
         const outputText = document.getElementById('output-text');
         const resMeta = document.getElementById('res-meta');
         const base64Recommendation = document.getElementById('base64-recommendation');
+        const decodedContentAnalysis = document.getElementById('decoded-content-analysis');
 
         let activeTab = 'text';
 
@@ -528,6 +561,98 @@
             } catch (error) {
                 return null;
             }
+        }
+
+        function decodeBase64Bytes(raw) {
+            const candidate = normalizeBase64Candidate(raw);
+            if (!candidate || !/^[A-Za-z0-9+/]+={0,2}$/.test(candidate)) {
+                return null;
+            }
+            try {
+                const binary = window.atob(candidate);
+                return Array.from(binary, (char) => char.charCodeAt(0));
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function decodeUtf8Bytes(bytes) {
+            if (!bytes || bytes.length === 0) {
+                return null;
+            }
+            try {
+                const binary = String.fromCharCode(...bytes);
+                return decodeURIComponent(escape(binary));
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function getImageMimeFromBytes(bytes) {
+            if (bytes.length >= 8
+                && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47
+                && bytes[4] === 0x0d && bytes[5] === 0x0a && bytes[6] === 0x1a && bytes[7] === 0x0a) {
+                return { label: 'PNG 图片', mime: 'image/png' };
+            }
+            if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+                return { label: 'JPEG 图片', mime: 'image/jpeg' };
+            }
+            if (bytes.length >= 6) {
+                const header = String.fromCharCode(...bytes.slice(0, 6));
+                if (header === 'GIF87a' || header === 'GIF89a') {
+                    return { label: 'GIF 图片', mime: 'image/gif' };
+                }
+            }
+            return null;
+        }
+
+        function detectDecodedContentType(raw) {
+            const bytes = decodeBase64Bytes(raw);
+            if (!bytes) {
+                return {
+                    type: 'unknown',
+                    label: '未识别',
+                    detail: '输入内容暂时不像有效 Base64',
+                    preview: ''
+                };
+            }
+
+            const image = getImageMimeFromBytes(bytes);
+            if (image) {
+                return {
+                    type: 'image',
+                    label: image.label,
+                    detail: `检测到 ${image.label.replace(' 图片', '')} 文件头，建议按文件或图片内容处理`,
+                    preview: image.mime
+                };
+            }
+
+            const text = decodeUtf8Bytes(bytes);
+            if (text && isMostlyReadableText(text)) {
+                try {
+                    const parsed = JSON.parse(text);
+                    return {
+                        type: 'json',
+                        label: 'JSON 文本',
+                        detail: '解码后是可解析 JSON，可复制到 JSON 格式化工具继续处理',
+                        preview: JSON.stringify(parsed, null, 2)
+                    };
+                } catch (error) {
+                    return {
+                        type: 'text',
+                        label: '普通文本',
+                        detail: '解码后是可读文本',
+                        preview: text.slice(0, 120)
+                    };
+                }
+            }
+
+            return {
+                type: 'binary',
+                label: '二进制内容',
+                detail: '解码后包含不可打印字节，页面不会把它当作普通文本展示',
+                preview: `${bytes.length} 字节`
+            };
         }
 
         function convertBase64ToBase64Url(raw) {
@@ -610,6 +735,14 @@
             base64Recommendation.className = `recommendation recommend-${result.type}`;
         }
 
+        function updateDecodedContentAnalysis() {
+            const result = detectDecodedContentType(inputText.value);
+            decodedContentAnalysis.textContent = result.type === 'unknown'
+                ? `解码内容识别：${result.detail}`
+                : `${result.label}：${result.detail}`;
+            decodedContentAnalysis.className = `content-analysis analysis-${result.type}`;
+        }
+
         function doTextEncode() {
             const val = inputText.value;
             if (!val) return;
@@ -629,6 +762,12 @@
             const val = inputText.value.trim();
             if (!val) return;
             try {
+                const analysis = detectDecodedContentType(val);
+                if (analysis.type === 'image' || analysis.type === 'binary') {
+                    outputText.value = '';
+                    showToast(`${analysis.label}: 不按普通文本输出`);
+                    return;
+                }
                 // Reverse: atob -> escape -> decodeURIComponent
                 const str = decodeURIComponent(escape(window.atob(val)));
                 outputText.value = str;
@@ -666,6 +805,7 @@
             inputText.value = '';
             outputText.value = '';
             updateBase64Recommendation();
+            updateDecodedContentAnalysis();
             inputText.focus();
         }
 
@@ -711,8 +851,12 @@
             ClipboardUtils.showToast(msg);
         }
 
-        inputText.addEventListener('input', updateBase64Recommendation);
+        inputText.addEventListener('input', () => {
+            updateBase64Recommendation();
+            updateDecodedContentAnalysis();
+        });
         updateBase64Recommendation();
+        updateDecodedContentAnalysis();
     </script>
 </body>
 
