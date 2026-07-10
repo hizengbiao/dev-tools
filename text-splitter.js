@@ -58,6 +58,61 @@
         return Array.from(String(text ?? '')).length;
     }
 
+    function estimateTokens(text) {
+        const source = String(text ?? '');
+        if (!source) return 0;
+        let tokens = 0;
+        const matches = source.match(/[\p{Script=Han}]|[A-Za-z0-9_]+|[^\s]/gu) || [];
+        for (const part of matches) {
+            if (/^[A-Za-z0-9_]+$/u.test(part)) {
+                tokens += Math.ceil(part.length / 4);
+            } else {
+                tokens += 1;
+            }
+        }
+        return tokens;
+    }
+
+    function splitTextByEstimatedTokens(text, maxTokens) {
+        if (!Number.isInteger(maxTokens) || maxTokens <= 0) {
+            throw new TypeError('maxTokens must be a positive integer');
+        }
+
+        const source = String(text ?? '');
+        if (!source) {
+            return [];
+        }
+
+        const characters = Array.from(source);
+        const segments = [];
+        let start = 0;
+
+        while (start < characters.length) {
+            let end = start;
+            let lastNaturalEnd = start;
+            while (end < characters.length) {
+                const next = characters.slice(start, end + 1).join('');
+                if (estimateTokens(next) > maxTokens) break;
+                end += 1;
+                if (isNaturalBoundary(characters[end - 1])) {
+                    lastNaturalEnd = end;
+                }
+            }
+
+            if (end >= characters.length) {
+                segments.push(characters.slice(start).join(''));
+                break;
+            }
+
+            const preferredStart = start + Math.max(1, Math.floor((end - start) * 0.55));
+            const breakIndex = lastNaturalEnd >= preferredStart ? lastNaturalEnd : Math.max(start + 1, end);
+            segments.push(characters.slice(start, breakIndex).join(''));
+            start = breakIndex;
+        }
+
+        return segments;
+    }
+
     function getClipboardHistoryWriteOrder(segments) {
         return Array.from(segments ?? []).reverse();
     }
@@ -65,6 +120,8 @@
     return {
         splitText,
         countCharacters,
+        estimateTokens,
+        splitTextByEstimatedTokens,
         getClipboardHistoryWriteOrder,
     };
 });

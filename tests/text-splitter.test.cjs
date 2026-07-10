@@ -27,6 +27,13 @@ assert.deepStrictEqual(
     splitter.splitText('你好🙂世界', 3),
     ['你好🙂', '世界']
 );
+assert.strictEqual(splitter.estimateTokens('hello world'), 4);
+assert.strictEqual(splitter.estimateTokens('你好世界'), 4);
+assert.strictEqual(splitter.estimateTokens('hello 世界'), 4);
+assert.deepStrictEqual(
+    splitter.splitTextByEstimatedTokens('hello world again', 4),
+    ['hello world ', 'again']
+);
 
 const source = 'Line one.\nLine two is longer.\n\nFinal paragraph.';
 const segments = splitter.splitText(source, 18);
@@ -53,6 +60,9 @@ assert.match(page, /<script src="nav\.js" defer><\/script>/);
 assert.match(page, /<script src="editor-lines\.js"><\/script>/);
 assert.match(page, /<script src="text-splitter\.js"><\/script>/);
 assert.match(page, /id="maxLength"[^>]*value="2950"/);
+assert.match(page, /id="splitMode"/);
+assert.match(page, /<option value="characters">字符长度<\/option>/);
+assert.match(page, /<option value="tokens">Token 估算<\/option>/);
 assert.match(page, /id="inputText"/);
 assert.match(page, /id="inputLineNumbers"/);
 assert.match(page, /id="splitBtn"/);
@@ -83,7 +93,11 @@ assert.match(page, /async function copySegmentsToHistory\(\)/);
 assert.match(page, /TextSplitter\.getClipboardHistoryWriteOrder\(currentSegments\)/);
 assert.match(page, /await delay\(600\)/);
 assert.match(page, /copyHistoryBtn\.addEventListener\('click', copySegmentsToHistory\)/);
-assert.match(page, /V1\.03/);
+assert.match(page, /V1\.04/);
+assert.match(page, /Token 估算拆分/);
+assert.match(page, /TextSplitter\.splitTextByEstimatedTokens\(inputText\.value, limit\)/);
+assert.match(page, /TextSplitter\.estimateTokens\(segment\)/);
+assert.match(page, /字符，约/);
 assert.match(page, /class="version-info" onclick="showChangelog\(\)"/);
 assert.match(page, /🚀 版本更新说明/);
 assert.match(page, /V1\.00/);

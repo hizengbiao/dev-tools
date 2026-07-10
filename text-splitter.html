@@ -544,7 +544,7 @@
         <div class="tool-title">
             <h1>文本智能拆分</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.03</span>
+                <span>V1.04</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -552,6 +552,11 @@
         <section class="tool-card">
             <div class="toolbar">
                 <div class="limit-control">
+                    <label for="splitMode">拆分模式</label>
+                    <select id="splitMode">
+                        <option value="characters">字符长度</option>
+                        <option value="tokens">Token 估算</option>
+                    </select>
                     <label for="maxLength">每段最大长度</label>
                     <input id="maxLength" type="number" min="1" step="1" value="2950">
                     <span class="hint">优先在靠近上限的换行、标点或单词空格处拆分</span>
@@ -599,6 +604,11 @@
                 <button class="close-modal" type="button" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date">2026年7月10日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.04</div>
+                    <div>新增 Token 估算拆分模式，可在字符长度和 token 估算之间切换，并在结果中显示每段字符数和估算 token 数。</div>
+                </div>
                 <div class="changelog-date">2026年6月20日</div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.03</div>
@@ -640,6 +650,7 @@
     <script>
         const inputText = document.getElementById('inputText');
         const inputLineNumbers = document.getElementById('inputLineNumbers');
+        const splitMode = document.getElementById('splitMode');
         const maxLength = document.getElementById('maxLength');
         const resultList = document.getElementById('resultList');
         const inputStats = document.getElementById('inputStats');
@@ -704,7 +715,7 @@
                     <div class="result-header">
                         <div class="result-meta">
                             <span class="segment-number">第 ${index + 1} 段</span>
-                            <span class="segment-length">${TextSplitter.countCharacters(segment)} 个字符</span>
+                            <span class="segment-length">${TextSplitter.countCharacters(segment)} 个字符，约 ${TextSplitter.estimateTokens(segment)} tokens</span>
                         </div>
                         <div class="result-actions">
                             <button class="btn btn-small fullscreen-segment-btn" type="button" data-index="${index}" title="全屏查看本段完整内容">全屏查看</button>
@@ -742,7 +753,9 @@
                 return;
             }
 
-            const segments = TextSplitter.splitText(inputText.value, limit);
+            const segments = splitMode.value === 'tokens'
+                ? TextSplitter.splitTextByEstimatedTokens(inputText.value, limit)
+                : TextSplitter.splitText(inputText.value, limit);
             renderResults(segments);
             showToast(`已拆分为 ${segments.length} 段`);
         }
