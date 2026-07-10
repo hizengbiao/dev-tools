@@ -231,6 +231,27 @@
             color: #57606a;
         }
 
+        .recommendation {
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 13px;
+            color: #57606a;
+            background: #f6f8fa;
+        }
+
+        .recommendation.recommend-decode {
+            border-color: #54aeff;
+            background: #ddf4ff;
+            color: #0969da;
+        }
+
+        .recommendation.recommend-encode {
+            border-color: #6cc644;
+            background: #dafbe1;
+            color: #116329;
+        }
+
         #toast {
             visibility: hidden;
             min-width: 200px;
@@ -377,7 +398,7 @@
         <div class="tool-title">
             <h1>Base64 编解码</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.00</span>
+                <span>V1.01</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -394,6 +415,7 @@
                 <button class="icon-btn" onclick="clearText()">🗑️ 清空</button>
             </div>
             <textarea id="input-text" placeholder="在此输入需要处理的文本..."></textarea>
+            <div id="base64-recommendation" class="recommendation">等待输入：输入内容后会自动判断更适合编码还是解码</div>
 
             <div class="actions">
                 <button class="btn btn-primary" onclick="doTextEncode()">编码 (Encode)</button>
@@ -435,6 +457,13 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date-group">
+                    <div class="changelog-date">2026年7月10日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.01</div>
+                        <div class="changelog-desc">输入文本后自动识别更适合编码还是解码，并给出非强制推荐提示。</div>
+                    </div>
+                </div>
+                <div class="changelog-date-group">
                     <div class="changelog-date">2026年6月9日</div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.00</div>
@@ -451,6 +480,7 @@
         const inputText = document.getElementById('input-text');
         const outputText = document.getElementById('output-text');
         const resMeta = document.getElementById('res-meta');
+        const base64Recommendation = document.getElementById('base64-recommendation');
 
         let activeTab = 'text';
 
@@ -474,6 +504,73 @@
         }
 
         // --- Text Logic (UTF-8 safe) ---
+        function normalizeBase64Candidate(raw) {
+            const compact = String(raw || '').replace(/\s+/g, '');
+            if (!compact || compact.length % 4 === 1) {
+                return '';
+            }
+            return compact + '='.repeat((4 - compact.length % 4) % 4);
+        }
+
+        function getDecodedBase64Text(raw) {
+            const candidate = normalizeBase64Candidate(raw);
+            if (!candidate || !/^[A-Za-z0-9+/]+={0,2}$/.test(candidate)) {
+                return null;
+            }
+            try {
+                return decodeURIComponent(escape(window.atob(candidate)));
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function isMostlyReadableText(text) {
+            if (!text) {
+                return false;
+            }
+            const readableChars = Array.from(text).filter((char) => {
+                const code = char.charCodeAt(0);
+                return char === '\n' || char === '\r' || char === '\t' || code >= 32;
+            }).length;
+            return readableChars / Array.from(text).length >= 0.85;
+        }
+
+        function detectBase64Intent(raw) {
+            const value = String(raw || '').trim();
+            if (!value) {
+                return {
+                    type: 'neutral',
+                    label: '等待输入',
+                    reason: '输入内容后会自动判断更适合编码还是解码'
+                };
+            }
+
+            const compact = value.replace(/\s+/g, '');
+            const looksLikeBase64 = compact.length >= 4
+                && compact.length % 4 !== 1
+                && /^[A-Za-z0-9+/]+={0,2}$/.test(normalizeBase64Candidate(compact));
+            const decoded = looksLikeBase64 ? getDecodedBase64Text(compact) : null;
+            if (decoded && isMostlyReadableText(decoded)) {
+                return {
+                    type: 'decode',
+                    label: '建议解码',
+                    reason: '内容符合 Base64 特征，解码后像可读文本'
+                };
+            }
+
+            return {
+                type: 'encode',
+                label: '建议编码',
+                reason: '内容更像普通文本'
+            };
+        }
+
+        function updateBase64Recommendation() {
+            const result = detectBase64Intent(inputText.value);
+            base64Recommendation.textContent = `${result.label}：${result.reason}`;
+            base64Recommendation.className = `recommendation recommend-${result.type}`;
+        }
+
         function doTextEncode() {
             const val = inputText.value;
             if (!val) return;
@@ -505,6 +602,7 @@
         function clearText() {
             inputText.value = '';
             outputText.value = '';
+            updateBase64Recommendation();
             inputText.focus();
         }
 
@@ -549,6 +647,9 @@
         function showToast(msg) {
             ClipboardUtils.showToast(msg);
         }
+
+        inputText.addEventListener('input', updateBase64Recommendation);
+        updateBase64Recommendation();
     </script>
 </body>
 
