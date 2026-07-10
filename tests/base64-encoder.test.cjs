@@ -6,11 +6,16 @@ const vm = require('vm');
 const rootDir = path.resolve(__dirname, '..');
 const page = fs.readFileSync(path.join(rootDir, 'base64-encoder.html'), 'utf8');
 
-assert.match(page, /<span>V1\.01<\/span>/);
-assert.match(page, /<div class="changelog-date">2026年7月10日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
+assert.match(page, /<span>V1\.02<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月10日<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
 assert.match(page, /id="base64-recommendation"/);
 assert.match(page, /function detectBase64Intent\(raw\)/);
 assert.match(page, /function updateBase64Recommendation\(\)/);
+assert.match(page, /function convertBase64ToBase64Url\(raw\)/);
+assert.match(page, /function normalizeBase64UrlToBase64\(raw\)/);
+assert.match(page, /function getDecodedBase64UrlText\(raw\)/);
+assert.match(page, /function doBase64UrlEncode\(\)/);
+assert.match(page, /function doBase64UrlDecode\(\)/);
 
 const scriptMatch = page.match(/<script>\s*([\s\S]*?)\s*<\/script>\s*<\/body>/);
 assert.ok(scriptMatch, 'inline script should be present');
@@ -121,5 +126,17 @@ element('input-text').value = 'hello world';
 context.updateBase64Recommendation();
 assert.equal(element('base64-recommendation').textContent, '建议编码：内容更像普通文本');
 assert.match(element('base64-recommendation').className, /recommend-encode/);
+
+assert.equal(context.convertBase64ToBase64Url('SGVsbG8+/w=='), 'SGVsbG8-_w');
+assert.equal(context.normalizeBase64UrlToBase64('SGVsbG8-_w'), 'SGVsbG8+/w==');
+assert.equal(context.getDecodedBase64UrlText('5L2g5aW9'), '你好');
+
+element('input-text').value = 'SGVsbG8+/w==';
+context.doBase64UrlEncode();
+assert.equal(element('output-text').value, 'SGVsbG8-_w');
+
+element('input-text').value = '5L2g5aW9';
+context.doBase64UrlDecode();
+assert.equal(element('output-text').value, '你好');
 
 console.log('base64 encoder recommendation behavior passed');

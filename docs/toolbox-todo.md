@@ -375,7 +375,7 @@
 
 ### TODO-BASE64-002：Base64URL 支持
 
-- 状态：`[ ]`
+- 状态：`[x]`
 - 优先级：`P1`
 - 类型：功能增强
 - 目标：支持 Base64URL 与标准 Base64 互转，处理 `-`、`_`、省略 padding 的场景。
@@ -384,7 +384,7 @@
   - 标准 Base64 可转 Base64URL。
   - Base64URL 可解码。
   - padding 缺失时自动补齐或提示。
-- 完成记录：待填写。
+- 完成记录：2026-07-10 已在 `base64-encoder.html` 中新增 Base64URL 支持，标准 Base64 可转换为 URL 安全格式，Base64URL 解码会自动补齐缺失 padding；已更新 Base64 编解码工具版本至 V1.02。
 
 ### TODO-BASE64-003：解码内容类型识别
 

@@ -398,7 +398,7 @@
         <div class="tool-title">
             <h1>Base64 编解码</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.01</span>
+                <span>V1.02</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -420,6 +420,8 @@
             <div class="actions">
                 <button class="btn btn-primary" onclick="doTextEncode()">编码 (Encode)</button>
                 <button class="btn btn-primary" onclick="doTextDecode()">解码 (Decode)</button>
+                <button class="btn" onclick="doBase64UrlEncode()">转 Base64URL</button>
+                <button class="btn" onclick="doBase64UrlDecode()">Base64URL 解码</button>
             </div>
         </div>
 
@@ -458,6 +460,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月10日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.02</div>
+                        <div class="changelog-desc">新增 Base64URL 支持，可将标准 Base64 转为 URL 安全格式，并支持省略 padding 的 Base64URL 解码。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.01</div>
                         <div class="changelog-desc">输入文本后自动识别更适合编码还是解码，并给出非强制推荐提示。</div>
@@ -514,6 +520,39 @@
 
         function getDecodedBase64Text(raw) {
             const candidate = normalizeBase64Candidate(raw);
+            if (!candidate || !/^[A-Za-z0-9+/]+={0,2}$/.test(candidate)) {
+                return null;
+            }
+            try {
+                return decodeURIComponent(escape(window.atob(candidate)));
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function convertBase64ToBase64Url(raw) {
+            return String(raw || '')
+                .trim()
+                .replace(/\s+/g, '')
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/g, '');
+        }
+
+        function normalizeBase64UrlToBase64(raw) {
+            const compact = String(raw || '')
+                .trim()
+                .replace(/\s+/g, '')
+                .replace(/-/g, '+')
+                .replace(/_/g, '/');
+            if (!compact || compact.length % 4 === 1) {
+                return '';
+            }
+            return compact + '='.repeat((4 - compact.length % 4) % 4);
+        }
+
+        function getDecodedBase64UrlText(raw) {
+            const candidate = normalizeBase64UrlToBase64(raw);
             if (!candidate || !/^[A-Za-z0-9+/]+={0,2}$/.test(candidate)) {
                 return null;
             }
@@ -597,6 +636,30 @@
             } catch (e) {
                 showToast("解码错误: 无效的 Base64");
             }
+        }
+
+        function doBase64UrlEncode() {
+            const val = inputText.value;
+            if (!val) return;
+            const result = convertBase64ToBase64Url(val);
+            if (!result) {
+                showToast("转换失败: 请输入标准 Base64");
+                return;
+            }
+            outputText.value = result;
+            showToast("已转为 Base64URL");
+        }
+
+        function doBase64UrlDecode() {
+            const val = inputText.value.trim();
+            if (!val) return;
+            const result = getDecodedBase64UrlText(val);
+            if (result === null) {
+                showToast("解码错误: 无效的 Base64URL");
+                return;
+            }
+            outputText.value = result;
+            showToast("Base64URL 解码成功");
         }
 
         function clearText() {
