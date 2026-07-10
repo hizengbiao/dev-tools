@@ -143,6 +143,36 @@
         return extractFieldNames(value).map(converter).join('\n');
     }
 
+    function generateCodeNames(value) {
+        const camel = toCamelCase(value);
+        const pascal = toPascalCase(value);
+        const isBooleanStyle = /^is[A-Z]/.test(camel);
+        const propertyName = isBooleanStyle ? pascal.slice(2) : pascal;
+        return {
+            constant: toConstantCase(value),
+            enumName: toConstantCase(value),
+            getter: isBooleanStyle ? camel : `get${pascal}`,
+            setter: `set${propertyName}`
+        };
+    }
+
+    function generateCodeNamesReport(value) {
+        return String(value || '')
+            .split(/\r?\n/)
+            .filter(line => line.trim())
+            .map(line => {
+                const names = generateCodeNames(line);
+                return [
+                    line.trim(),
+                    `  常量: ${names.constant}`,
+                    `  枚举: ${names.enumName}`,
+                    `  Getter: ${names.getter}`,
+                    `  Setter: ${names.setter}`
+                ].join('\n');
+            })
+            .join('\n\n');
+    }
+
     function swapText(input, output) {
         return {
             input: String(output || ''),
@@ -165,6 +195,8 @@
         convertLines,
         extractFieldNames,
         convertExtractedFields,
+        generateCodeNames,
+        generateCodeNamesReport,
         swapText
     };
 

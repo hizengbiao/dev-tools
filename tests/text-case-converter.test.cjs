@@ -38,6 +38,34 @@ assert.strictEqual(
     converter.convertExtractedFields(`select user_id, user_name as userName from users`, converter.toCamelCase),
     'userId\nuserName'
 );
+assert.deepStrictEqual(converter.generateCodeNames('user name'), {
+    constant: 'USER_NAME',
+    enumName: 'USER_NAME',
+    getter: 'getUserName',
+    setter: 'setUserName'
+});
+assert.deepStrictEqual(converter.generateCodeNames('is_enabled'), {
+    constant: 'IS_ENABLED',
+    enumName: 'IS_ENABLED',
+    getter: 'isEnabled',
+    setter: 'setEnabled'
+});
+assert.strictEqual(
+    converter.generateCodeNamesReport('user name\nis_enabled'),
+    [
+        'user name',
+        '  常量: USER_NAME',
+        '  枚举: USER_NAME',
+        '  Getter: getUserName',
+        '  Setter: setUserName',
+        '',
+        'is_enabled',
+        '  常量: IS_ENABLED',
+        '  枚举: IS_ENABLED',
+        '  Getter: isEnabled',
+        '  Setter: setEnabled'
+    ].join('\n')
+);
 assert.strictEqual(converter.swapText('left', 'right').input, 'right');
 assert.strictEqual(converter.swapText('left', 'right').output, 'left');
 
@@ -59,7 +87,11 @@ assert.doesNotMatch(html, />Sentence case</);
 assert.doesNotMatch(html, />整理空格</);
 assert.doesNotMatch(html, /<div class="actions">[\s\S]*转换大小写[\s\S]*<\/div>/);
 assert.doesNotMatch(html, />转换驼峰</);
-assert.match(html, /<span>V1\.05<\/span>/);
+assert.match(html, /<span>V1\.06<\/span>/);
+assert.match(html, /<div class="changelog-date">2026年7月10日<\/div>[\s\S]*?<div class="changelog-version">V1\.06<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>/);
+assert.match(html, /生成代码命名/);
+assert.match(html, /generateCodeNamesReport\(value\)/);
+assert.match(html, /<div class="changelog-version">V1\.06<\/div>/);
 assert.match(html, /<div class="changelog-date">2026年7月10日<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>/);
 assert.match(html, /提取字段并转小驼峰/);
 assert.match(html, /提取字段并转下划线/);

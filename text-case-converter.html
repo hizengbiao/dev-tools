@@ -409,7 +409,7 @@
         <div class="tool-title">
             <h1>文本命名转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.05</span>
+                <span>V1.06</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -458,10 +458,11 @@
                     <button class="btn format-btn" onclick="convertText('trim')">清理多余空格</button>
                     <button class="btn format-btn" onclick="convertExtractedFieldsText('camel')">提取字段并转小驼峰</button>
                     <button class="btn format-btn" onclick="convertExtractedFieldsText('snake')">提取字段并转下划线</button>
+                    <button class="btn format-btn" onclick="generateCodeNamesText()">生成代码命名</button>
                 </div>
             </section>
 
-            <p class="hint">支持从普通短语、下划线、短横线、点号、斜杠和驼峰变量名中拆词，再转换为常见代码命名格式。“清理多余空格”会去掉每行首尾空白，并把连续空格压缩为单个空格。字段提取可从简单 SQL select 字段、Java 字段声明和 JSON key 中提取名称。</p>
+            <p class="hint">支持从普通短语、下划线、短横线、点号、斜杠和驼峰变量名中拆词，再转换为常见代码命名格式。“清理多余空格”会去掉每行首尾空白，并把连续空格压缩为单个空格。字段提取可从简单 SQL select 字段、Java 字段声明和 JSON key 中提取名称。“生成代码命名”会输出常量、枚举、Getter 和 Setter。</p>
         </div>
     </div>
 
@@ -474,6 +475,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月10日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.06</div>
+                        <div class="changelog-desc">新增代码命名生成，可根据输入生成常量名、枚举名、Getter 和 Setter，并对 isEnabled 这类布尔字段做合理处理。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.05</div>
                         <div class="changelog-desc">新增字段提取转换，支持从简单 SQL select 字段、Java 字段声明和 JSON key 中提取名称后批量转换。</div>
@@ -543,6 +548,16 @@
             const result = converter.convertExtractedFields(value, handlers[targetType]);
             if (!result) {
                 showToast('没有识别到可转换的字段名');
+                return;
+            }
+            outputText.value = result;
+        }
+
+        function generateCodeNamesText() {
+            const value = inputText.value;
+            const result = window.TextCaseConverter.generateCodeNamesReport(value);
+            if (!result) {
+                showToast('请输入需要生成代码命名的字段名');
                 return;
             }
             outputText.value = result;
