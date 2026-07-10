@@ -231,6 +231,24 @@
             color: #57606a;
         }
 
+        .file-hash-info {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            background: #f6f8fa;
+            color: #57606a;
+            font-size: 13px;
+            line-height: 1.5;
+            word-break: break-all;
+        }
+
+        .file-hash-info.error {
+            border-color: #ffebe9;
+            background: #ffebe9;
+            color: #cf222e;
+        }
+
         .recommendation {
             border: 1px solid #d0d7de;
             border-radius: 6px;
@@ -425,7 +443,7 @@
         <div class="tool-title">
             <h1>Base64 编解码</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.03</span>
+                <span>V1.04</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -461,6 +479,7 @@
             <div class="file-drop-area" onclick="document.getElementById('file-input').click()">
                 <p>点击或拖拽文件到此处</p>
                 <div id="file-name" class="file-info"></div>
+                <div id="file-hash-info" class="file-hash-info">选择文件后会计算 SHA-256 摘要</div>
             </div>
             <input type="file" id="file-input" style="display: none;" onchange="handleFileSelect(this)">
         </div>
@@ -488,6 +507,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月10日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.04</div>
+                        <div class="changelog-desc">文件模式新增 SHA-256 摘要展示，选择文件后在本地计算摘要，便于校验文件内容。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.03</div>
                         <div class="changelog-desc">新增解码内容类型识别，可提示 JSON、图片和二进制内容，避免二进制误按普通文本输出。</div>
@@ -520,6 +543,7 @@
         const resMeta = document.getElementById('res-meta');
         const base64Recommendation = document.getElementById('base64-recommendation');
         const decodedContentAnalysis = document.getElementById('decoded-content-analysis');
+        const fileHashInfo = document.getElementById('file-hash-info');
 
         let activeTab = 'text';
 
@@ -561,6 +585,25 @@
             } catch (error) {
                 return null;
             }
+        }
+
+        function arrayBufferToHex(buffer) {
+            return Array.from(new Uint8Array(buffer))
+                .map((byte) => byte.toString(16).padStart(2, '0'))
+                .join('');
+        }
+
+        async function calculateFileSha256(file) {
+            if (!window.crypto || !window.crypto.subtle || typeof file.arrayBuffer !== 'function') {
+                throw new Error('当前浏览器不支持文件 SHA-256 计算');
+            }
+            const hashBuffer = await window.crypto.subtle.digest('SHA-256', await file.arrayBuffer());
+            return arrayBufferToHex(hashBuffer);
+        }
+
+        function renderFileHashInfo(message, isError = false) {
+            fileHashInfo.textContent = message;
+            fileHashInfo.className = `file-hash-info${isError ? ' error' : ''}`;
         }
 
         function decodeBase64Bytes(raw) {
@@ -814,6 +857,10 @@
             if (input.files && input.files[0]) {
                 const file = input.files[0];
                 document.getElementById('file-name').textContent = `选定文件: ${file.name} (${formatSize(file.size)})`;
+                renderFileHashInfo('正在计算 SHA-256 摘要...');
+                calculateFileSha256(file)
+                    .then((hash) => renderFileHashInfo(`SHA-256: ${hash}`))
+                    .catch((error) => renderFileHashInfo(`SHA-256 计算失败: ${error.message}`, true));
 
                 const reader = new FileReader();
                 reader.onload = function (e) {
