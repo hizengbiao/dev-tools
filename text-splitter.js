@@ -54,6 +54,19 @@
         return segments;
     }
 
+    function splitTextStrictly(text, maxLength) {
+        if (!Number.isInteger(maxLength) || maxLength <= 0) {
+            throw new TypeError('maxLength must be a positive integer');
+        }
+
+        const characters = Array.from(String(text ?? ''));
+        const segments = [];
+        for (let index = 0; index < characters.length; index += maxLength) {
+            segments.push(characters.slice(index, index + maxLength).join(''));
+        }
+        return segments;
+    }
+
     function countCharacters(text) {
         return Array.from(String(text ?? '')).length;
     }
@@ -113,6 +126,96 @@
         return segments;
     }
 
+    function splitByUnits(units, limit, measure, fallbackSplit) {
+        const segments = [];
+        let current = '';
+
+        for (const unit of units) {
+            if (!unit) continue;
+            if (measure(unit) > limit) {
+                if (current) {
+                    segments.push(current);
+                    current = '';
+                }
+                segments.push(...fallbackSplit(unit));
+                continue;
+            }
+
+            if (current && measure(current + unit) > limit) {
+                segments.push(current);
+                current = unit;
+            } else {
+                current += unit;
+            }
+        }
+
+        if (current) {
+            segments.push(current);
+        }
+        return segments;
+    }
+
+    function getLineUnits(text) {
+        const source = String(text ?? '');
+        if (!source) return [];
+        return source.match(/[^\n]*(?:\n|$)/g).filter(Boolean);
+    }
+
+    function getParagraphUnits(text) {
+        const source = String(text ?? '');
+        if (!source) return [];
+        return source.match(/(?:[^\n]|\n(?!\n))*\n{0,2}/g).filter(Boolean);
+    }
+
+    function getSentenceUnits(text) {
+        const source = String(text ?? '');
+        if (!source) return [];
+        const units = source.match(/[^。！？.!?]+[。！？.!?]*\s*/gu);
+        return units && units.length ? units : [source];
+    }
+
+    function getStrategyUnits(text, strategy) {
+        if (strategy === 'lines') return getLineUnits(text);
+        if (strategy === 'paragraphs') return getParagraphUnits(text);
+        if (strategy === 'sentences') return getSentenceUnits(text);
+        return [];
+    }
+
+    function splitTextByStrategy(text, maxLength, strategy = 'smart') {
+        if (strategy === 'characters') {
+            return splitTextStrictly(text, maxLength);
+        }
+        if (strategy === 'lines' || strategy === 'paragraphs' || strategy === 'sentences') {
+            return splitByUnits(
+                getStrategyUnits(text, strategy),
+                maxLength,
+                countCharacters,
+                (unit) => splitText(unit, maxLength)
+            );
+        }
+        return splitText(text, maxLength);
+    }
+
+    function splitTextByEstimatedTokensWithStrategy(text, maxTokens, strategy = 'smart') {
+        if (strategy === 'characters') {
+            return splitByUnits(
+                Array.from(String(text ?? '')),
+                maxTokens,
+                estimateTokens,
+                (unit) => [unit]
+            );
+        }
+        if (strategy === 'lines' || strategy === 'paragraphs' || strategy === 'sentences') {
+            return splitByUnits(
+                getStrategyUnits(text, strategy),
+                maxTokens,
+                estimateTokens,
+                (unit) => splitTextByEstimatedTokens(unit, maxTokens)
+            );
+        }
+        return splitTextByEstimatedTokens(text, maxTokens);
+    }
+
     function renderTemplate(template, index, total) {
         return String(template ?? '')
             .replaceAll('{index}', String(index))
@@ -142,9 +245,12 @@
 
     return {
         splitText,
+        splitTextStrictly,
         countCharacters,
         estimateTokens,
         splitTextByEstimatedTokens,
+        splitTextByStrategy,
+        splitTextByEstimatedTokensWithStrategy,
         renderTemplate,
         applySegmentTemplates,
         getCopySegments,

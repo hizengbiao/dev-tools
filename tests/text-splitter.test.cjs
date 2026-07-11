@@ -35,6 +35,30 @@ assert.deepStrictEqual(
     ['hello world ', 'again']
 );
 assert.deepStrictEqual(
+    splitter.splitTextStrictly('abcdefghijk', 5),
+    ['abcde', 'fghij', 'k']
+);
+assert.deepStrictEqual(
+    splitter.splitTextByStrategy('alpha line\nbeta line\ngamma', 22, 'lines'),
+    ['alpha line\nbeta line\n', 'gamma']
+);
+assert.deepStrictEqual(
+    splitter.splitTextByStrategy('first sentence. second sentence! third sentence?', 34, 'sentences'),
+    ['first sentence. second sentence! ', 'third sentence?']
+);
+assert.deepStrictEqual(
+    splitter.splitTextByStrategy('第一句内容。第二句内容！第三句内容？', 12, 'sentences'),
+    ['第一句内容。第二句内容！', '第三句内容？']
+);
+assert.deepStrictEqual(
+    splitter.splitTextByStrategy('const value = veryLongVariableName;\nreturn value;', 16, 'lines'),
+    ['const value = ', 'veryLongVariable', 'Name;\n', 'return value;']
+);
+assert.deepStrictEqual(
+    splitter.splitTextByEstimatedTokensWithStrategy('alpha beta\ngamma delta', 4, 'lines'),
+    ['alpha beta\n', 'gamma delta']
+);
+assert.deepStrictEqual(
     splitter.applySegmentTemplates(['alpha', 'beta'], { prefix: '第 {index}/{total} 段：', suffix: '\n---' }),
     ['第 1/2 段：alpha\n---', '第 2/2 段：beta\n---']
 );
@@ -105,15 +129,21 @@ assert.match(page, /async function copySegmentsToHistory\(\)/);
 assert.match(page, /TextSplitter\.getClipboardHistoryWriteOrder\(copySegments\)/);
 assert.match(page, /await delay\(600\)/);
 assert.match(page, /copyHistoryBtn\.addEventListener\('click', copySegmentsToHistory\)/);
-assert.match(page, /V1\.05/);
+assert.match(page, /V1\.06/);
 assert.match(page, /Token 估算拆分/);
+assert.match(page, /id="splitStrategy"/);
+assert.match(page, /<option value="lines">/);
+assert.match(page, /<option value="paragraphs">/);
+assert.match(page, /<option value="sentences">/);
+assert.match(page, /<option value="characters">/);
 assert.match(page, /id="prefixTemplate"/);
 assert.match(page, /id="suffixTemplate"/);
 assert.match(page, /id="includeTemplateInCopy"/);
 assert.match(page, /TextSplitter\.applySegmentTemplates\(segments, getTemplateOptions\(\)\)/);
 assert.match(page, /TextSplitter\.getCopySegments\(currentSegments, getTemplateOptions\(\)\)/);
 assert.match(page, /第 \{index\}\/\{total\} 段：/);
-assert.match(page, /TextSplitter\.splitTextByEstimatedTokens\(inputText\.value, limit\)/);
+assert.match(page, /TextSplitter\.splitTextByEstimatedTokensWithStrategy\(inputText\.value, limit, strategy\)/);
+assert.match(page, /TextSplitter\.splitTextByStrategy\(inputText\.value, limit, strategy\)/);
 assert.match(page, /TextSplitter\.estimateTokens\(segment\)/);
 assert.match(page, /字符，约/);
 assert.match(page, /class="version-info" onclick="showChangelog\(\)"/);

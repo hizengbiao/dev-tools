@@ -565,7 +565,7 @@
         <div class="tool-title">
             <h1>文本智能拆分</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.05</span>
+                <span>V1.06</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -578,9 +578,17 @@
                         <option value="characters">字符长度</option>
                         <option value="tokens">Token 估算</option>
                     </select>
+                    <label for="splitStrategy">拆分策略</label>
+                    <select id="splitStrategy">
+                        <option value="smart">智能边界</option>
+                        <option value="lines">按行</option>
+                        <option value="paragraphs">按段落</option>
+                        <option value="sentences">按句子</option>
+                        <option value="characters">硬字符</option>
+                    </select>
                     <label for="maxLength">每段最大长度</label>
                     <input id="maxLength" type="number" min="1" step="1" value="2950">
-                    <span class="hint">优先在靠近上限的换行、标点或单词空格处拆分</span>
+                    <span class="hint" id="strategyHint">智能边界：优先在靠近上限的换行、标点或单词空格处拆分</span>
                 </div>
                 <div class="template-control">
                     <label for="prefixTemplate">分段前缀</label>
@@ -637,6 +645,10 @@
             <div class="modal-body">
                 <div class="changelog-date">2026年7月11日</div>
                 <div class="changelog-entry">
+                    <div class="changelog-version">V1.06</div>
+                    <div>新增拆分策略选择，支持智能边界、按行、按段落、按句子和硬字符拆分，超长单元会自动兜底拆分。</div>
+                </div>
+                <div class="changelog-entry">
                     <div class="changelog-version">V1.05</div>
                     <div>新增分段前缀/后缀模板，支持 {index}、{total} 变量，并可选择复制时是否包含模板。</div>
                 </div>
@@ -686,6 +698,8 @@
         const inputText = document.getElementById('inputText');
         const inputLineNumbers = document.getElementById('inputLineNumbers');
         const splitMode = document.getElementById('splitMode');
+        const splitStrategy = document.getElementById('splitStrategy');
+        const strategyHint = document.getElementById('strategyHint');
         const maxLength = document.getElementById('maxLength');
         const prefixTemplate = document.getElementById('prefixTemplate');
         const suffixTemplate = document.getElementById('suffixTemplate');
@@ -746,6 +760,17 @@
             };
         }
 
+        function updateStrategyHint() {
+            const descriptions = {
+                smart: '智能边界：优先在靠近上限的换行、标点或单词空格处拆分',
+                lines: '按行：尽量保持整行不被拆开，超长单行会继续兜底拆分',
+                paragraphs: '按段落：优先保留空行分隔的段落，适合文档和说明文本',
+                sentences: '按句子：优先按中英文句号、问号、感叹号后的句子拆分',
+                characters: '硬字符：严格按长度切分，不主动寻找单词或标点边界'
+            };
+            strategyHint.textContent = descriptions[splitStrategy.value] || descriptions.smart;
+        }
+
         function renderResults(segments) {
             currentSegments = segments;
             currentDisplaySegments = includeTemplateInCopy.checked
@@ -803,9 +828,10 @@
                 return;
             }
 
+            const strategy = splitStrategy.value;
             const segments = splitMode.value === 'tokens'
-                ? TextSplitter.splitTextByEstimatedTokens(inputText.value, limit)
-                : TextSplitter.splitText(inputText.value, limit);
+                ? TextSplitter.splitTextByEstimatedTokensWithStrategy(inputText.value, limit, strategy)
+                : TextSplitter.splitTextByStrategy(inputText.value, limit, strategy);
             renderResults(segments);
             showToast(`已拆分为 ${segments.length} 段`);
         }
@@ -872,6 +898,7 @@
 
         document.getElementById('splitBtn').addEventListener('click', runSplit);
         document.getElementById('clearBtn').addEventListener('click', clearAll);
+        splitStrategy.addEventListener('change', updateStrategyHint);
         inputText.addEventListener('input', () => {
             updateInputStats();
             refreshInputLineNumbers();
@@ -942,6 +969,7 @@
         window.closeSegmentPreview = closeSegmentPreview;
         updateInputStats();
         refreshInputLineNumbers();
+        updateStrategyHint();
     </script>
 </body>
 
