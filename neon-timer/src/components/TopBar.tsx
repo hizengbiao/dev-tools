@@ -68,7 +68,7 @@ export const TopBar: FC<TopBarProps> = ({ mode = 'stopwatch', onSetMode }) => {
                             boxShadow: '0 0 12px rgba(0, 229, 255, 0.18)'
                         }}
                     >
-                        V1.00
+                        V1.01
                     </button>
                 </div>
             </div>
@@ -132,6 +132,26 @@ export const TopBar: FC<TopBarProps> = ({ mode = 'stopwatch', onSetMode }) => {
                             <div style={{
                                 display: 'inline-block',
                                 marginBottom: '14px',
+                                paddingBottom: '8px',
+                                borderBottom: '2px solid var(--neon-cyan)',
+                                fontWeight: 700
+                            }}>
+                                2026年7月11日
+                            </div>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', fontSize: '14px', marginBottom: '12px' }}>
+                                <div style={{
+                                    flex: '0 0 56px',
+                                    color: 'var(--neon-cyan)',
+                                    fontWeight: 800,
+                                    textShadow: '0 0 8px rgba(0, 229, 255, 0.75)'
+                                }}>
+                                    V1.01
+                                </div>
+                                <div>新增倒计时常用预设，可在倒计时空闲状态下快速选择 5、10、15、25、30、60 分钟。</div>
+                            </div>
+                            <div style={{
+                                display: 'inline-block',
+                                margin: '4px 0 14px',
                                 paddingBottom: '8px',
                                 borderBottom: '2px solid var(--neon-cyan)',
                                 fontWeight: 700
