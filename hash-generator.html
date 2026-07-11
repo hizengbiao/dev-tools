@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>哈希/摘要工具</title>
+    <link rel="stylesheet" href="nav.css">
+    <script src="nav.js" defer></script>
+    <script src="changelog.js"></script>
+    <script src="clipboard-utils.js"></script>
+    <script src="hash-generator.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f6f8;
+            --panel-bg: #ffffff;
+            --border-color: #d0d7de;
+            --text-color: #24292f;
+            --muted-color: #57606a;
+            --accent-color: #0969da;
+            --success-color: #116329;
+            --danger-color: #cf222e;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 18px;
+            min-height: 100vh;
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        }
+
+        button,
+        input,
+        textarea {
+            font: inherit;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1180px;
+            margin: 0 auto;
+        }
+
+        .tool-title,
+        .panel-header,
+        .actions,
+        .compare-row,
+        .result-header {
+            display: flex;
+            align-items: center;
+        }
+
+        .tool-title {
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .version-info {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 999px;
+            background: #f6f8fa;
+            color: var(--muted-color);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .version-info:hover {
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+            background: #ddf4ff;
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: minmax(360px, 0.95fr) minmax(420px, 1.05fr);
+            gap: 16px;
+        }
+
+        .panel {
+            min-width: 0;
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--panel-bg);
+            box-shadow: 0 1px 3px rgba(27, 31, 36, 0.06);
+        }
+
+        .panel + .panel,
+        .stacked-panel {
+            margin-top: 16px;
+        }
+
+        .panel-header,
+        .result-header {
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .panel-header h2,
+        .result-header h3 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 260px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            outline: none;
+            resize: vertical;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        textarea:focus,
+        input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
+        }
+
+        .drop-zone {
+            padding: 28px;
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            background: #f6f8fa;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .drop-zone:hover {
+            border-color: var(--accent-color);
+            background: #ddf4ff;
+        }
+
+        .hint,
+        .meta {
+            color: var(--muted-color);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .actions {
+            justify-content: center;
+            gap: 10px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 13px;
+            border: 1px solid rgba(27, 31, 36, 0.15);
+            border-radius: 6px;
+            background: #fff;
+            color: var(--text-color);
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #f3f4f6;
+        }
+
+        .btn-primary {
+            border-color: var(--accent-color);
+            background: var(--accent-color);
+            color: #fff;
+        }
+
+        .btn-danger {
+            border-color: var(--danger-color);
+            color: var(--danger-color);
+        }
+
+        .hash-table {
+            display: grid;
+            gap: 10px;
+        }
+
+        .hash-row {
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 7px;
+            background: #f6f8fa;
+        }
+
+        .hash-name {
+            margin-bottom: 6px;
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+
+        .hash-value {
+            margin: 0;
+            word-break: break-all;
+            white-space: pre-wrap;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .compare-row {
+            gap: 8px;
+        }
+
+        .compare-row input {
+            flex: 1;
+            min-width: 0;
+            padding: 9px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        }
+
+        .compare-status {
+            margin-top: 10px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            background: #f6f8fa;
+            color: var(--muted-color);
+            font-size: 13px;
+        }
+
+        .compare-status.match {
+            background: #dafbe1;
+            color: var(--success-color);
+        }
+
+        .compare-status.mismatch {
+            background: #ffebe9;
+            color: var(--danger-color);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.42);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            width: min(650px, calc(100vw - 32px));
+            max-height: 85vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.16);
+        }
+
+        .modal-header {
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eaeef2;
+            background: #f6f8fa;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+
+        .close-modal {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            color: var(--muted-color);
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .changelog-date {
+            display: inline-block;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--accent-color);
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .changelog-entry {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .changelog-version {
+            flex: 0 0 56px;
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+
+        @media (max-width: 900px) {
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="container">
+        <div class="tool-title">
+            <h1>哈希/摘要工具</h1>
+            <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
+                <span>V1.00</span>
+                <span>ℹ️</span>
+            </div>
+        </div>
+
+        <div class="workspace">
+            <section>
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>文本摘要</h2>
+                        <button class="btn btn-danger" id="clear-text-btn" type="button">清空</button>
+                    </div>
+                    <textarea id="text-input" placeholder="输入需要计算摘要的文本，支持中文、换行和任意 UTF-8 字符。"></textarea>
+                    <div class="actions">
+                        <button class="btn btn-primary" id="hash-text-btn" type="button">计算文本摘要</button>
+                    </div>
+                </div>
+
+                <div class="panel stacked-panel">
+                    <div class="panel-header">
+                        <h2>文件摘要</h2>
+                    </div>
+                    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+                        <strong>点击选择文件或拖拽到这里</strong>
+                        <div class="hint">文件只在浏览器本地读取，用于计算 MD5、SHA-1、SHA-256、SHA-512。</div>
+                        <div class="meta" id="file-meta">尚未选择文件</div>
+                    </div>
+                    <input id="file-input" type="file" hidden>
+                </div>
+            </section>
+
+            <section>
+                <div class="panel">
+                    <div class="result-header">
+                        <h3>摘要结果</h3>
+                        <button class="btn" id="copy-all-btn" type="button">复制全部</button>
+                    </div>
+                    <div class="hash-table" id="hash-results">
+                        <div class="hint">计算后会在这里显示 MD5、SHA-1、SHA-256、SHA-512。</div>
+                    </div>
+                </div>
+
+                <div class="panel stacked-panel">
+                    <div class="panel-header">
+                        <h2>摘要比对</h2>
+                    </div>
+                    <div class="compare-row">
+                        <input id="compare-input" placeholder="粘贴已有摘要值，自动与当前结果比对">
+                        <button class="btn" id="compare-btn" type="button">比对</button>
+                    </div>
+                    <div class="compare-status" id="compare-status">等待输入摘要值。</div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <div id="changelog-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🚀 版本更新说明</h3>
+                <button class="close-modal" type="button" onclick="closeChangelog()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="changelog-date">2026年7月11日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.00</div>
+                    <div>版本初始化：支持文本和文件摘要计算，输出 MD5、SHA-1、SHA-256、SHA-512，并支持单项复制、全部复制和摘要比对。</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const textInput = document.getElementById('text-input');
+        const fileInput = document.getElementById('file-input');
+        const dropZone = document.getElementById('drop-zone');
+        const fileMeta = document.getElementById('file-meta');
+        const hashResults = document.getElementById('hash-results');
+        const compareInput = document.getElementById('compare-input');
+        const compareStatus = document.getElementById('compare-status');
+        let currentHashes = null;
+
+        function showToast(message) {
+            ClipboardUtils.showToast(message);
+        }
+
+        function formatAllHashes(hashes) {
+            if (!hashes) return '';
+            return HashGenerator.ALGORITHMS.map((name) => `${name}: ${hashes[name]}`).join('\n');
+        }
+
+        function renderHashes(hashes) {
+            currentHashes = hashes;
+            hashResults.innerHTML = HashGenerator.ALGORITHMS.map((name) => `
+                <article class="hash-row">
+                    <div class="result-header">
+                        <div class="hash-name">${name}</div>
+                        <button class="btn copy-hash-btn" type="button" data-name="${name}">复制</button>
+                    </div>
+                    <pre class="hash-value">${hashes[name]}</pre>
+                </article>
+            `).join('');
+            updateCompareStatus();
+        }
+
+        async function hashTextInput() {
+            const value = textInput.value;
+            if (!value) {
+                showToast('请先输入文本');
+                return;
+            }
+            renderHashes(await HashGenerator.hashText(value));
+            showToast('文本摘要计算完成');
+        }
+
+        async function hashFile(file) {
+            if (!file) return;
+            fileMeta.textContent = `正在计算：${file.name} (${HashGenerator.formatBytes(file.size)})`;
+            const bytes = new Uint8Array(await file.arrayBuffer());
+            renderHashes(await HashGenerator.hashBytes(bytes));
+            fileMeta.textContent = `已计算：${file.name} (${HashGenerator.formatBytes(file.size)})`;
+            showToast('文件摘要计算完成');
+        }
+
+        function updateCompareStatus() {
+            const value = compareInput.value;
+            if (!value) {
+                compareStatus.textContent = '等待输入摘要值。';
+                compareStatus.className = 'compare-status';
+                return;
+            }
+            if (!currentHashes) {
+                compareStatus.textContent = '请先计算文本或文件摘要。';
+                compareStatus.className = 'compare-status mismatch';
+                return;
+            }
+            const matched = HashGenerator.ALGORITHMS.find((name) => HashGenerator.compareHash(currentHashes[name], value));
+            compareStatus.textContent = matched ? `匹配：${matched}` : '不匹配：当前结果中没有相同摘要。';
+            compareStatus.className = `compare-status ${matched ? 'match' : 'mismatch'}`;
+        }
+
+        document.getElementById('hash-text-btn').addEventListener('click', hashTextInput);
+        document.getElementById('clear-text-btn').addEventListener('click', () => {
+            textInput.value = '';
+            textInput.focus();
+        });
+        document.getElementById('copy-all-btn').addEventListener('click', () => {
+            const text = formatAllHashes(currentHashes);
+            if (!text) {
+                showToast('暂无摘要结果');
+                return;
+            }
+            ClipboardUtils.copyText(text, { successMessage: '全部摘要已复制' });
+        });
+        hashResults.addEventListener('click', (event) => {
+            const button = event.target.closest('.copy-hash-btn');
+            if (!button || !currentHashes) return;
+            ClipboardUtils.copyText(currentHashes[button.dataset.name], { successMessage: `${button.dataset.name} 已复制` });
+        });
+        fileInput.addEventListener('change', () => {
+            hashFile(fileInput.files && fileInput.files[0]);
+        });
+        dropZone.addEventListener('dragover', (event) => {
+            event.preventDefault();
+        });
+        dropZone.addEventListener('drop', (event) => {
+            event.preventDefault();
+            hashFile(event.dataTransfer.files && event.dataTransfer.files[0]);
+        });
+        compareInput.addEventListener('input', updateCompareStatus);
+        document.getElementById('compare-btn').addEventListener('click', updateCompareStatus);
+    </script>
+</body>
+
+</html>
