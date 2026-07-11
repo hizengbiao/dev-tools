@@ -68,7 +68,7 @@ export const TopBar: FC<TopBarProps> = ({ mode = 'stopwatch', onSetMode }) => {
                             boxShadow: '0 0 12px rgba(0, 229, 255, 0.18)'
                         }}
                     >
-                        V1.01
+                        V1.02
                     </button>
                 </div>
             </div>
@@ -137,6 +137,17 @@ export const TopBar: FC<TopBarProps> = ({ mode = 'stopwatch', onSetMode }) => {
                                 fontWeight: 700
                             }}>
                                 2026年7月11日
+                            </div>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', fontSize: '14px', marginBottom: '12px' }}>
+                                <div style={{
+                                    flex: '0 0 56px',
+                                    color: 'var(--neon-cyan)',
+                                    fontWeight: 800,
+                                    textShadow: '0 0 8px rgba(0, 229, 255, 0.75)'
+                                }}>
+                                    V1.02
+                                </div>
+                                <div>新增倒计时结束声音提醒和浏览器通知开关，通知会在用户授权后触发。</div>
                             </div>
                             <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', fontSize: '14px', marginBottom: '12px' }}>
                                 <div style={{

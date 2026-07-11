@@ -1,12 +1,32 @@
 
+import { useCallback, useState } from 'react';
 import './index.css';
 import { BigTimeDisplay } from './components/BigTimeDisplay';
 import { TimeInputHHMMSS } from './components/TimeInputHHMMSS';
 import { TopBar } from './components/TopBar';
 import { ControlsPanel } from './components/ControlsPanel';
 import { useTimerEngine } from './hooks/useTimerEngine';
+import {
+  getNotificationPermission,
+  playTimerEndSound,
+  requestTimerNotificationPermission,
+  showTimerEndNotification,
+  type TimerNotificationStatus
+} from './lib/alerts';
 
 function App() {
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [notificationEnabled, setNotificationEnabled] = useState(false);
+  const [notificationStatus, setNotificationStatus] = useState<TimerNotificationStatus>(() => getNotificationPermission());
+  const handleTimerEnd = useCallback(() => {
+    if (soundEnabled) {
+      playTimerEndSound();
+    }
+    if (notificationEnabled) {
+      showTimerEndNotification();
+    }
+  }, [notificationEnabled, soundEnabled]);
+
   const {
     status,
     timeMs,
@@ -17,7 +37,18 @@ function App() {
     start,
     pause,
     reset
-  } = useTimerEngine();
+  } = useTimerEngine({ onEnd: handleTimerEnd });
+
+  const handleNotificationEnabledChange = useCallback(async (enabled: boolean) => {
+    if (!enabled) {
+      setNotificationEnabled(false);
+      return;
+    }
+
+    const permission = await requestTimerNotificationPermission();
+    setNotificationStatus(permission);
+    setNotificationEnabled(permission === 'granted');
+  }, []);
 
   const showInput = mode === 'countdown' && status === 'idle';
 
@@ -53,6 +84,11 @@ function App() {
           onPause={pause}
           onReset={reset}
           onPresetSelect={setCountdownInputMs}
+          soundEnabled={soundEnabled}
+          notificationEnabled={notificationEnabled}
+          notificationStatus={notificationStatus}
+          onSoundEnabledChange={setSoundEnabled}
+          onNotificationEnabledChange={handleNotificationEnabledChange}
         />
       </div>
     </>

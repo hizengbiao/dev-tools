@@ -2,6 +2,7 @@
 import type { TimerStatus } from './BigTimeDisplay';
 
 import { PRESETS } from '../lib/presets';
+import type { TimerNotificationStatus } from '../lib/alerts';
 
 interface ControlsPanelProps {
     status: TimerStatus;
@@ -10,6 +11,11 @@ interface ControlsPanelProps {
     onPause: () => void;
     onReset: () => void;
     onPresetSelect: (ms: number) => void;
+    soundEnabled: boolean;
+    notificationEnabled: boolean;
+    notificationStatus: TimerNotificationStatus;
+    onSoundEnabledChange: (enabled: boolean) => void;
+    onNotificationEnabledChange: (enabled: boolean) => void | Promise<void>;
 }
 
 export const ControlsPanel: React.FC<ControlsPanelProps> = ({
@@ -18,9 +24,22 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
     onStart,
     onPause,
     onReset,
-    onPresetSelect
+    onPresetSelect,
+    soundEnabled,
+    notificationEnabled,
+    notificationStatus,
+    onSoundEnabledChange,
+    onNotificationEnabledChange
 }) => {
     const isRunning = status === 'running';
+    const notificationDisabled = notificationStatus === 'unsupported' || notificationStatus === 'denied';
+    const notificationHint = notificationStatus === 'unsupported'
+        ? 'Browser notifications are not supported.'
+        : notificationStatus === 'denied'
+            ? 'Notification permission was denied.'
+            : notificationStatus === 'granted'
+                ? 'Notification will appear when countdown ends.'
+                : 'Enable to request browser notification permission.';
 
     return (
         <div style={{
@@ -122,6 +141,47 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                     Reset
                 </button>
             </div>
+
+            {mode === 'countdown' && (
+                <div style={{
+                    display: 'flex',
+                    gap: '1rem',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexWrap: 'wrap',
+                    color: 'var(--muted)',
+                    fontSize: '0.78rem',
+                    letterSpacing: '0.04em'
+                }}>
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer' }}>
+                        <input
+                            type="checkbox"
+                            checked={soundEnabled}
+                            onChange={(event) => onSoundEnabledChange(event.currentTarget.checked)}
+                        />
+                        SOUND ALERT
+                    </label>
+                    <label
+                        title={notificationHint}
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                            cursor: notificationDisabled ? 'not-allowed' : 'pointer',
+                            opacity: notificationDisabled ? 0.55 : 1
+                        }}
+                    >
+                        <input
+                            type="checkbox"
+                            checked={notificationEnabled}
+                            disabled={notificationDisabled}
+                            onChange={(event) => void onNotificationEnabledChange(event.currentTarget.checked)}
+                        />
+                        BROWSER NOTIFY
+                    </label>
+                    <span title={notificationHint}>PERMISSION: {notificationStatus.toUpperCase()}</span>
+                </div>
+            )}
         </div>
     );
 };
