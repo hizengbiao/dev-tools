@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JWT 解析工具</title>
+    <link rel="stylesheet" href="nav.css">
+    <script src="nav.js" defer></script>
+    <script src="changelog.js"></script>
+    <script src="clipboard-utils.js"></script>
+    <script src="jwt-decoder.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f6f8;
+            --panel-bg: #ffffff;
+            --border-color: #d0d7de;
+            --text-color: #24292f;
+            --muted-color: #57606a;
+            --accent-color: #0969da;
+            --danger-color: #cf222e;
+            --success-color: #116329;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 18px;
+            min-height: 100vh;
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        }
+
+        button,
+        textarea {
+            font: inherit;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1220px;
+            margin: 0 auto;
+        }
+
+        .tool-title,
+        .panel-header,
+        .actions {
+            display: flex;
+            align-items: center;
+        }
+
+        .tool-title {
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .version-info {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 999px;
+            background: #f6f8fa;
+            color: var(--muted-color);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .version-info:hover {
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+            background: #ddf4ff;
+        }
+
+        .notice {
+            margin-bottom: 14px;
+            padding: 10px 12px;
+            border: 1px solid #f2cc60;
+            border-radius: 8px;
+            background: #fff8c5;
+            color: #7d4e00;
+            line-height: 1.6;
+            font-size: 13px;
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: minmax(360px, 0.9fr) minmax(460px, 1.1fr);
+            gap: 16px;
+        }
+
+        .panel {
+            min-width: 0;
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--panel-bg);
+            box-shadow: 0 1px 3px rgba(27, 31, 36, 0.06);
+        }
+
+        .panel + .panel {
+            margin-top: 16px;
+        }
+
+        .panel-header {
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .panel-header h2 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 310px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            outline: none;
+            resize: vertical;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        textarea:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
+        }
+
+        .actions {
+            justify-content: center;
+            gap: 10px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 13px;
+            border: 1px solid rgba(27, 31, 36, 0.15);
+            border-radius: 6px;
+            background: #fff;
+            color: var(--text-color);
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #f3f4f6;
+        }
+
+        .btn-primary {
+            border-color: var(--accent-color);
+            background: var(--accent-color);
+            color: #fff;
+        }
+
+        .status {
+            margin-top: 10px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            background: #f6f8fa;
+            color: var(--muted-color);
+            font-size: 13px;
+        }
+
+        .status.ok {
+            background: #dafbe1;
+            color: var(--success-color);
+        }
+
+        .status.error {
+            background: #ffebe9;
+            color: var(--danger-color);
+        }
+
+        pre {
+            min-height: 120px;
+            margin: 0;
+            padding: 12px;
+            overflow: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: #f6f8fa;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 13px;
+            line-height: 1.55;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .time-list {
+            display: grid;
+            gap: 8px;
+        }
+
+        .time-item {
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: #f6f8fa;
+            font-size: 13px;
+        }
+
+        .time-key {
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.42);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            width: min(650px, calc(100vw - 32px));
+            max-height: 85vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border-radius: 12px;
+            background: #fff;
+        }
+
+        .modal-header {
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eaeef2;
+            background: #f6f8fa;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+
+        .close-modal {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            color: var(--muted-color);
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .changelog-date {
+            display: inline-block;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--accent-color);
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .changelog-entry {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .changelog-version {
+            flex: 0 0 56px;
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+
+        @media (max-width: 920px) {
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="container">
+        <div class="tool-title">
+            <h1>JWT 解析工具</h1>
+            <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
+                <span>V1.00</span>
+                <span>ℹ️</span>
+            </div>
+        </div>
+
+        <div class="notice">
+            本工具仅本地解析 JWT 的 Header 和 Payload，用于查看内容和时间字段；不验证签名可信性，也不会判断令牌是否真的来自可信签发方。
+        </div>
+
+        <div class="workspace">
+            <section class="panel">
+                <div class="panel-header">
+                    <h2>JWT 输入</h2>
+                    <button class="btn" id="copy-token-btn" type="button">复制原文</button>
+                </div>
+                <textarea id="jwt-input" placeholder="粘贴形如 header.payload.signature 的 JWT"></textarea>
+                <div class="actions">
+                    <button class="btn btn-primary" id="decode-btn" type="button">解析 JWT</button>
+                    <button class="btn" id="sample-btn" type="button">载入示例</button>
+                    <button class="btn" id="clear-btn" type="button">清空</button>
+                </div>
+                <div class="status" id="decode-status">等待输入 JWT。</div>
+            </section>
+
+            <section>
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>Header</h2>
+                        <button class="btn copy-output-btn" type="button" data-target="header-output">复制</button>
+                    </div>
+                    <pre id="header-output">解析后显示 Header JSON。</pre>
+                </div>
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>Payload</h2>
+                        <button class="btn copy-output-btn" type="button" data-target="payload-output">复制</button>
+                    </div>
+                    <pre id="payload-output">解析后显示 Payload JSON。</pre>
+                </div>
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>时间字段</h2>
+                    </div>
+                    <div class="time-list" id="time-output">解析后会展示 exp、iat、nbf、auth_time 等时间字段。</div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>签名片段</h2>
+                        <button class="btn copy-output-btn" type="button" data-target="signature-output">复制</button>
+                    </div>
+                    <pre id="signature-output">解析后显示签名片段；这里不验证签名可信性。</pre>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <div id="changelog-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🚀 版本更新说明</h3>
+                <button class="close-modal" type="button" onclick="closeChangelog()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="changelog-date">2026年7月11日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.00</div>
+                    <div>版本初始化：支持本地解析 JWT Header 和 Payload，展示 exp、iat、nbf 等时间字段，并明确不做签名可信校验。</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const sampleToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjMiLCJuYW1lIjoi5byg5LiJIiwiZXhwIjoxNzEwMDAwMDAwLCJpYXQiOjE3MDk5OTAwMDAsImFjdGl2ZSI6dHJ1ZX0.signature';
+        const jwtInput = document.getElementById('jwt-input');
+        const headerOutput = document.getElementById('header-output');
+        const payloadOutput = document.getElementById('payload-output');
+        const timeOutput = document.getElementById('time-output');
+        const signatureOutput = document.getElementById('signature-output');
+        const decodeStatus = document.getElementById('decode-status');
+
+        function setStatus(message, type = '') {
+            decodeStatus.textContent = message;
+            decodeStatus.className = `status ${type}`.trim();
+        }
+
+        function formatJson(value) {
+            return JSON.stringify(value, null, 2);
+        }
+
+        function renderTimeFields(decoded) {
+            const entries = Object.entries(decoded.timeFields);
+            if (!entries.length) {
+                timeOutput.textContent = '未识别到 exp、iat、nbf 或 auth_time 时间字段。';
+                return;
+            }
+            timeOutput.innerHTML = entries.map(([key, info]) => `
+                <div class="time-item">
+                    <span class="time-key">${key}</span>
+                    <div>Unix 秒：${info.seconds}</div>
+                    <div>UTC：${info.iso}</div>
+                </div>
+            `).join('');
+        }
+
+        function decodeCurrentJwt() {
+            try {
+                const decoded = JwtDecoder.decodeJwt(jwtInput.value);
+                headerOutput.textContent = formatJson(decoded.header);
+                payloadOutput.textContent = formatJson(decoded.payload);
+                signatureOutput.textContent = decoded.signature || '(empty)';
+                renderTimeFields(decoded);
+                setStatus(decoded.isExpired() ? '解析成功：当前时间看该令牌已过期。' : '解析成功：当前时间看该令牌未过期或未包含 exp。', 'ok');
+            } catch (error) {
+                setStatus(`解析失败：${error.message}`, 'error');
+            }
+        }
+
+        document.getElementById('decode-btn').addEventListener('click', decodeCurrentJwt);
+        document.getElementById('sample-btn').addEventListener('click', () => {
+            jwtInput.value = sampleToken;
+            decodeCurrentJwt();
+        });
+        document.getElementById('clear-btn').addEventListener('click', () => {
+            jwtInput.value = '';
+            headerOutput.textContent = '解析后显示 Header JSON。';
+            payloadOutput.textContent = '解析后显示 Payload JSON。';
+            signatureOutput.textContent = '解析后显示签名片段；这里不验证签名可信性。';
+            timeOutput.textContent = '解析后会展示 exp、iat、nbf、auth_time 等时间字段。';
+            setStatus('等待输入 JWT。');
+            jwtInput.focus();
+        });
+        document.getElementById('copy-token-btn').addEventListener('click', () => {
+            ClipboardUtils.copyText(jwtInput.value, { successMessage: 'JWT 原文已复制' });
+        });
+        document.querySelectorAll('.copy-output-btn').forEach((button) => {
+            button.addEventListener('click', () => {
+                const target = document.getElementById(button.dataset.target);
+                ClipboardUtils.copyText(target.textContent, { successMessage: '内容已复制' });
+            });
+        });
+    </script>
+</body>
+
+</html>

@@ -629,7 +629,7 @@
 
 ### TODO-NEW-002：JWT 解析工具
 
-- 状态：`[ ]`
+- 状态：`[x]`
 - 优先级：`P1`
 - 类型：新增工具
 - 目标：粘贴 JWT 后解析 Header、Payload，展示 `exp`、`iat` 等时间字段。
@@ -638,7 +638,7 @@
   - 明确标注仅本地解析，不做签名可信校验。
   - Header 和 Payload 格式化展示。
   - 过期时间展示为可读时间。
-- 完成记录：待填写。
+- 完成记录：2026-07-11 已新增 JWT 解析工具 `jwt-decoder.html`，支持本地解析 Header、Payload、签名片段和 exp/iat/nbf/auth_time 时间字段，页面明确标注不做签名可信校验；已同步导航、首页、README、DEVELOPMENT，并新增 `tests/jwt-decoder.test.cjs` 覆盖解析逻辑和工具入口。
 
 ### TODO-NEW-003：UUID / 随机值生成器
 

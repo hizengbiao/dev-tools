@@ -7,6 +7,7 @@
         { name: 'URL 编解码', path: 'url-encoder.html', icon: '🔗' },
         { name: 'Base64', path: 'base64-encoder.html', icon: '🔐' },
         { name: '哈希摘要', path: 'hash-generator.html', icon: '🔎' },
+        { name: 'JWT 解析', path: 'jwt-decoder.html', icon: '🎫' },
         { name: '命名转换', path: 'text-case-converter.html', icon: '🔤' },
         { name: '文本转义', path: 'text_escape_formatter_final.html', icon: '↔️' },
         { name: '文本拆分', path: 'text-splitter.html', icon: '✂️' },

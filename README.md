@@ -15,6 +15,7 @@
 | [URL 编解码](url-encoder.html) | URL Encode/Decode、输入输出差异对比和 URL 参数分析。 |
 | [Base64 编解码](base64-encoder.html) | 支持文本和文件的 Base64 互相转换。 |
 | [哈希/摘要工具](hash-generator.html) | 计算文本和文件的 MD5、SHA-1、SHA-256、SHA-512 摘要，并支持摘要比对。 |
+| [JWT 解析工具](jwt-decoder.html) | 本地解析 JWT Header、Payload 和时间字段，明确不做签名可信校验。 |
 | [命名转换](text-case-converter.html) | 支持变量名大小写、蛇形、驼峰、短横线等格式互转。 |
 | [文本转义转换工具](text_escape_formatter_final.html) | 支持转义文本、可读文本、拼接字符串合并和输入输出差异对比。 |
 | [文本智能拆分](text-splitter.html) | 按指定长度智能拆分长文本，优先保留自然语义边界并支持逐段复制。 |
