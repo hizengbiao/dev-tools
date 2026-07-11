@@ -655,7 +655,7 @@
 
 ### TODO-NEW-004：Cron 表达式解析工具
 
-- 状态：`[ ]`
+- 状态：`[x]`
 - 优先级：`P2`
 - 类型：新增工具
 - 目标：解析 Cron 表达式并展示最近几次执行时间，区分 Linux cron 和 Quartz cron。
@@ -664,7 +664,7 @@
   - 支持常见 5 段和 6/7 段表达式。
   - 展示最近 N 次执行时间。
   - 错误表达式提示具体位置。
-- 完成记录：待填写。
+- 完成记录：2026-07-11 已新增 Cron 表达式解析工具 `cron-parser.html`，支持 5 段 Linux cron 和 6/7 段 Quartz cron，展示最近 N 次执行时间，并对字段范围、步进和段数错误给出提示；已同步导航、首页、README、DEVELOPMENT，并新增 `tests/cron-parser.test.cjs` 覆盖核心解析和工具入口。
 
 ### TODO-NEW-005：SQL 格式化/压缩工具
 

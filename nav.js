@@ -9,6 +9,7 @@
         { name: '哈希摘要', path: 'hash-generator.html', icon: '🔎' },
         { name: 'JWT 解析', path: 'jwt-decoder.html', icon: '🎫' },
         { name: '随机生成', path: 'random-generator.html', icon: '🎲' },
+        { name: 'Cron 解析', path: 'cron-parser.html', icon: '🕒' },
         { name: '命名转换', path: 'text-case-converter.html', icon: '🔤' },
         { name: '文本转义', path: 'text_escape_formatter_final.html', icon: '↔️' },
         { name: '文本拆分', path: 'text-splitter.html', icon: '✂️' },
