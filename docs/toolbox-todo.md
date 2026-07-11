@@ -691,11 +691,11 @@
 
 ### TODO-IDEA-002：示例数据统一管理
 
-- 状态：`[ ]`
+- 状态：`[x]`
 - 优先级：`P3`
 - 类型：候选增强
 - 目标：各工具常用示例数据逐步集中管理，减少散落在 HTML 中的样例字符串。
-- 完成记录：待填写。
+- 完成记录：2026-07-11 已新增公共示例数据模块 `sample-data.js`，首批集中管理 SQL 默认示例和 Cron Linux/Quartz 示例；`sql-formatter.html` 与 `cron-parser.html` 已接入模块，并新增 `tests/sample-data.test.cjs` 覆盖样例读取和页面接入。
 
 ### TODO-IDEA-003：浏览器端冒烟测试
 

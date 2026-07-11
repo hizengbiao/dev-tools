@@ -9,6 +9,7 @@
     <script src="nav.js" defer></script>
     <script src="changelog.js"></script>
     <script src="clipboard-utils.js"></script>
+    <script src="sample-data.js"></script>
     <script src="cron-parser.js"></script>
     <style>
         :root {
@@ -282,7 +283,7 @@
                 <h2>表达式</h2>
             </div>
             <div class="input-row">
-                <input id="cron-input" value="*/30 * * * *" placeholder="例如 */30 * * * * 或 0 0 12 * * ?">
+                <input id="cron-input" placeholder="例如 */30 * * * * 或 0 0 12 * * ?">
                 <input id="count-input" type="number" min="1" max="50" value="10" title="输出次数">
             </div>
             <div class="actions">
@@ -349,11 +350,11 @@
 
         document.getElementById('parse-btn').addEventListener('click', parseCron);
         document.getElementById('sample-linux-btn').addEventListener('click', () => {
-            cronInput.value = '*/30 * * * *';
+            cronInput.value = SampleData.getSample('cron.linuxEveryThirtyMinutes');
             parseCron();
         });
         document.getElementById('sample-quartz-btn').addEventListener('click', () => {
-            cronInput.value = '0 0 12 * * ?';
+            cronInput.value = SampleData.getSample('cron.quartzDailyNoon');
             parseCron();
         });
         document.getElementById('copy-result-btn').addEventListener('click', () => {
@@ -363,6 +364,7 @@
             }
             ClipboardUtils.copyText(currentRuns.map((date) => date.toISOString()).join('\n'), { successMessage: '执行时间已复制' });
         });
+        cronInput.value = SampleData.getSample('cron.linuxEveryThirtyMinutes');
         parseCron();
     </script>
 </body>

@@ -9,6 +9,7 @@
     <script src="nav.js" defer></script>
     <script src="changelog.js"></script>
     <script src="clipboard-utils.js"></script>
+    <script src="sample-data.js"></script>
     <script src="sql-formatter.js"></script>
     <style>
         :root {
@@ -269,7 +270,7 @@
                     <h2>输入 SQL</h2>
                     <button class="btn btn-danger" id="clear-btn">清空</button>
                 </div>
-                <textarea id="sql-input" spellcheck="false">select id,name from users where id=? and status=:status order by created_at desc</textarea>
+                <textarea id="sql-input" spellcheck="false"></textarea>
                 <div class="actions">
                     <button class="btn btn-primary" id="format-btn">格式化</button>
                     <button class="btn" id="compress-btn">压缩单行</button>
@@ -393,6 +394,7 @@
         document.getElementById('copy-placeholders-btn').addEventListener('click', () => copyText(placeholderOutput.textContent));
         inputEl.addEventListener('input', refreshMeta);
 
+        inputEl.value = SampleData.getSample('sql.basicSelect');
         runFormat();
     </script>
 </body>
