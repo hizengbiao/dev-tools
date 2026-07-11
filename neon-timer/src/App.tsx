@@ -1,5 +1,5 @@
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import './index.css';
 import { BigTimeDisplay } from './components/BigTimeDisplay';
 import { TimeInputHHMMSS } from './components/TimeInputHHMMSS';
@@ -18,6 +18,7 @@ function App() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [notificationEnabled, setNotificationEnabled] = useState(false);
   const [notificationStatus, setNotificationStatus] = useState<TimerNotificationStatus>(() => getNotificationPermission());
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const handleTimerEnd = useCallback(() => {
     if (soundEnabled) {
       playTimerEndSound();
@@ -56,6 +57,49 @@ function App() {
   }, []);
 
   const showInput = mode === 'countdown' && status === 'idle';
+  const toggleFullscreen = useCallback(async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) {
+        return;
+      }
+
+      if (event.code === 'Space') {
+        event.preventDefault();
+        if (status === 'running') {
+          pause();
+        } else {
+          start();
+        }
+      } else if (event.key.toLowerCase() === 'r') {
+        reset();
+      } else if (event.key.toLowerCase() === 'f') {
+        void toggleFullscreen();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [pause, reset, start, status, toggleFullscreen]);
 
   return (
     <>
@@ -66,10 +110,15 @@ function App() {
       <div style={{
         display: 'flex',
         flexDirection: 'column',
-        height: 'calc(100vh - 80px)',
+        height: isFullscreen ? '100vh' : 'calc(100vh - 80px)',
         justifyContent: 'space-between'
       }}>
-        <TopBar mode={mode} onSetMode={setMode} />
+        <TopBar
+          mode={mode}
+          isFullscreen={isFullscreen}
+          onSetMode={setMode}
+          onToggleFullscreen={() => void toggleFullscreen()}
+        />
 
         <div className="flex-center" style={{ flex: 1 }}>
           {showInput ? (

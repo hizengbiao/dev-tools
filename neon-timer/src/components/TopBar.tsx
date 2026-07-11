@@ -5,10 +5,12 @@ import type { TimerMode } from '../hooks/useTimerEngine';
 
 interface TopBarProps {
     mode?: TimerMode;
+    isFullscreen?: boolean;
     onSetMode?: (mode: TimerMode) => void;
+    onToggleFullscreen?: () => void;
 }
 
-export const TopBar: FC<TopBarProps> = ({ mode = 'stopwatch', onSetMode }) => {
+export const TopBar: FC<TopBarProps> = ({ mode = 'stopwatch', isFullscreen = false, onSetMode, onToggleFullscreen }) => {
     const [isChangelogOpen, setIsChangelogOpen] = useState(false);
 
     const linkStyle = (targetMode: TimerMode) => ({
@@ -55,6 +57,24 @@ export const TopBar: FC<TopBarProps> = ({ mode = 'stopwatch', onSetMode }) => {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <button
+                        type="button"
+                        onClick={onToggleFullscreen}
+                        title="Toggle fullscreen (F)"
+                        style={{
+                            border: '1px solid rgba(255, 255, 255, 0.18)',
+                            borderRadius: '999px',
+                            background: isFullscreen ? 'rgba(255, 0, 255, 0.16)' : 'rgba(255,255,255,0.04)',
+                            color: isFullscreen ? 'var(--neon-magenta)' : '#b7d8e0',
+                            cursor: 'pointer',
+                            font: 'inherit',
+                            fontSize: '0.76rem',
+                            letterSpacing: '0.05em',
+                            padding: '0.25rem 0.65rem'
+                        }}
+                    >
+                        {isFullscreen ? 'EXIT FULL' : 'FULLSCREEN'}
+                    </button>
                     <div style={{ opacity: 0.5, cursor: 'not-allowed' }}>SETTINGS</div>
                     <button
                         type="button"
@@ -74,7 +94,7 @@ export const TopBar: FC<TopBarProps> = ({ mode = 'stopwatch', onSetMode }) => {
                             boxShadow: '0 0 12px rgba(0, 229, 255, 0.18)'
                         }}
                     >
-                        V1.03
+                        V1.04
                     </button>
                 </div>
             </div>
@@ -143,6 +163,17 @@ export const TopBar: FC<TopBarProps> = ({ mode = 'stopwatch', onSetMode }) => {
                                 fontWeight: 700
                             }}>
                                 2026年7月11日
+                            </div>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', fontSize: '14px', marginBottom: '12px' }}>
+                                <div style={{
+                                    flex: '0 0 56px',
+                                    color: 'var(--neon-cyan)',
+                                    fontWeight: 800,
+                                    textShadow: '0 0 8px rgba(0, 229, 255, 0.75)'
+                                }}>
+                                    V1.04
+                                </div>
+                                <div>优化全屏展示，新增全屏切换按钮，并支持空格开始/暂停、R 重置、F 切换全屏。</div>
                             </div>
                             <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', fontSize: '14px', marginBottom: '12px' }}>
                                 <div style={{
