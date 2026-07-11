@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL 格式化/压缩工具</title>
+    <link rel="stylesheet" href="nav.css">
+    <script src="nav.js" defer></script>
+    <script src="changelog.js"></script>
+    <script src="clipboard-utils.js"></script>
+    <script src="sql-formatter.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f6f8;
+            --panel-bg: #ffffff;
+            --border-color: #d0d7de;
+            --text-color: #24292f;
+            --muted-color: #57606a;
+            --accent-color: #0969da;
+            --danger-color: #cf222e;
+            --code-bg: #f6f8fa;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 18px;
+            min-height: 100vh;
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        }
+
+        button,
+        textarea,
+        input {
+            font: inherit;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        .tool-title,
+        .panel-header,
+        .actions,
+        .summary-grid,
+        .list-actions {
+            display: flex;
+            align-items: center;
+        }
+
+        .tool-title {
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .version-info {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 999px;
+            background: #f6f8fa;
+            color: var(--muted-color);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .version-info:hover {
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+            background: #ddf4ff;
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: minmax(420px, 1fr) minmax(420px, 1fr);
+            gap: 16px;
+        }
+
+        .panel {
+            min-width: 0;
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--panel-bg);
+            box-shadow: 0 1px 3px rgba(27, 31, 36, 0.06);
+        }
+
+        .panel-header {
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .panel-header h2 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 430px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-color);
+            background: #fff;
+            resize: vertical;
+            line-height: 1.55;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 13px;
+        }
+
+        textarea:focus,
+        input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
+        }
+
+        .actions {
+            justify-content: center;
+            gap: 10px;
+            margin: 14px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 13px;
+            border: 1px solid rgba(27, 31, 36, 0.15);
+            border-radius: 6px;
+            background: #fff;
+            color: var(--text-color);
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #f3f4f6;
+        }
+
+        .btn-primary {
+            border-color: var(--accent-color);
+            background: var(--accent-color);
+            color: #fff;
+        }
+
+        .btn-danger {
+            border-color: var(--danger-color);
+            color: var(--danger-color);
+        }
+
+        .summary-grid {
+            align-items: stretch;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .metric {
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--code-bg);
+        }
+
+        .metric-label {
+            margin-bottom: 6px;
+            color: var(--muted-color);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .metric-value {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .details {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .list-panel {
+            padding: 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--panel-bg);
+        }
+
+        .list-actions {
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .list-actions h2 {
+            margin: 0;
+            font-size: 15px;
+        }
+
+        .list-output {
+            min-height: 92px;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--code-bg);
+            color: var(--text-color);
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 13px;
+        }
+
+        .hint {
+            margin-top: 8px;
+            color: var(--muted-color);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 960px) {
+            .workspace,
+            .details {
+                grid-template-columns: 1fr;
+            }
+
+            textarea {
+                min-height: 260px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="container">
+        <div class="tool-title">
+            <h1>SQL 格式化/压缩工具</h1>
+            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明">
+                <span>V1.00</span>
+                <span>ℹ️</span>
+            </div>
+        </div>
+
+        <section class="workspace">
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>输入 SQL</h2>
+                    <button class="btn btn-danger" id="clear-btn">清空</button>
+                </div>
+                <textarea id="sql-input" spellcheck="false">select id,name from users where id=? and status=:status order by created_at desc</textarea>
+                <div class="actions">
+                    <button class="btn btn-primary" id="format-btn">格式化</button>
+                    <button class="btn" id="compress-btn">压缩单行</button>
+                    <button class="btn" id="copy-output-btn">复制结果</button>
+                </div>
+                <div class="hint">支持常见 SELECT / INSERT / UPDATE / DELETE。表名和参数占位符会随输入自动提取，不影响格式化结果。</div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>处理结果</h2>
+                    <button class="btn" id="swap-btn">结果回填输入</button>
+                </div>
+                <textarea id="sql-output" spellcheck="false" readonly></textarea>
+                <div class="summary-grid">
+                    <div class="metric">
+                        <div class="metric-label">表名数量</div>
+                        <div class="metric-value" id="table-count">0</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">占位符数量</div>
+                        <div class="metric-value" id="placeholder-count">0</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">输出字符数</div>
+                        <div class="metric-value" id="char-count">0</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="details">
+            <div class="list-panel">
+                <div class="list-actions">
+                    <h2>表名提取</h2>
+                    <button class="btn" id="copy-tables-btn">复制表名</button>
+                </div>
+                <div class="list-output" id="table-output"></div>
+                <div class="hint">从 FROM、JOIN、UPDATE、INSERT INTO 中提取，重复表名会自动去重。</div>
+            </div>
+            <div class="list-panel">
+                <div class="list-actions">
+                    <h2>占位符提取</h2>
+                    <button class="btn" id="copy-placeholders-btn">复制占位符</button>
+                </div>
+                <div class="list-output" id="placeholder-output"></div>
+                <div class="hint">支持 ?、:name、$1、#{name}、${name} 这几类常见参数占位符。</div>
+            </div>
+        </section>
+    </main>
+
+    <div id="changelog-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🚀 版本更新说明</h3>
+                <span class="close" onclick="hideChangelog()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="changelog-entry">
+                    <div class="changelog-date">2026年7月11日</div>
+                    <div class="changelog-item">
+                        <div class="changelog-version">V1.00</div>
+                        <div class="changelog-description">版本初始化：新增 SQL 格式化、压缩、表名提取和占位符提取能力。</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const inputEl = document.getElementById('sql-input');
+        const outputEl = document.getElementById('sql-output');
+        const tableOutput = document.getElementById('table-output');
+        const placeholderOutput = document.getElementById('placeholder-output');
+        const tableCount = document.getElementById('table-count');
+        const placeholderCount = document.getElementById('placeholder-count');
+        const charCount = document.getElementById('char-count');
+
+        function copyText(text) {
+            if (window.ClipboardUtils && ClipboardUtils.copyText) {
+                ClipboardUtils.copyText(text);
+                return;
+            }
+            navigator.clipboard.writeText(text);
+        }
+
+        function refreshMeta() {
+            const input = inputEl.value;
+            const tables = SqlFormatter.extractTableNames(input);
+            const placeholders = SqlFormatter.extractPlaceholders(input);
+            tableOutput.textContent = tables.length ? tables.join('\n') : '未识别到表名';
+            placeholderOutput.textContent = placeholders.length ? placeholders.join('\n') : '未识别到占位符';
+            tableCount.textContent = String(tables.length);
+            placeholderCount.textContent = String(placeholders.length);
+            charCount.textContent = String(outputEl.value.length);
+        }
+
+        function runFormat() {
+            outputEl.value = SqlFormatter.formatSql(inputEl.value);
+            refreshMeta();
+        }
+
+        function runCompress() {
+            outputEl.value = SqlFormatter.compressSql(inputEl.value);
+            refreshMeta();
+        }
+
+        document.getElementById('format-btn').addEventListener('click', runFormat);
+        document.getElementById('compress-btn').addEventListener('click', runCompress);
+        document.getElementById('clear-btn').addEventListener('click', () => {
+            inputEl.value = '';
+            outputEl.value = '';
+            refreshMeta();
+        });
+        document.getElementById('swap-btn').addEventListener('click', () => {
+            inputEl.value = outputEl.value;
+            runFormat();
+        });
+        document.getElementById('copy-output-btn').addEventListener('click', () => copyText(outputEl.value));
+        document.getElementById('copy-tables-btn').addEventListener('click', () => copyText(tableOutput.textContent));
+        document.getElementById('copy-placeholders-btn').addEventListener('click', () => copyText(placeholderOutput.textContent));
+        inputEl.addEventListener('input', refreshMeta);
+
+        runFormat();
+    </script>
+</body>
+
+</html>
