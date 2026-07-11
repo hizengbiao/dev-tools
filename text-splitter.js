@@ -113,6 +113,29 @@
         return segments;
     }
 
+    function renderTemplate(template, index, total) {
+        return String(template ?? '')
+            .replaceAll('{index}', String(index))
+            .replaceAll('{total}', String(total));
+    }
+
+    function applySegmentTemplates(segments, options = {}) {
+        const list = Array.from(segments ?? []);
+        const total = list.length;
+        const prefix = options.prefix ?? '';
+        const suffix = options.suffix ?? '';
+        return list.map((segment, index) => (
+            `${renderTemplate(prefix, index + 1, total)}${segment}${renderTemplate(suffix, index + 1, total)}`
+        ));
+    }
+
+    function getCopySegments(segments, options = {}) {
+        if (options.includeTemplateInCopy) {
+            return applySegmentTemplates(segments, options);
+        }
+        return Array.from(segments ?? []);
+    }
+
     function getClipboardHistoryWriteOrder(segments) {
         return Array.from(segments ?? []).reverse();
     }
@@ -122,6 +145,9 @@
         countCharacters,
         estimateTokens,
         splitTextByEstimatedTokens,
+        renderTemplate,
+        applySegmentTemplates,
+        getCopySegments,
         getClipboardHistoryWriteOrder,
     };
 });

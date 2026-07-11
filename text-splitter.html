@@ -108,18 +108,21 @@
         }
 
         .limit-control,
+        .template-control,
         .toolbar-actions {
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        .limit-control label {
+        .limit-control label,
+        .template-control label {
             font-size: 14px;
             font-weight: 600;
         }
 
-        .limit-control input {
+        .limit-control input,
+        .template-control input[type="text"] {
             width: 116px;
             padding: 8px 10px;
             border: 1px solid var(--border-color);
@@ -127,9 +130,27 @@
             outline: none;
         }
 
-        .limit-control input:focus {
+        .template-control input[type="text"] {
+            width: 190px;
+        }
+
+        .limit-control input:focus,
+        .template-control input[type="text"]:focus {
             border-color: var(--accent-color);
             box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
+        }
+
+        .template-control {
+            flex-wrap: wrap;
+        }
+
+        .template-checkbox {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--muted-color);
+            font-size: 13px;
+            font-weight: 600;
         }
 
         .hint {
@@ -544,7 +565,7 @@
         <div class="tool-title">
             <h1>文本智能拆分</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.04</span>
+                <span>V1.05</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -560,6 +581,16 @@
                     <label for="maxLength">每段最大长度</label>
                     <input id="maxLength" type="number" min="1" step="1" value="2950">
                     <span class="hint">优先在靠近上限的换行、标点或单词空格处拆分</span>
+                </div>
+                <div class="template-control">
+                    <label for="prefixTemplate">分段前缀</label>
+                    <input id="prefixTemplate" type="text" value="" placeholder="第 {index}/{total} 段：">
+                    <label for="suffixTemplate">分段后缀</label>
+                    <input id="suffixTemplate" type="text" value="" placeholder="例如：\n---">
+                    <label class="template-checkbox">
+                        <input id="includeTemplateInCopy" type="checkbox">
+                        复制时包含模板
+                    </label>
                 </div>
                 <div class="toolbar-actions">
                     <button class="btn btn-primary" id="splitBtn" type="button">开始拆分</button>
@@ -604,7 +635,11 @@
                 <button class="close-modal" type="button" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="changelog-date">2026年7月10日</div>
+                <div class="changelog-date">2026年7月11日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.05</div>
+                    <div>新增分段前缀/后缀模板，支持 {index}、{total} 变量，并可选择复制时是否包含模板。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.04</div>
                     <div>新增 Token 估算拆分模式，可在字符长度和 token 估算之间切换，并在结果中显示每段字符数和估算 token 数。</div>
@@ -652,12 +687,16 @@
         const inputLineNumbers = document.getElementById('inputLineNumbers');
         const splitMode = document.getElementById('splitMode');
         const maxLength = document.getElementById('maxLength');
+        const prefixTemplate = document.getElementById('prefixTemplate');
+        const suffixTemplate = document.getElementById('suffixTemplate');
+        const includeTemplateInCopy = document.getElementById('includeTemplateInCopy');
         const resultList = document.getElementById('resultList');
         const inputStats = document.getElementById('inputStats');
         const resultStats = document.getElementById('resultStats');
         const copyAllBtn = document.getElementById('copyAllBtn');
         const copyHistoryBtn = document.getElementById('copyHistoryBtn');
         let currentSegments = [];
+        let currentDisplaySegments = [];
         let toastTimer;
 
         function escapeHtml(value) {
@@ -699,8 +738,19 @@
             inputLineNumbers.textContent = buildLineNumbers(inputText.value);
         }
 
+        function getTemplateOptions() {
+            return {
+                prefix: prefixTemplate.value,
+                suffix: suffixTemplate.value,
+                includeTemplateInCopy: includeTemplateInCopy.checked
+            };
+        }
+
         function renderResults(segments) {
             currentSegments = segments;
+            currentDisplaySegments = includeTemplateInCopy.checked
+                ? TextSplitter.applySegmentTemplates(segments, getTemplateOptions())
+                : segments;
             resultStats.textContent = `${segments.length} 段`;
             copyAllBtn.disabled = segments.length === 0;
             copyHistoryBtn.disabled = segments.length === 0;
@@ -710,7 +760,7 @@
                 return;
             }
 
-            resultList.innerHTML = segments.map((segment, index) => `
+            resultList.innerHTML = currentDisplaySegments.map((segment, index) => `
                 <article class="result-item">
                     <div class="result-header">
                         <div class="result-meta">
@@ -794,7 +844,8 @@
                 return;
             }
 
-            const writeOrder = TextSplitter.getClipboardHistoryWriteOrder(currentSegments);
+            const copySegments = TextSplitter.getCopySegments(currentSegments, getTemplateOptions());
+            const writeOrder = TextSplitter.getClipboardHistoryWriteOrder(copySegments);
             const originalText = copyHistoryBtn.textContent;
             copyHistoryBtn.disabled = true;
             copyAllBtn.disabled = true;
@@ -853,12 +904,24 @@
                 return;
             }
             const index = Number(button.dataset.index);
-            copyText(currentSegments[index], `第 ${index + 1} 段已复制`);
+            copyText(TextSplitter.getCopySegments(currentSegments, getTemplateOptions())[index], `第 ${index + 1} 段已复制`);
         });
         copyAllBtn.addEventListener('click', () => {
-            copyText(currentSegments.join('\n\n'), '全部分段已复制');
+            copyText(TextSplitter.getCopySegments(currentSegments, getTemplateOptions()).join('\n\n'), '全部分段已复制');
         });
         copyHistoryBtn.addEventListener('click', copySegmentsToHistory);
+        [prefixTemplate, suffixTemplate, includeTemplateInCopy].forEach((control) => {
+            control.addEventListener('input', () => {
+                if (currentSegments.length) {
+                    renderResults(currentSegments);
+                }
+            });
+            control.addEventListener('change', () => {
+                if (currentSegments.length) {
+                    renderResults(currentSegments);
+                }
+            });
+        });
 
         window.addEventListener('click', (event) => {
             const previewModal = document.getElementById('segment-preview-modal');
