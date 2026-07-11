@@ -3,10 +3,11 @@ import type { TimerStatus } from './BigTimeDisplay';
 
 import { PRESETS } from '../lib/presets';
 import type { TimerNotificationStatus } from '../lib/alerts';
+import type { PomodoroPhase, TimerMode } from '../hooks/useTimerEngine';
 
 interface ControlsPanelProps {
     status: TimerStatus;
-    mode: 'stopwatch' | 'countdown';
+    mode: TimerMode;
     onStart: () => void;
     onPause: () => void;
     onReset: () => void;
@@ -14,6 +15,11 @@ interface ControlsPanelProps {
     soundEnabled: boolean;
     notificationEnabled: boolean;
     notificationStatus: TimerNotificationStatus;
+    pomodoroPhase: PomodoroPhase;
+    pomodoroWorkMs: number;
+    pomodoroBreakMs: number;
+    onPomodoroWorkMsChange: (ms: number) => void;
+    onPomodoroBreakMsChange: (ms: number) => void;
     onSoundEnabledChange: (enabled: boolean) => void;
     onNotificationEnabledChange: (enabled: boolean) => void | Promise<void>;
 }
@@ -28,6 +34,11 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
     soundEnabled,
     notificationEnabled,
     notificationStatus,
+    pomodoroPhase,
+    pomodoroWorkMs,
+    pomodoroBreakMs,
+    onPomodoroWorkMsChange,
+    onPomodoroBreakMsChange,
     onSoundEnabledChange,
     onNotificationEnabledChange
 }) => {
@@ -40,6 +51,8 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
             : notificationStatus === 'granted'
                 ? 'Notification will appear when countdown ends.'
                 : 'Enable to request browser notification permission.';
+    const minutesFromMs = (ms: number) => Math.max(1, Math.round(ms / 60000));
+    const msFromMinutes = (minutes: number) => Math.max(1, minutes) * 60 * 1000;
 
     return (
         <div style={{
@@ -82,6 +95,45 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                             {preset.label}
                         </button>
                     ))}
+                </div>
+            )}
+
+            {mode === 'pomodoro' && (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    marginBottom: '1rem',
+                    color: 'var(--neon-cyan)',
+                    textShadow: '0 0 8px rgba(0, 229, 255, 0.65)',
+                    letterSpacing: '0.08em'
+                }}>
+                    <div>{pomodoroPhase === 'work' ? 'WORK SESSION' : 'BREAK SESSION'}</div>
+                    {status === 'idle' && (
+                        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: 'var(--muted)' }}>
+                                WORK MIN
+                                <input
+                                    type="number"
+                                    min={1}
+                                    value={minutesFromMs(pomodoroWorkMs)}
+                                    onChange={(event) => onPomodoroWorkMsChange(msFromMinutes(Number(event.currentTarget.value) || 1))}
+                                    style={{ width: '72px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--muted)', color: '#fff', padding: '0.25rem 0.5rem' }}
+                                />
+                            </label>
+                            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: 'var(--muted)' }}>
+                                BREAK MIN
+                                <input
+                                    type="number"
+                                    min={1}
+                                    value={minutesFromMs(pomodoroBreakMs)}
+                                    onChange={(event) => onPomodoroBreakMsChange(msFromMinutes(Number(event.currentTarget.value) || 1))}
+                                    style={{ width: '72px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--muted)', color: '#fff', padding: '0.25rem 0.5rem' }}
+                                />
+                            </label>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -142,7 +194,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                 </button>
             </div>
 
-            {mode === 'countdown' && (
+            {(mode === 'countdown' || mode === 'pomodoro') && (
                 <div style={{
                     display: 'flex',
                     gap: '1rem',

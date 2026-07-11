@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-export type TimerMode = 'stopwatch' | 'countdown';
+export type TimerMode = 'stopwatch' | 'countdown' | 'pomodoro';
 export type TimerStatus = 'idle' | 'running' | 'paused' | 'ended';
+export type PomodoroPhase = 'work' | 'break';
 
 interface UseTimerEngineProps {
     initialMode?: TimerMode;
     defaultCountdownMs?: number; // default 5 minutes
+    defaultPomodoroWorkMs?: number;
+    defaultPomodoroBreakMs?: number;
     onTick?: (ms: number) => void;
     onEnd?: () => void;
 }
@@ -13,13 +16,20 @@ interface UseTimerEngineProps {
 export function useTimerEngine({
     initialMode = 'stopwatch',
     defaultCountdownMs = 300000,
+    defaultPomodoroWorkMs = 25 * 60 * 1000,
+    defaultPomodoroBreakMs = 5 * 60 * 1000,
     onTick,
     onEnd
 }: UseTimerEngineProps = {}) {
     const [mode, setMode] = useState<TimerMode>(initialMode);
     const [status, setStatus] = useState<TimerStatus>('idle');
-    const [timeMs, setTimeMs] = useState<number>(initialMode === 'stopwatch' ? 0 : defaultCountdownMs);
+    const [timeMs, setTimeMs] = useState<number>(
+        initialMode === 'stopwatch' ? 0 : initialMode === 'pomodoro' ? defaultPomodoroWorkMs : defaultCountdownMs
+    );
     const [countdownInputMs, setCountdownInputMs] = useState<number>(defaultCountdownMs);
+    const [pomodoroPhase, setPomodoroPhase] = useState<PomodoroPhase>('work');
+    const [pomodoroWorkMs, setPomodoroWorkMs] = useState<number>(defaultPomodoroWorkMs);
+    const [pomodoroBreakMs, setPomodoroBreakMs] = useState<number>(defaultPomodoroBreakMs);
 
     // Refs for animation loop
 
@@ -33,10 +43,12 @@ export function useTimerEngine({
 
         if (mode === 'stopwatch') {
             setTimeMs(0);
+        } else if (mode === 'pomodoro') {
+            setTimeMs(pomodoroPhase === 'work' ? pomodoroWorkMs : pomodoroBreakMs);
         } else {
             setTimeMs(countdownInputMs);
         }
-    }, [mode, countdownInputMs]);
+    }, [mode, countdownInputMs, pomodoroBreakMs, pomodoroPhase, pomodoroWorkMs]);
 
     // Handle mode switch safely
     const switchMode = useCallback((newMode: TimerMode) => {
@@ -55,11 +67,14 @@ export function useTimerEngine({
 
         if (newMode === 'stopwatch') {
             setTimeMs(0);
-        } else {
+        } else if (newMode === 'countdown') {
             // If switching to countdown, use existing input or default
             setTimeMs(countdownInputMs);
+        } else {
+            setPomodoroPhase('work');
+            setTimeMs(pomodoroWorkMs);
         }
-    }, [countdownInputMs]);
+    }, [countdownInputMs, pomodoroWorkMs]);
 
     // Sync timeMs with countdownInputMs when idle in countdown mode
     useEffect(() => {
@@ -67,6 +82,12 @@ export function useTimerEngine({
             setTimeMs(countdownInputMs);
         }
     }, [countdownInputMs, mode, status]);
+
+    useEffect(() => {
+        if (mode === 'pomodoro' && status === 'idle') {
+            setTimeMs(pomodoroPhase === 'work' ? pomodoroWorkMs : pomodoroBreakMs);
+        }
+    }, [mode, pomodoroBreakMs, pomodoroPhase, pomodoroWorkMs, status]);
 
 
     // startTimeRef and pausedTimeRef are removed as we use anchorTimeRef/durationAtStartRef
@@ -94,15 +115,26 @@ export function useTimerEngine({
             if (remaining <= 0) {
                 setTimeMs(0);
                 onTick?.(0);
-                setStatus('ended');
                 onEnd?.();
+                if (mode === 'pomodoro') {
+                    const nextPhase = pomodoroPhase === 'work' ? 'break' : 'work';
+                    const nextDuration = nextPhase === 'work' ? pomodoroWorkMs : pomodoroBreakMs;
+                    setPomodoroPhase(nextPhase);
+                    setTimeMs(nextDuration);
+                    setStatus('running');
+                    anchorTimeRef.current = performance.now();
+                    durationAtStartRef.current = nextDuration;
+                    animationFrameRef.current = requestAnimationFrame(loop);
+                } else {
+                    setStatus('ended');
+                }
             } else {
                 setTimeMs(remaining);
                 onTick?.(remaining);
                 animationFrameRef.current = requestAnimationFrame(loop);
             }
         }
-    }, [mode, onEnd, onTick]);
+    }, [mode, onEnd, onTick, pomodoroBreakMs, pomodoroPhase, pomodoroWorkMs]);
 
 
     const start = useCallback(() => {
@@ -143,6 +175,11 @@ export function useTimerEngine({
         timeMs,
         countdownInputMs,
         setCountdownInputMs, // User typing new duration
+        pomodoroPhase,
+        pomodoroWorkMs,
+        setPomodoroWorkMs,
+        pomodoroBreakMs,
+        setPomodoroBreakMs,
         start,
         pause,
         reset

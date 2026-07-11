@@ -34,6 +34,11 @@ function App() {
     setMode,
     countdownInputMs,
     setCountdownInputMs,
+    pomodoroPhase,
+    pomodoroWorkMs,
+    setPomodoroWorkMs,
+    pomodoroBreakMs,
+    setPomodoroBreakMs,
     start,
     pause,
     reset
@@ -87,6 +92,11 @@ function App() {
           soundEnabled={soundEnabled}
           notificationEnabled={notificationEnabled}
           notificationStatus={notificationStatus}
+          pomodoroPhase={pomodoroPhase}
+          pomodoroWorkMs={pomodoroWorkMs}
+          pomodoroBreakMs={pomodoroBreakMs}
+          onPomodoroWorkMsChange={setPomodoroWorkMs}
+          onPomodoroBreakMsChange={setPomodoroBreakMs}
           onSoundEnabledChange={setSoundEnabled}
           onNotificationEnabledChange={handleNotificationEnabledChange}
         />
