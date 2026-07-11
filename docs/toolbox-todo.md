@@ -683,11 +683,11 @@
 
 ### TODO-IDEA-001：本地配置统一导入导出
 
-- 状态：`[ ]`
+- 状态：`[x]`
 - 优先级：`P3`
 - 类型：候选增强
 - 目标：为会保存本地配置的工具提供统一导入/导出能力，例如映射配置、拆分配置、正则模板。
-- 完成记录：待填写。
+- 完成记录：2026-07-11 已新增工具配置管理页 `tool-config-manager.html` 和公共配置注册表 `tool-config-manager.js`，支持导出/导入本地配置 JSON，首批接入文本转义变量映射配置；已同步导航、首页、README、DEVELOPMENT，并新增 `tests/tool-config-manager.test.cjs`。
 
 ### TODO-IDEA-002：示例数据统一管理
 

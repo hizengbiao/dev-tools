@@ -15,6 +15,7 @@
         { name: '文本转义', path: 'text_escape_formatter_final.html', icon: '↔️' },
         { name: '文本拆分', path: 'text-splitter.html', icon: '✂️' },
         { name: '正则测试', path: 'regex-tester.html', icon: '🔎' },
+        { name: '配置管理', path: 'tool-config-manager.html', icon: '⚙️' },
         { name: 'Neon Timer', path: 'neon-timer/dist/index.html', icon: '⏲️' }
     ];
 
