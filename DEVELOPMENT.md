@@ -20,6 +20,7 @@
 | **Base64 编解码** | `base64-encoder.html` | 文本与文件的 Base64 转换。 | Vanilla JS |
 | **哈希/摘要工具** | `hash-generator.html` | 文本与文件摘要计算，支持 MD5、SHA-1、SHA-256、SHA-512 和摘要比对。 | Vanilla JS |
 | **JWT 解析工具** | `jwt-decoder.html` | 本地解析 JWT Header、Payload 和时间字段，不做签名可信校验。 | Vanilla JS |
+| **UUID / 随机值生成器** | `random-generator.html` | 生成 UUID v4、随机字符串、随机数字和密码，支持批量复制。 | Vanilla JS |
 | **命名转换** | `text-case-converter.html` | 大小写、蛇形、驼峰、短横线等变量命名格式互转。 | Vanilla JS |
 | **文本转义转换工具** | `text_escape_formatter_final.html` | 转义文本与可读文本互转、拼接字符串合并和输入输出差异对比。 | Vanilla JS |
 | **文本智能拆分** | `text-splitter.html` | 按指定长度智能拆分文本，优先保留自然边界并支持逐段复制。 | Vanilla JS |
