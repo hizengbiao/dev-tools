@@ -189,6 +189,25 @@
             font-size: 12px;
         }
 
+        .validation-status {
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: #f6f8fa;
+            color: var(--muted-color);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .validation-status.ok {
+            background: #dafbe1;
+            color: #116329;
+        }
+
+        .validation-status.error {
+            background: #ffebe9;
+            color: #cf222e;
+        }
+
         .editor-shell {
             width: 100%;
             height: 570px;
@@ -565,7 +584,7 @@
         <div class="tool-title">
             <h1>文本智能拆分</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.06</span>
+                <span>V1.07</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -599,6 +618,10 @@
                         <input id="includeTemplateInCopy" type="checkbox">
                         复制时包含模板
                     </label>
+                    <label class="template-checkbox">
+                        <input id="includeTemplateInValidation" type="checkbox">
+                        校验时包含模板
+                    </label>
                 </div>
                 <div class="toolbar-actions">
                     <button class="btn btn-primary" id="splitBtn" type="button">开始拆分</button>
@@ -623,6 +646,7 @@
                         <h2>拆分结果</h2>
                         <div class="result-summary-actions">
                             <span class="stats" id="resultStats">0 段</span>
+                            <span class="validation-status" id="mergeValidationStatus">未校验</span>
                             <button class="btn btn-small" id="copyAllBtn" type="button" disabled>复制全部分段</button>
                             <button class="btn btn-small" id="copyHistoryBtn" type="button" disabled
                                 title="按相反顺序逐段写入剪切板，使 Win + V 中从上到下按第 1 段开始排列">逐段加入剪切板历史</button>
@@ -644,6 +668,10 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date">2026年7月11日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.07</div>
+                    <div>新增分段合并校验，自动检查拆分结果按顺序合并后是否与原文一致，并在失败时提示首个差异位置。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.06</div>
                     <div>新增拆分策略选择，支持智能边界、按行、按段落、按句子和硬字符拆分，超长单元会自动兜底拆分。</div>
@@ -704,9 +732,11 @@
         const prefixTemplate = document.getElementById('prefixTemplate');
         const suffixTemplate = document.getElementById('suffixTemplate');
         const includeTemplateInCopy = document.getElementById('includeTemplateInCopy');
+        const includeTemplateInValidation = document.getElementById('includeTemplateInValidation');
         const resultList = document.getElementById('resultList');
         const inputStats = document.getElementById('inputStats');
         const resultStats = document.getElementById('resultStats');
+        const mergeValidationStatus = document.getElementById('mergeValidationStatus');
         const copyAllBtn = document.getElementById('copyAllBtn');
         const copyHistoryBtn = document.getElementById('copyHistoryBtn');
         let currentSegments = [];
@@ -756,7 +786,8 @@
             return {
                 prefix: prefixTemplate.value,
                 suffix: suffixTemplate.value,
-                includeTemplateInCopy: includeTemplateInCopy.checked
+                includeTemplateInCopy: includeTemplateInCopy.checked,
+                includeTemplateInValidation: includeTemplateInValidation.checked
             };
         }
 
@@ -771,6 +802,25 @@
             strategyHint.textContent = descriptions[splitStrategy.value] || descriptions.smart;
         }
 
+        function updateMergeValidation() {
+            if (!currentSegments.length) {
+                mergeValidationStatus.textContent = '未校验';
+                mergeValidationStatus.className = 'validation-status';
+                return;
+            }
+
+            const validation = TextSplitter.validateMergedSegments(inputText.value, currentSegments, getTemplateOptions());
+            if (validation.ok) {
+                mergeValidationStatus.textContent = `校验通过：合并后 ${validation.mergedLength} 字符`;
+                mergeValidationStatus.className = 'validation-status ok';
+                return;
+            }
+
+            const position = validation.difference ? validation.difference.index + 1 : 1;
+            mergeValidationStatus.textContent = `校验失败：第 ${position} 个字符不一致`;
+            mergeValidationStatus.className = 'validation-status error';
+        }
+
         function renderResults(segments) {
             currentSegments = segments;
             currentDisplaySegments = includeTemplateInCopy.checked
@@ -779,6 +829,7 @@
             resultStats.textContent = `${segments.length} 段`;
             copyAllBtn.disabled = segments.length === 0;
             copyHistoryBtn.disabled = segments.length === 0;
+            updateMergeValidation();
 
             if (!segments.length) {
                 resultList.innerHTML = '<div class="empty-state">暂无可拆分的文本</div>';
@@ -937,7 +988,7 @@
             copyText(TextSplitter.getCopySegments(currentSegments, getTemplateOptions()).join('\n\n'), '全部分段已复制');
         });
         copyHistoryBtn.addEventListener('click', copySegmentsToHistory);
-        [prefixTemplate, suffixTemplate, includeTemplateInCopy].forEach((control) => {
+        [prefixTemplate, suffixTemplate, includeTemplateInCopy, includeTemplateInValidation].forEach((control) => {
             control.addEventListener('input', () => {
                 if (currentSegments.length) {
                     renderResults(currentSegments);

@@ -239,6 +239,37 @@
         return Array.from(segments ?? []);
     }
 
+    function findFirstDifference(left, right) {
+        const leftChars = Array.from(String(left ?? ''));
+        const rightChars = Array.from(String(right ?? ''));
+        const length = Math.max(leftChars.length, rightChars.length);
+        for (let index = 0; index < length; index += 1) {
+            if (leftChars[index] !== rightChars[index]) {
+                return {
+                    index,
+                    left: leftChars[index] ?? '',
+                    right: rightChars[index] ?? '',
+                };
+            }
+        }
+        return null;
+    }
+
+    function validateMergedSegments(source, segments, options = {}) {
+        const expected = String(source ?? '');
+        const list = options.includeTemplateInValidation
+            ? applySegmentTemplates(segments, options)
+            : Array.from(segments ?? []);
+        const merged = list.join('');
+        const difference = findFirstDifference(expected, merged);
+        return {
+            ok: difference === null,
+            sourceLength: countCharacters(expected),
+            mergedLength: countCharacters(merged),
+            difference,
+        };
+    }
+
     function getClipboardHistoryWriteOrder(segments) {
         return Array.from(segments ?? []).reverse();
     }
@@ -254,6 +285,8 @@
         renderTemplate,
         applySegmentTemplates,
         getCopySegments,
+        findFirstDifference,
+        validateMergedSegments,
         getClipboardHistoryWriteOrder,
     };
 });

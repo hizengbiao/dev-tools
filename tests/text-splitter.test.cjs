@@ -70,6 +70,22 @@ assert.deepStrictEqual(
     splitter.getCopySegments(['alpha', 'beta'], { includeTemplateInCopy: true, prefix: '第 {index}/{total} 段：' }),
     ['第 1/2 段：alpha', '第 2/2 段：beta']
 );
+assert.deepStrictEqual(
+    splitter.findFirstDifference('abcdef', 'abcxef'),
+    { index: 3, left: 'd', right: 'x' }
+);
+assert.deepStrictEqual(
+    splitter.validateMergedSegments('alpha beta', ['alpha ', 'beta']),
+    { ok: true, sourceLength: 10, mergedLength: 10, difference: null }
+);
+assert.deepStrictEqual(
+    splitter.validateMergedSegments('alpha beta', ['alpha', 'beta']),
+    { ok: false, sourceLength: 10, mergedLength: 9, difference: { index: 5, left: ' ', right: 'b' } }
+);
+assert.deepStrictEqual(
+    splitter.validateMergedSegments('alpha', ['alpha'], { includeTemplateInValidation: true, prefix: '第 {index}/{total} 段：' }),
+    { ok: false, sourceLength: 5, mergedLength: 13, difference: { index: 0, left: 'a', right: '第' } }
+);
 
 const source = 'Line one.\nLine two is longer.\n\nFinal paragraph.';
 const segments = splitter.splitText(source, 18);
@@ -129,7 +145,7 @@ assert.match(page, /async function copySegmentsToHistory\(\)/);
 assert.match(page, /TextSplitter\.getClipboardHistoryWriteOrder\(copySegments\)/);
 assert.match(page, /await delay\(600\)/);
 assert.match(page, /copyHistoryBtn\.addEventListener\('click', copySegmentsToHistory\)/);
-assert.match(page, /V1\.06/);
+assert.match(page, /V1\.07/);
 assert.match(page, /Token 估算拆分/);
 assert.match(page, /id="splitStrategy"/);
 assert.match(page, /<option value="lines">/);
@@ -139,8 +155,11 @@ assert.match(page, /<option value="characters">/);
 assert.match(page, /id="prefixTemplate"/);
 assert.match(page, /id="suffixTemplate"/);
 assert.match(page, /id="includeTemplateInCopy"/);
+assert.match(page, /id="includeTemplateInValidation"/);
+assert.match(page, /id="mergeValidationStatus"/);
 assert.match(page, /TextSplitter\.applySegmentTemplates\(segments, getTemplateOptions\(\)\)/);
 assert.match(page, /TextSplitter\.getCopySegments\(currentSegments, getTemplateOptions\(\)\)/);
+assert.match(page, /TextSplitter\.validateMergedSegments\(inputText\.value, currentSegments, getTemplateOptions\(\)\)/);
 assert.match(page, /第 \{index\}\/\{total\} 段：/);
 assert.match(page, /TextSplitter\.splitTextByEstimatedTokensWithStrategy\(inputText\.value, limit, strategy\)/);
 assert.match(page, /TextSplitter\.splitTextByStrategy\(inputText\.value, limit, strategy\)/);
