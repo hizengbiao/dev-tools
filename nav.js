@@ -136,6 +136,7 @@
         const selectedPaths = navConfig.orderedPaths.filter(path => toolByPath.has(path));
         let activeDraggedPath = '';
         let activePointerId = null;
+        let activePointerOffsetY = 0;
 
         function findManagerItem(path) {
             return [...list.querySelectorAll('.nav-manager-item')]
@@ -149,6 +150,7 @@
 
         function animateListReorder(previousPositions) {
             list.querySelectorAll('.nav-manager-item').forEach(element => {
+                if (element.classList.contains('dragging')) return;
                 const previousTop = previousPositions.get(element.dataset.path);
                 if (previousTop === undefined) return;
 
@@ -158,10 +160,18 @@
                 element.style.transition = 'none';
                 element.style.transform = `translateY(${deltaY}px)`;
                 requestAnimationFrame(() => {
-                    element.style.transition = 'transform 160ms ease, border-color 160ms ease, background-color 160ms ease, opacity 160ms ease';
+                    element.style.transition = 'transform 180ms cubic-bezier(0.2, 0, 0, 1), border-color 180ms ease, background-color 180ms ease, opacity 180ms ease';
                     element.style.transform = '';
                 });
             });
+        }
+
+        function updateDraggedItemPosition(item, clientY) {
+            item.style.transition = 'none';
+            item.style.transform = '';
+            const itemRect = item.getBoundingClientRect();
+            const translateY = clientY - activePointerOffsetY - itemRect.top;
+            item.style.transform = `translateY(${translateY}px)`;
         }
 
         function reorderDraggedPath(draggedPath, targetPath, insertAfterTarget, list) {
@@ -243,28 +253,32 @@
             dragButton.textContent = '☰';
 
             function finishPointerDrag(event) {
-                if (activePointerId !== event.pointerId) return;
-                if (dragButton.hasPointerCapture(event.pointerId)) {
-                    dragButton.releasePointerCapture(event.pointerId);
-                }
-                item.classList.remove('dragging');
-                list.querySelectorAll('.drag-over').forEach(element => element.classList.remove('drag-over'));
-                saveNavConfig(navConfig);
+                if (activePointerId === null) return;
+                if (event.pointerId !== undefined && activePointerId !== event.pointerId) return;
+
                 activeDraggedPath = '';
                 activePointerId = null;
+                activePointerOffsetY = 0;
+                window.removeEventListener('pointermove', handlePointerMove, true);
+                window.removeEventListener('pointerup', finishPointerDrag, true);
+                window.removeEventListener('pointercancel', finishPointerDrag, true);
+                window.removeEventListener('blur', finishPointerDrag);
+                item.classList.remove('dragging');
+                list.querySelectorAll('.drag-over').forEach(element => element.classList.remove('drag-over'));
+                item.style.transition = 'transform 140ms cubic-bezier(0.2, 0, 0, 1)';
+                item.style.transform = '';
+                window.setTimeout(() => {
+                    if (!item.classList.contains('dragging')) item.style.transition = '';
+                }, 160);
+                saveNavConfig(navConfig);
             }
 
-            dragButton.addEventListener('pointerdown', (event) => {
-                if (!isSelected || (event.pointerType === 'mouse' && event.button !== 0)) return;
-                event.preventDefault();
-                activeDraggedPath = tool.path;
-                activePointerId = event.pointerId;
-                dragButton.setPointerCapture(event.pointerId);
-                item.classList.add('dragging');
-            });
-
-            dragButton.addEventListener('pointermove', (event) => {
+            function handlePointerMove(event) {
                 if (activePointerId !== event.pointerId || !activeDraggedPath) return;
+                if (event.pointerType === 'mouse' && (event.buttons & 1) === 0) {
+                    finishPointerDrag(event);
+                    return;
+                }
 
                 const reorderTarget = getPointerReorderTarget(event.clientY);
                 if (!reorderTarget) return;
@@ -273,10 +287,21 @@
                 list.querySelectorAll('.drag-over').forEach(element => element.classList.remove('drag-over'));
                 targetItem.classList.add('drag-over');
                 reorderDraggedPath(activeDraggedPath, targetItem.dataset.path, insertAfterTarget, list);
-            });
+                updateDraggedItemPosition(item, event.clientY);
+            }
 
-            dragButton.addEventListener('pointerup', finishPointerDrag);
-            dragButton.addEventListener('pointercancel', finishPointerDrag);
+            dragButton.addEventListener('pointerdown', (event) => {
+                if (!isSelected || (event.pointerType === 'mouse' && event.button !== 0)) return;
+                event.preventDefault();
+                activeDraggedPath = tool.path;
+                activePointerId = event.pointerId;
+                activePointerOffsetY = event.clientY - item.getBoundingClientRect().top;
+                item.classList.add('dragging');
+                window.addEventListener('pointermove', handlePointerMove, true);
+                window.addEventListener('pointerup', finishPointerDrag, true);
+                window.addEventListener('pointercancel', finishPointerDrag, true);
+                window.addEventListener('blur', finishPointerDrag);
+            });
 
             item.appendChild(label);
             item.appendChild(dragButton);
