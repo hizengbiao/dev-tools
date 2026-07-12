@@ -393,13 +393,15 @@
 
     <script>
         const resultList = document.getElementById('resultList');
+        const valueType = document.getElementById('valueType');
+        const symbolsCheck = document.getElementById('symbolsCheck');
         let currentResults = [];
 
         function getOptions() {
             const customCharset = document.getElementById('customCharset').value;
-            const valueType = document.getElementById('valueType').value;
+            const selectedType = valueType.value;
             return {
-                type: valueType === 'password' ? 'string' : valueType,
+                type: selectedType,
                 count: Number(document.getElementById('countInput').value),
                 length: Number(document.getElementById('lengthInput').value),
                 min: Number(document.getElementById('minInput').value),
@@ -407,7 +409,7 @@
                 lower: document.getElementById('lowerCheck').checked,
                 upper: document.getElementById('upperCheck').checked,
                 digits: document.getElementById('digitsCheck').checked,
-                symbols: valueType === 'password' || document.getElementById('symbolsCheck').checked,
+                symbols: symbolsCheck.checked,
                 charset: customCharset || undefined,
             };
         }
@@ -435,8 +437,15 @@
             }
         }
 
+        function syncTypeDefaults() {
+            if (valueType.value === 'password') {
+                symbolsCheck.checked = true;
+            }
+        }
+
         document.getElementById('generateBtn').addEventListener('click', generateValues);
         document.getElementById('clearBtn').addEventListener('click', () => renderResults([]));
+        valueType.addEventListener('change', syncTypeDefaults);
         document.getElementById('copyAllBtn').addEventListener('click', () => {
             if (!currentResults.length) {
                 ClipboardUtils.showToast('暂无生成结果');
@@ -449,6 +458,7 @@
             if (!button) return;
             ClipboardUtils.copyText(currentResults[Number(button.dataset.index)], { successMessage: '单项结果已复制' });
         });
+        syncTypeDefaults();
         generateValues();
     </script>
 </body>

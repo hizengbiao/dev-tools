@@ -23,6 +23,29 @@ assert.deepStrictEqual(
     random.generateBatch({ type: 'number', count: 2, min: 1, max: 3 }, () => 0),
     ['1', '1']
 );
+const password = random.generatePassword(8, {
+    lower: true,
+    upper: true,
+    digits: true,
+    symbols: true,
+}, () => 0);
+assert.strictEqual(password.length, 8);
+assert.match(password, /[a-z]/);
+assert.match(password, /[A-Z]/);
+assert.match(password, /[0-9]/);
+assert.match(password, /[!@#$%^&*()_+\-=[\]{};:,.<>?]/);
+assert.deepStrictEqual(
+    random.generateBatch({
+        type: 'password',
+        count: 2,
+        length: 8,
+        lower: true,
+        upper: true,
+        digits: true,
+        symbols: true,
+    }, () => 0).map((value) => value.length),
+    [8, 8]
+);
 
 const page = fs.readFileSync(path.join(root, 'random-generator.html'), 'utf8');
 assert.match(page, /<title>UUID \/ 随机值生成器<\/title>/);
@@ -36,6 +59,10 @@ assert.match(page, /id="countInput"/);
 assert.match(page, /id="lengthInput"/);
 assert.match(page, /id="resultList"/);
 assert.match(page, /RandomGenerator\.generateBatch/);
+assert.match(page, /type: selectedType/);
+assert.doesNotMatch(page, /valueType === 'password' \? 'string' : valueType/);
+assert.match(page, /function syncTypeDefaults/);
+assert.match(page, /valueType\.addEventListener\('change', syncTypeDefaults\)/);
 
 const nav = fs.readFileSync(path.join(root, 'nav.js'), 'utf8');
 const home = fs.readFileSync(path.join(root, 'index.html'), 'utf8');

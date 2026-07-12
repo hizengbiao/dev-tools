@@ -59,6 +59,45 @@
         return Array.from({ length }, () => charset[Math.min(charset.length - 1, Math.floor(random() * charset.length))]).join('');
     }
 
+    function pickCharacter(charset, random) {
+        return charset[Math.min(charset.length - 1, Math.floor(random() * charset.length))];
+    }
+
+    function shuffleCharacters(characters, random) {
+        const result = [...characters];
+        for (let index = result.length - 1; index > 0; index -= 1) {
+            const swapIndex = Math.min(index, Math.floor(random() * (index + 1)));
+            [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
+        }
+        return result.join('');
+    }
+
+    function generatePassword(length, options = {}, random = Math.random) {
+        if (!Number.isInteger(length) || length <= 0) {
+            throw new TypeError('length must be positive');
+        }
+
+        const groups = [];
+        if (options.lower !== false) groups.push(LOWER);
+        if (options.upper !== false) groups.push(UPPER);
+        if (options.digits !== false) groups.push(DIGITS);
+        if (options.symbols !== false) groups.push(SYMBOLS);
+
+        if (!groups.length) {
+            throw new TypeError('at least one character group is required');
+        }
+        if (length < groups.length) {
+            throw new TypeError('length is too short for selected character groups');
+        }
+
+        const charset = groups.join('');
+        const characters = groups.map((group) => pickCharacter(group, random));
+        while (characters.length < length) {
+            characters.push(pickCharacter(charset, random));
+        }
+        return shuffleCharacters(characters, random);
+    }
+
     function generateRandomIntegers(options = {}, random = Math.random) {
         const count = Number(options.count);
         const min = Number(options.min);
@@ -85,6 +124,9 @@
             return generateRandomIntegers(options, random).map(String);
         }
         const length = Number(options.length);
+        if (type === 'password') {
+            return Array.from({ length: count }, () => generatePassword(length, options, random));
+        }
         if (Object.prototype.hasOwnProperty.call(options, 'charset') && !options.charset) {
             throw new TypeError('charset is required');
         }
@@ -104,6 +146,7 @@
         generateUuidV4,
         getCharacterSet,
         generateRandomString,
+        generatePassword,
         generateRandomIntegers,
         generateBatch,
     };
