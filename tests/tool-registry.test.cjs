@@ -41,6 +41,14 @@ assert.match(nav, /nav\.classList\.toggle\('expanded'/);
 assert.match(nav, /linksDiv\.addEventListener\('wheel'/);
 assert.match(nav, /scrollLeft \+= event\.deltaY/);
 assert.match(nav, /document\.body\.classList\.toggle\('nav-expanded'/);
+assert.match(nav, /NAV_CONFIG_STORAGE_KEY = 'dev-tools-nav-config-v1'/);
+assert.match(nav, /function loadNavConfig/);
+assert.match(nav, /function saveNavConfig/);
+assert.match(nav, /function renderNavManager/);
+assert.match(nav, /type = 'checkbox'/);
+assert.match(nav, /nav-manager-item/);
+assert.match(nav, /恢复默认/);
+assert.doesNotMatch(nav, /placeholder = '.*链接/);
 
 const homeToolOrder = [...home.matchAll(/<a\s+href="([^"]+)"\s+class="tool-card"/g)].map((match) => match[1]);
 assert.deepStrictEqual(
