@@ -32,11 +32,14 @@ const hash = require(path.join(root, 'hash-generator.js'));
     assert.match(page, /<div class="changelog-date">2026年7月11日<\/div>[\s\S]*?<div class="changelog-version">V1\.00<\/div>/);
     assert.match(page, /id="text-input"/);
     assert.match(page, /id="file-input"/);
+    assert.match(page, /id="clear-file-btn"/);
     assert.match(page, /id="hash-results"/);
     assert.match(page, /id="compare-input"/);
     assert.match(page, /HashGenerator\.hashText/);
     assert.match(page, /HashGenerator\.hashBytes/);
     assert.match(page, /HashGenerator\.compareHash/);
+    assert.match(page, /function clearFileHash/);
+    assert.match(page, /currentHashSource === 'file'/);
 
     const nav = fs.readFileSync(path.join(root, 'nav.js'), 'utf8');
     const home = fs.readFileSync(path.join(root, 'index.html'), 'utf8');

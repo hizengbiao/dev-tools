@@ -362,6 +362,7 @@
                 <div class="panel stacked-panel">
                     <div class="panel-header">
                         <h2>文件摘要</h2>
+                        <button class="btn btn-danger" id="clear-file-btn" type="button">清除文件</button>
                     </div>
                     <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
                         <strong>点击选择文件或拖拽到这里</strong>
@@ -422,6 +423,7 @@
         const compareInput = document.getElementById('compare-input');
         const compareStatus = document.getElementById('compare-status');
         let currentHashes = null;
+        let currentHashSource = '';
 
         function showToast(message) {
             ClipboardUtils.showToast(message);
@@ -432,8 +434,9 @@
             return HashGenerator.ALGORITHMS.map((name) => `${name}: ${hashes[name]}`).join('\n');
         }
 
-        function renderHashes(hashes) {
+        function renderHashes(hashes, source = '') {
             currentHashes = hashes;
+            currentHashSource = source;
             hashResults.innerHTML = HashGenerator.ALGORITHMS.map((name) => `
                 <article class="hash-row">
                     <div class="result-header">
@@ -452,7 +455,7 @@
                 showToast('请先输入文本');
                 return;
             }
-            renderHashes(await HashGenerator.hashText(value));
+            renderHashes(await HashGenerator.hashText(value), 'text');
             showToast('文本摘要计算完成');
         }
 
@@ -460,9 +463,21 @@
             if (!file) return;
             fileMeta.textContent = `正在计算：${file.name} (${HashGenerator.formatBytes(file.size)})`;
             const bytes = new Uint8Array(await file.arrayBuffer());
-            renderHashes(await HashGenerator.hashBytes(bytes));
+            renderHashes(await HashGenerator.hashBytes(bytes), 'file');
             fileMeta.textContent = `已计算：${file.name} (${HashGenerator.formatBytes(file.size)})`;
             showToast('文件摘要计算完成');
+        }
+
+        function clearFileHash() {
+            fileInput.value = '';
+            fileMeta.textContent = '尚未选择文件';
+            if (currentHashSource === 'file') {
+                currentHashes = null;
+                currentHashSource = '';
+                hashResults.innerHTML = '<div class="hint">计算后会在这里显示 MD5、SHA-1、SHA-256、SHA-512。</div>';
+                updateCompareStatus();
+            }
+            showToast('文件已清除');
         }
 
         function updateCompareStatus() {
@@ -487,6 +502,7 @@
             textInput.value = '';
             textInput.focus();
         });
+        document.getElementById('clear-file-btn').addEventListener('click', clearFileHash);
         document.getElementById('copy-all-btn').addEventListener('click', () => {
             const text = formatAllHashes(currentHashes);
             if (!text) {
