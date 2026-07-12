@@ -20,7 +20,7 @@
 | **Base64 编解码** | `base64-encoder.html` | 文本与文件的 Base64 转换。 | Vanilla JS |
 | **哈希/摘要工具** | `hash-generator.html` | 文本与文件摘要计算，支持 MD5、SHA-1、SHA-256、SHA-512 和摘要比对。 | Vanilla JS |
 | **JWT 解析工具** | `jwt-decoder.html` | 本地解析 JWT Header、Payload 和时间字段，不做签名可信校验。 | Vanilla JS |
-| **UUID / 随机值生成器** | `random-generator.html` | 生成 UUID v4、随机字符串、随机数字和密码，支持批量复制。 | Vanilla JS |
+| **UUID / 随机值生成器** | `random-generator.html` | 生成 UUID v4、随机密码和随机数字，支持批量复制。 | Vanilla JS |
 | **Cron 表达式解析工具** | `cron-parser.html` | 解析 Linux 和 Quartz Cron 表达式，展示最近执行时间。 | Vanilla JS |
 | **SQL 格式化/压缩工具** | `sql-formatter.html` | 格式化、压缩常见 SQL，并提取表名和参数占位符。 | Vanilla JS |
 | **命名转换** | `text-case-converter.html` | 大小写、蛇形、驼峰、短横线等变量命名格式互转。 | Vanilla JS |

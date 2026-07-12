@@ -16,7 +16,7 @@
 | [Base64 编解码](base64-encoder.html) | 支持文本和文件的 Base64 互相转换。 |
 | [哈希/摘要工具](hash-generator.html) | 计算文本和文件的 MD5、SHA-1、SHA-256、SHA-512 摘要，并支持摘要比对。 |
 | [JWT 解析工具](jwt-decoder.html) | 本地解析 JWT Header、Payload 和时间字段，明确不做签名可信校验。 |
-| [UUID / 随机值生成器](random-generator.html) | 生成 UUID v4、随机字符串、随机数字和密码，支持批量复制。 |
+| [UUID / 随机值生成器](random-generator.html) | 生成 UUID v4、随机密码和随机数字，支持批量复制。 |
 | [Cron 表达式解析工具](cron-parser.html) | 解析 Linux 和 Quartz Cron 表达式，展示最近执行时间。 |
 | [SQL 格式化/压缩工具](sql-formatter.html) | 格式化、压缩常见 SQL，并提取表名和参数占位符。 |
 | [命名转换](text-case-converter.html) | 支持变量名大小写、蛇形、驼峰、短横线等格式互转。 |

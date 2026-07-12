@@ -645,13 +645,13 @@
 - 状态：`[x]`
 - 优先级：`P2`
 - 类型：新增工具
-- 目标：生成 UUID v4、随机字符串、随机数字、密码，支持批量复制。
+- 目标：生成 UUID v4、随机密码、随机数字，支持批量复制。
 - 建议路径：`random-generator.html`。
 - 验收标准：
   - 可配置数量和长度。
   - 可选择字符集。
   - 支持复制单个和全部。
-- 完成记录：2026-07-11 已新增 UUID / 随机值生成器 `random-generator.html`，支持 UUID v4、随机字符串、随机数字和密码生成，可配置数量、长度、字符集，并支持单项和全部复制；已同步导航、首页、README、DEVELOPMENT，并新增 `tests/random-generator.test.cjs` 覆盖核心逻辑和工具入口。
+- 完成记录：2026-07-11 已新增 UUID / 随机值生成器 `random-generator.html`，支持 UUID v4、随机数字和密码生成，可配置数量、长度、字符集，并支持单项和全部复制；已同步导航、首页、README、DEVELOPMENT，并新增 `tests/random-generator.test.cjs` 覆盖核心逻辑和工具入口。2026-07-12 已按使用反馈移除随机字符串入口。
 
 ### TODO-NEW-004：Cron 表达式解析工具
 

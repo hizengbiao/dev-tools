@@ -59,6 +59,8 @@ assert.match(page, /id="countInput"/);
 assert.match(page, /id="lengthInput"/);
 assert.match(page, /id="resultList"/);
 assert.match(page, /RandomGenerator\.generateBatch/);
+assert.doesNotMatch(page, /<option value="string">随机字符串<\/option>/);
+assert.doesNotMatch(page, /随机字符串/);
 assert.match(page, /type: selectedType/);
 assert.doesNotMatch(page, /valueType === 'password' \? 'string' : valueType/);
 assert.match(page, /function syncTypeDefaults/);
