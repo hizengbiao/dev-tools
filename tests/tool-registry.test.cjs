@@ -47,6 +47,12 @@ assert.match(nav, /function saveNavConfig/);
 assert.match(nav, /function renderNavManager/);
 assert.match(nav, /type = 'checkbox'/);
 assert.match(nav, /nav-manager-item/);
+assert.match(nav, /nav-manager-drag/);
+assert.match(nav, /dragButton\.draggable = isSelected/);
+assert.match(nav, /dragstart/);
+assert.match(nav, /drop/);
+assert.doesNotMatch(nav, /textContent = '上移'/);
+assert.doesNotMatch(nav, /textContent = '下移'/);
 assert.match(nav, /恢复默认/);
 assert.doesNotMatch(nav, /placeholder = '.*链接/);
 

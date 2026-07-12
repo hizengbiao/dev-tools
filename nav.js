@@ -128,7 +128,7 @@
 
         const hint = document.createElement('p');
         hint.className = 'nav-manager-hint';
-        hint.textContent = '勾选要显示在顶部导航中的工具，取消勾选相当于删除；已勾选工具可上下调整顺序。配置只影响顶部导航，首页入口保持不变。';
+        hint.textContent = '勾选要显示在顶部导航中的工具，取消勾选相当于删除；已勾选工具可按住拖动图标调整顺序。配置只影响顶部导航，首页入口保持不变。';
         modalBody.appendChild(hint);
 
         const list = document.createElement('div');
@@ -140,6 +140,29 @@
             const isSelected = selectedIndex >= 0;
             const item = document.createElement('div');
             item.className = 'nav-manager-item';
+            item.dataset.path = tool.path;
+            item.addEventListener('dragover', (event) => {
+                if (!isSelected) return;
+                event.preventDefault();
+                item.classList.add('drag-over');
+            });
+            item.addEventListener('dragleave', () => {
+                item.classList.remove('drag-over');
+            });
+            item.addEventListener('drop', (event) => {
+                item.classList.remove('drag-over');
+                if (!isSelected) return;
+
+                const draggedPath = event.dataTransfer.getData('text/plain');
+                if (!draggedPath || draggedPath === tool.path || !selectedPaths.includes(draggedPath)) return;
+
+                event.preventDefault();
+                const nextPaths = navConfig.orderedPaths.filter(path => path !== draggedPath);
+                const targetIndex = nextPaths.indexOf(tool.path);
+                nextPaths.splice(targetIndex, 0, draggedPath);
+                saveAndRefresh({ orderedPaths: nextPaths });
+                renderNavManagerContent(modalBody);
+            });
 
             const label = document.createElement('label');
             label.className = 'nav-manager-check';
@@ -162,35 +185,27 @@
             label.appendChild(checkbox);
             label.appendChild(name);
 
-            const actions = document.createElement('div');
-            actions.className = 'nav-manager-actions';
-
-            const upButton = document.createElement('button');
-            upButton.type = 'button';
-            upButton.textContent = '上移';
-            upButton.disabled = !isSelected || selectedIndex === 0;
-            upButton.addEventListener('click', () => {
-                const nextPaths = navConfig.orderedPaths.slice();
-                [nextPaths[selectedIndex - 1], nextPaths[selectedIndex]] = [nextPaths[selectedIndex], nextPaths[selectedIndex - 1]];
-                saveAndRefresh({ orderedPaths: nextPaths });
-                renderNavManagerContent(modalBody);
+            const dragButton = document.createElement('button');
+            dragButton.type = 'button';
+            dragButton.className = 'nav-manager-drag';
+            dragButton.draggable = isSelected;
+            dragButton.disabled = !isSelected;
+            dragButton.title = isSelected ? '按住拖动调整顺序' : '勾选后可拖动排序';
+            dragButton.setAttribute('aria-label', `拖动 ${tool.name} 调整顺序`);
+            dragButton.textContent = '☰';
+            dragButton.addEventListener('dragstart', (event) => {
+                if (!isSelected) return;
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', tool.path);
+                item.classList.add('dragging');
+            });
+            dragButton.addEventListener('dragend', () => {
+                item.classList.remove('dragging');
+                list.querySelectorAll('.drag-over').forEach(element => element.classList.remove('drag-over'));
             });
 
-            const downButton = document.createElement('button');
-            downButton.type = 'button';
-            downButton.textContent = '下移';
-            downButton.disabled = !isSelected || selectedIndex === selectedPaths.length - 1;
-            downButton.addEventListener('click', () => {
-                const nextPaths = navConfig.orderedPaths.slice();
-                [nextPaths[selectedIndex + 1], nextPaths[selectedIndex]] = [nextPaths[selectedIndex], nextPaths[selectedIndex + 1]];
-                saveAndRefresh({ orderedPaths: nextPaths });
-                renderNavManagerContent(modalBody);
-            });
-
-            actions.appendChild(upButton);
-            actions.appendChild(downButton);
             item.appendChild(label);
-            item.appendChild(actions);
+            item.appendChild(dragButton);
             list.appendChild(item);
         });
 

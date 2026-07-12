@@ -213,6 +213,15 @@ body.nav-expanded {
     background: rgba(148, 163, 184, 0.06);
 }
 
+.nav-manager-item.dragging {
+    opacity: 0.55;
+}
+
+.nav-manager-item.drag-over {
+    border-color: var(--accent, #38bdf8);
+    background: rgba(56, 189, 248, 0.12);
+}
+
 .nav-manager-check {
     min-width: 0;
     display: flex;
@@ -222,13 +231,7 @@ body.nav-expanded {
     cursor: pointer;
 }
 
-.nav-manager-actions {
-    flex: 0 0 auto;
-    display: flex;
-    gap: 8px;
-}
-
-.nav-manager-actions button,
+.nav-manager-drag,
 .nav-manager-reset,
 .nav-manager-done {
     border: 1px solid rgba(148, 163, 184, 0.32);
@@ -242,12 +245,25 @@ body.nav-expanded {
     cursor: pointer;
 }
 
-.nav-manager-actions button:disabled {
+.nav-manager-drag {
+    flex: 0 0 auto;
+    width: 36px;
+    height: 34px;
+    padding: 0;
+    color: var(--text-secondary, #64748b);
+    cursor: grab;
+}
+
+.nav-manager-drag:active {
+    cursor: grabbing;
+}
+
+.nav-manager-drag:disabled {
     opacity: 0.42;
     cursor: not-allowed;
 }
 
-.nav-manager-actions button:not(:disabled):hover,
+.nav-manager-drag:not(:disabled):hover,
 .nav-manager-reset:hover {
     border-color: var(--accent, #38bdf8);
     color: var(--accent, #0ea5e9);
