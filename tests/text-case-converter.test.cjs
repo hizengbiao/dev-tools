@@ -100,8 +100,11 @@ assert.match(html, /选择目标命名格式或文本处理方式，结果会输
 assert.match(html, /支持每行一个变量名批量转换/);
 assert.match(html, /\.format-actions/);
 assert.match(html, /\.format-btn/);
-assert.match(html, /<div class="quick-actions format-actions">[\s\S]*常量变量名/);
-assert.match(html, /<div class="quick-actions format-actions">[\s\S]*下划线命名[\s\S]*小驼峰命名[\s\S]*大驼峰命名[\s\S]*短横线命名/);
+assert.match(html, /onclick="convertText\('constant'\)"[^>]*>大写下划线命名<\/button>/);
+assert.match(html, /onclick="convertText\('snake'\)"[^>]*>小写下划线命名<\/button>/);
+assert.doesNotMatch(html, />常量变量名<\/button>/);
+assert.doesNotMatch(html, />下划线命名<\/button>/);
+assert.match(html, /<div class="quick-actions format-actions">[\s\S]*小驼峰命名[\s\S]*大驼峰命名[\s\S]*短横线命名/);
 assert.match(html, /<div class="quick-actions format-actions">[\s\S]*标题格式[\s\S]*句子格式[\s\S]*全部大写[\s\S]*全部小写[\s\S]*清理多余空格/);
 assert.doesNotMatch(html, />snake_case</);
 assert.doesNotMatch(html, />camelCase</);
