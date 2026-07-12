@@ -21,6 +21,23 @@ function parseRegisteredTools(source) {
 
 const tools = parseRegisteredTools(nav);
 const nonHomeTools = tools.filter((tool) => tool.path !== 'index.html');
+const expectedLeadingPaths = [
+    'index.html',
+    'json-parser.html',
+    'text-case-converter.html',
+    'text_escape_formatter_final.html',
+    'text-splitter.html',
+    'regex-tester.html',
+    'timestamp-converter.html',
+];
+assert.deepStrictEqual(
+    tools.slice(0, expectedLeadingPaths.length).map((tool) => tool.path),
+    expectedLeadingPaths,
+    'nav.js should put the main text tools first, then keep the other tools in their existing order'
+);
+assert.match(nav, /className = 'nav-expand-toggle'/);
+assert.match(nav, /aria-expanded/);
+assert.match(nav, /nav\.classList\.toggle\('expanded'/);
 
 for (const tool of nonHomeTools) {
     assert.match(
