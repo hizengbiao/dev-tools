@@ -134,6 +134,8 @@
         const list = document.createElement('div');
         list.className = 'nav-manager-list';
         const selectedPaths = navConfig.orderedPaths.filter(path => toolByPath.has(path));
+        let activeDraggedPath = '';
+        let activePointerId = null;
 
         function findManagerItem(path) {
             return [...list.querySelectorAll('.nav-manager-item')]
@@ -188,33 +190,28 @@
             return true;
         }
 
+        function getPointerReorderTarget(clientY) {
+            const selectedPathSet = new Set(navConfig.orderedPaths);
+            const candidates = [...list.querySelectorAll('.nav-manager-item')]
+                .filter(element => element.dataset.path !== activeDraggedPath && selectedPathSet.has(element.dataset.path));
+
+            for (const targetItem of candidates) {
+                const targetRect = targetItem.getBoundingClientRect();
+                if (clientY < targetRect.top + targetRect.height / 2) {
+                    return { targetItem, insertAfterTarget: false };
+                }
+            }
+
+            const targetItem = candidates.at(-1);
+            return targetItem ? { targetItem, insertAfterTarget: true } : null;
+        }
+
         getManagerToolOrder().forEach(tool => {
             const selectedIndex = selectedPaths.indexOf(tool.path);
             const isSelected = selectedIndex >= 0;
             const item = document.createElement('div');
             item.className = 'nav-manager-item';
             item.dataset.path = tool.path;
-            item.addEventListener('dragover', (event) => {
-                if (!isSelected) return;
-                event.preventDefault();
-                item.classList.add('drag-over');
-                const draggedPath = event.dataTransfer.getData('text/plain');
-                const targetRect = item.getBoundingClientRect();
-                const insertAfterTarget = event.clientY > targetRect.top + targetRect.height / 2;
-                reorderDraggedPath(draggedPath, tool.path, insertAfterTarget, list);
-            });
-            item.addEventListener('dragleave', () => {
-                item.classList.remove('drag-over');
-            });
-            item.addEventListener('drop', (event) => {
-                item.classList.remove('drag-over');
-                if (!isSelected) return;
-
-                event.preventDefault();
-                saveNavConfig(navConfig);
-                renderNavLinks();
-                renderNavManagerContent(modalBody);
-            });
 
             const label = document.createElement('label');
             label.className = 'nav-manager-check';
@@ -240,22 +237,46 @@
             const dragButton = document.createElement('button');
             dragButton.type = 'button';
             dragButton.className = 'nav-manager-drag';
-            dragButton.draggable = isSelected;
             dragButton.disabled = !isSelected;
             dragButton.title = isSelected ? '按住拖动调整顺序' : '勾选后可拖动排序';
             dragButton.setAttribute('aria-label', `拖动 ${tool.name} 调整顺序`);
             dragButton.textContent = '☰';
-            dragButton.addEventListener('dragstart', (event) => {
-                if (!isSelected) return;
-                event.dataTransfer.effectAllowed = 'move';
-                event.dataTransfer.setData('text/plain', tool.path);
-                item.classList.add('dragging');
-            });
-            dragButton.addEventListener('dragend', () => {
+
+            function finishPointerDrag(event) {
+                if (activePointerId !== event.pointerId) return;
+                if (dragButton.hasPointerCapture(event.pointerId)) {
+                    dragButton.releasePointerCapture(event.pointerId);
+                }
                 item.classList.remove('dragging');
                 list.querySelectorAll('.drag-over').forEach(element => element.classList.remove('drag-over'));
                 saveNavConfig(navConfig);
+                activeDraggedPath = '';
+                activePointerId = null;
+            }
+
+            dragButton.addEventListener('pointerdown', (event) => {
+                if (!isSelected || (event.pointerType === 'mouse' && event.button !== 0)) return;
+                event.preventDefault();
+                activeDraggedPath = tool.path;
+                activePointerId = event.pointerId;
+                dragButton.setPointerCapture(event.pointerId);
+                item.classList.add('dragging');
             });
+
+            dragButton.addEventListener('pointermove', (event) => {
+                if (activePointerId !== event.pointerId || !activeDraggedPath) return;
+
+                const reorderTarget = getPointerReorderTarget(event.clientY);
+                if (!reorderTarget) return;
+                const { targetItem, insertAfterTarget } = reorderTarget;
+
+                list.querySelectorAll('.drag-over').forEach(element => element.classList.remove('drag-over'));
+                targetItem.classList.add('drag-over');
+                reorderDraggedPath(activeDraggedPath, targetItem.dataset.path, insertAfterTarget, list);
+            });
+
+            dragButton.addEventListener('pointerup', finishPointerDrag);
+            dragButton.addEventListener('pointercancel', finishPointerDrag);
 
             item.appendChild(label);
             item.appendChild(dragButton);

@@ -252,6 +252,8 @@ body.nav-expanded {
     padding: 0;
     color: var(--text-secondary, #64748b);
     cursor: grab;
+    touch-action: none;
+    user-select: none;
 }
 
 .nav-manager-drag:active {
