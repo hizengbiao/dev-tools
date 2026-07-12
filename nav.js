@@ -63,6 +63,15 @@
         linksDiv.appendChild(a);
     });
 
+    linksDiv.addEventListener('wheel', (event) => {
+        if (nav.classList.contains('expanded')) return;
+        if (linksDiv.scrollWidth <= linksDiv.clientWidth) return;
+        if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+
+        event.preventDefault();
+        linksDiv.scrollLeft += event.deltaY;
+    }, { passive: false });
+
     const expandButton = document.createElement('button');
     expandButton.type = 'button';
     expandButton.className = 'nav-expand-toggle';
@@ -71,6 +80,7 @@
     expandButton.textContent = '展开全部';
     expandButton.addEventListener('click', () => {
         const expanded = nav.classList.toggle('expanded');
+        document.body.classList.toggle('nav-expanded', expanded);
         expandButton.setAttribute('aria-expanded', String(expanded));
         expandButton.textContent = expanded ? '收起' : '展开全部';
     });

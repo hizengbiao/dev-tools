@@ -38,6 +38,19 @@ assert.deepStrictEqual(
 assert.match(nav, /className = 'nav-expand-toggle'/);
 assert.match(nav, /aria-expanded/);
 assert.match(nav, /nav\.classList\.toggle\('expanded'/);
+assert.match(nav, /linksDiv\.addEventListener\('wheel'/);
+assert.match(nav, /scrollLeft \+= event\.deltaY/);
+assert.match(nav, /document\.body\.classList\.toggle\('nav-expanded'/);
+
+const homeToolOrder = [...home.matchAll(/<a\s+href="([^"]+)"\s+class="tool-card"/g)].map((match) => match[1]);
+assert.deepStrictEqual(
+    homeToolOrder.slice(0, expectedLeadingPaths.length - 1),
+    expectedLeadingPaths.slice(1),
+    'index.html should use the same leading tool order as the shared nav'
+);
+
+const neonDist = fs.readFileSync(path.join(root, 'neon-timer', 'dist', 'index.html'), 'utf8');
+assert.match(neonDist, /<link rel="stylesheet" href="\.\.\/\.\.\/nav\.css">/);
 
 for (const tool of nonHomeTools) {
     assert.match(

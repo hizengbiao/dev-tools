@@ -77,6 +77,10 @@ body:has(#shared-nav.expanded) {
     padding-top: 132px !important;
 }
 
+body.nav-expanded {
+    padding-top: 132px !important;
+}
+
 .nav-links::-webkit-scrollbar {
     display: none;
 }
