@@ -26,9 +26,9 @@ const expectedLeadingPaths = [
     'index.html',
     'json-parser.html',
     'text-case-converter.html',
+    'regex-tester.html',
     'text_escape_formatter_final.html',
     'text-splitter.html',
-    'regex-tester.html',
     'timestamp-converter.html',
 ];
 assert.deepStrictEqual(
@@ -79,10 +79,18 @@ assert.match(nav, /恢复默认/);
 assert.doesNotMatch(nav, /placeholder = '.*链接/);
 
 const homeToolOrder = [...home.matchAll(/<a\s+href="([^"]+)"\s+class="tool-card"/g)].map((match) => match[1]);
+const expectedHomeLeadingPaths = [
+    'json-parser.html',
+    'text-case-converter.html',
+    'text_escape_formatter_final.html',
+    'text-splitter.html',
+    'regex-tester.html',
+    'timestamp-converter.html',
+];
 assert.deepStrictEqual(
-    homeToolOrder.slice(0, expectedLeadingPaths.length - 1),
-    expectedLeadingPaths.slice(1),
-    'index.html should use the same leading tool order as the shared nav'
+    homeToolOrder.slice(0, expectedHomeLeadingPaths.length),
+    expectedHomeLeadingPaths,
+    'index.html should retain its existing leading tool order'
 );
 
 const neonDist = fs.readFileSync(path.join(root, 'neon-timer', 'dist', 'index.html'), 'utf8');
