@@ -135,6 +135,59 @@
         list.className = 'nav-manager-list';
         const selectedPaths = navConfig.orderedPaths.filter(path => toolByPath.has(path));
 
+        function findManagerItem(path) {
+            return [...list.querySelectorAll('.nav-manager-item')]
+                .find(element => element.dataset.path === path);
+        }
+
+        function captureItemPositions() {
+            return new Map([...list.querySelectorAll('.nav-manager-item')]
+                .map(element => [element.dataset.path, element.getBoundingClientRect().top]));
+        }
+
+        function animateListReorder(previousPositions) {
+            list.querySelectorAll('.nav-manager-item').forEach(element => {
+                const previousTop = previousPositions.get(element.dataset.path);
+                if (previousTop === undefined) return;
+
+                const deltaY = previousTop - element.getBoundingClientRect().top;
+                if (!deltaY) return;
+
+                element.style.transition = 'none';
+                element.style.transform = `translateY(${deltaY}px)`;
+                requestAnimationFrame(() => {
+                    element.style.transition = 'transform 160ms ease, border-color 160ms ease, background-color 160ms ease, opacity 160ms ease';
+                    element.style.transform = '';
+                });
+            });
+        }
+
+        function reorderDraggedPath(draggedPath, targetPath, insertAfterTarget, list) {
+            const currentPaths = navConfig.orderedPaths.filter(path => toolByPath.has(path));
+            if (!draggedPath || draggedPath === targetPath || !currentPaths.includes(draggedPath) || !currentPaths.includes(targetPath)) {
+                return false;
+            }
+
+            const nextPaths = currentPaths.filter(path => path !== draggedPath);
+            const targetIndex = nextPaths.indexOf(targetPath);
+            const insertIndex = targetIndex + (insertAfterTarget ? 1 : 0);
+            nextPaths.splice(insertIndex, 0, draggedPath);
+
+            if (nextPaths.join('\n') === currentPaths.join('\n')) {
+                return false;
+            }
+
+            const previousPositions = captureItemPositions();
+            navConfig = normalizeNavConfig({ orderedPaths: nextPaths });
+            const draggedItem = findManagerItem(draggedPath);
+            const targetItem = findManagerItem(targetPath);
+            const nextSibling = insertAfterTarget ? targetItem.nextSibling : targetItem;
+            list.insertBefore(draggedItem, nextSibling);
+            animateListReorder(previousPositions);
+            renderNavLinks();
+            return true;
+        }
+
         getManagerToolOrder().forEach(tool => {
             const selectedIndex = selectedPaths.indexOf(tool.path);
             const isSelected = selectedIndex >= 0;
@@ -145,6 +198,10 @@
                 if (!isSelected) return;
                 event.preventDefault();
                 item.classList.add('drag-over');
+                const draggedPath = event.dataTransfer.getData('text/plain');
+                const targetRect = item.getBoundingClientRect();
+                const insertAfterTarget = event.clientY > targetRect.top + targetRect.height / 2;
+                reorderDraggedPath(draggedPath, tool.path, insertAfterTarget, list);
             });
             item.addEventListener('dragleave', () => {
                 item.classList.remove('drag-over');
@@ -153,14 +210,9 @@
                 item.classList.remove('drag-over');
                 if (!isSelected) return;
 
-                const draggedPath = event.dataTransfer.getData('text/plain');
-                if (!draggedPath || draggedPath === tool.path || !selectedPaths.includes(draggedPath)) return;
-
                 event.preventDefault();
-                const nextPaths = navConfig.orderedPaths.filter(path => path !== draggedPath);
-                const targetIndex = nextPaths.indexOf(tool.path);
-                nextPaths.splice(targetIndex, 0, draggedPath);
-                saveAndRefresh({ orderedPaths: nextPaths });
+                saveNavConfig(navConfig);
+                renderNavLinks();
                 renderNavManagerContent(modalBody);
             });
 
@@ -202,6 +254,7 @@
             dragButton.addEventListener('dragend', () => {
                 item.classList.remove('dragging');
                 list.querySelectorAll('.drag-over').forEach(element => element.classList.remove('drag-over'));
+                saveNavConfig(navConfig);
             });
 
             item.appendChild(label);
