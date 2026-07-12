@@ -449,6 +449,13 @@
             updateCompareStatus();
         }
 
+        function resetHashResults() {
+            currentHashes = null;
+            currentHashSource = '';
+            hashResults.innerHTML = '<div class="hint">计算后会在这里显示 MD5、SHA-1、SHA-256、SHA-512。</div>';
+            updateCompareStatus();
+        }
+
         async function hashTextInput() {
             const value = textInput.value;
             if (!value) {
@@ -468,14 +475,20 @@
             showToast('文件摘要计算完成');
         }
 
+        function clearTextHash() {
+            textInput.value = '';
+            if (currentHashSource === 'text') {
+                resetHashResults();
+            }
+            textInput.focus();
+            showToast('文本已清空');
+        }
+
         function clearFileHash() {
             fileInput.value = '';
             fileMeta.textContent = '尚未选择文件';
             if (currentHashSource === 'file') {
-                currentHashes = null;
-                currentHashSource = '';
-                hashResults.innerHTML = '<div class="hint">计算后会在这里显示 MD5、SHA-1、SHA-256、SHA-512。</div>';
-                updateCompareStatus();
+                resetHashResults();
             }
             showToast('文件已清除');
         }
@@ -498,10 +511,7 @@
         }
 
         document.getElementById('hash-text-btn').addEventListener('click', hashTextInput);
-        document.getElementById('clear-text-btn').addEventListener('click', () => {
-            textInput.value = '';
-            textInput.focus();
-        });
+        document.getElementById('clear-text-btn').addEventListener('click', clearTextHash);
         document.getElementById('clear-file-btn').addEventListener('click', clearFileHash);
         document.getElementById('copy-all-btn').addEventListener('click', () => {
             const text = formatAllHashes(currentHashes);

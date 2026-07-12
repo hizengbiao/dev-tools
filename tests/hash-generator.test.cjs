@@ -38,8 +38,11 @@ const hash = require(path.join(root, 'hash-generator.js'));
     assert.match(page, /HashGenerator\.hashText/);
     assert.match(page, /HashGenerator\.hashBytes/);
     assert.match(page, /HashGenerator\.compareHash/);
+    assert.match(page, /function clearTextHash/);
     assert.match(page, /function clearFileHash/);
+    assert.match(page, /currentHashSource === 'text'/);
     assert.match(page, /currentHashSource === 'file'/);
+    assert.match(page, /function resetHashResults/);
 
     const nav = fs.readFileSync(path.join(root, 'nav.js'), 'utf8');
     const home = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
