@@ -217,6 +217,10 @@
             font-size: 13px;
         }
 
+        .copy-item-btn {
+            justify-self: end;
+        }
+
         .hint {
             color: var(--muted-color);
             font-size: 13px;
@@ -310,7 +314,7 @@
         <div class="tool-title">
             <h1>UUID / 随机值生成器</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.00</span>
+                <span>V1.01</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -381,6 +385,11 @@
                 <button class="close-modal" type="button" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date">2026年7月14日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.01</div>
+                    <div>修复随机密码包含特殊字符时结果被误解析为 HTML，导致单项复制按钮错位的问题。</div>
+                </div>
                 <div class="changelog-date">2026年7月11日</div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.00</div>
@@ -413,18 +422,34 @@
             };
         }
 
+        function createResultItem(value, index) {
+            const item = document.createElement('article');
+            item.className = 'result-item';
+
+            const valueElement = document.createElement('div');
+            valueElement.className = 'result-value';
+            valueElement.textContent = value;
+
+            const copyButton = document.createElement('button');
+            copyButton.className = 'btn copy-item-btn';
+            copyButton.type = 'button';
+            copyButton.dataset.index = String(index);
+            copyButton.textContent = '复制';
+
+            item.append(valueElement, copyButton);
+            return item;
+        }
+
         function renderResults(results) {
             currentResults = results;
             if (!results.length) {
-                resultList.innerHTML = '<div class="hint">暂无生成结果。</div>';
+                const hint = document.createElement('div');
+                hint.className = 'hint';
+                hint.textContent = '暂无生成结果。';
+                resultList.replaceChildren(hint);
                 return;
             }
-            resultList.innerHTML = results.map((value, index) => `
-                <article class="result-item">
-                    <div class="result-value">${value}</div>
-                    <button class="btn copy-item-btn" type="button" data-index="${index}">复制</button>
-                </article>
-            `).join('');
+            resultList.replaceChildren(...results.map(createResultItem));
         }
 
         function generateValues() {
