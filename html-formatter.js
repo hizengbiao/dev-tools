@@ -195,6 +195,35 @@
         }).join('');
     }
 
+    function repairHtml(input, options = {}) {
+        const tokens = tokenizeHtml(input);
+        const stack = [];
+        const repaired = [];
+
+        tokens.forEach((token) => {
+            if (token.type !== 'tag') {
+                repaired.push(token.value);
+                return;
+            }
+            if (!token.closing) {
+                repaired.push(token.value);
+                if (!token.selfClosing) stack.push(token.name);
+                return;
+            }
+
+            const matchingIndex = stack.lastIndexOf(token.name);
+            if (matchingIndex < 0) return;
+            while (stack.length - 1 > matchingIndex) {
+                repaired.push(`</${stack.pop()}>`);
+            }
+            stack.pop();
+            repaired.push(token.value);
+        });
+
+        while (stack.length) repaired.push(`</${stack.pop()}>`);
+        return formatHtml(repaired.join(''), options);
+    }
+
     function analyzeHtml(input) {
         const stack = [];
         const issues = [];
@@ -229,5 +258,5 @@
         return { elementCount, maxDepth, issues };
     }
 
-    return { tokenizeHtml, formatHtml, compressHtml, analyzeHtml };
+    return { tokenizeHtml, formatHtml, compressHtml, repairHtml, analyzeHtml };
 });

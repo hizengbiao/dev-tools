@@ -37,6 +37,15 @@ assert.strictEqual(
     '<div><span>Hello</span><br></div>'
 );
 
+assert.strictEqual(
+    formatter.repairHtml('<div><span>内容</div>'),
+    '<div>\n  <span>内容</span>\n</div>'
+);
+assert.strictEqual(
+    formatter.repairHtml('</aside><main><p>内容'),
+    '<main>\n  <p>内容</p>\n</main>'
+);
+
 assert.deepStrictEqual(formatter.analyzeHtml('<main><div><span>内容</span></div></main>'), {
     elementCount: 3,
     maxDepth: 3,
@@ -53,8 +62,14 @@ assert.match(page, /id="html-input"/);
 assert.match(page, /id="html-output"/);
 assert.match(page, /id="format-btn"/);
 assert.match(page, /id="compress-btn"/);
-assert.match(page, /id="swap-btn"/);
-assert.match(page, /<span>V1\.00<\/span>/);
+assert.match(page, /id="repair-btn"/);
+assert.match(page, /id="paste-format-btn"/);
+assert.match(page, /id="edit-btn"/);
+assert.match(page, /id="undo-btn"/);
+assert.match(page, /id="redo-btn"/);
+assert.doesNotMatch(page, /id="swap-btn"/);
+assert.match(page, /<span>V1\.01<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.00<\/div>/);
 
 const nav = fs.readFileSync(path.join(root, 'nav.js'), 'utf8');

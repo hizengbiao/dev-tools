@@ -13,90 +13,175 @@
     <script src="html-formatter.js"></script>
     <style>
         :root {
-            --bg: #f4f6f8;
-            --panel: #fff;
-            --border: #d0d7de;
-            --text: #24292f;
-            --muted: #57606a;
-            --accent: #0969da;
-            --danger: #cf222e;
+            --bg-color: #f4f6f8;
+            --panel-bg: #ffffff;
+            --border-color: #d0d7de;
+            --text-color: #24292f;
+            --muted-color: #57606a;
+            --accent-color: #0969da;
+            --danger-color: #cf222e;
         }
 
         * { box-sizing: border-box; }
 
         body {
             margin: 0;
-            padding: 18px;
+            padding: 14px 18px 16px;
             min-height: 100vh;
-            color: var(--text);
-            background: var(--bg);
+            color: var(--text-color);
+            background: var(--bg-color);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
         }
 
         button, textarea, select { font: inherit; }
 
-        .container { width: 100%; max-width: 1500px; margin: 0 auto; }
-        .tool-title, .panel-header, .toolbar { display: flex; align-items: center; }
-        .tool-title { justify-content: space-between; margin-bottom: 14px; }
-        h1 { margin: 0; font-size: 24px; }
+        .page-shell {
+            width: 100%;
+            max-width: 1500px;
+            min-height: calc(100vh - 96px);
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .btn, .indent-select {
+            padding: 8px 12px;
+            border: 1px solid rgba(27, 31, 36, 0.15);
+            border-radius: 6px;
+            color: var(--text-color);
+            background: #fff;
+            font-weight: 600;
+        }
+
+        .btn { cursor: pointer; }
+        .btn:hover { background: #f3f4f6; }
+        .btn-primary { border-color: var(--accent-color); color: #fff; background: var(--accent-color); }
+        .btn-primary:hover { background: #075fca; }
+        .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        .action-separator {
+            width: 1px;
+            height: 22px;
+            margin: 0 2px;
+            background: var(--border-color);
+        }
+
+        .indent-control {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            color: var(--muted-color);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .indent-select { padding: 7px 9px; }
 
         .version-info {
             display: inline-flex;
             align-items: center;
             gap: 5px;
+            margin-left: auto;
             padding: 5px 10px;
-            border: 1px solid var(--border);
+            border: 1px solid var(--border-color);
             border-radius: 999px;
-            color: var(--muted);
+            color: var(--muted-color);
             background: #f6f8fa;
             font-size: 12px;
             cursor: pointer;
         }
 
-        .workspace {
-            display: grid;
-            grid-template-columns: minmax(360px, 1fr) 150px minmax(360px, 1fr);
-            gap: 14px;
-            align-items: stretch;
-        }
-
-        .panel {
-            min-width: 0;
-            padding: 14px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--panel);
-            box-shadow: 0 1px 3px rgba(27, 31, 36, 0.06);
-        }
-
-        .panel-header { justify-content: space-between; gap: 10px; margin-bottom: 10px; }
-        .panel-header h2 { margin: 0; font-size: 16px; }
-
-        .editor-shell {
-            display: grid;
-            grid-template-columns: 48px minmax(0, 1fr);
-            height: min(68vh, 680px);
-            min-height: 480px;
-            overflow: hidden;
-            border: 1px solid var(--border);
+        .status-message {
+            display: none;
+            margin-bottom: 10px;
+            padding: 8px 11px;
             border-radius: 6px;
+            color: #1a7f37;
+            background: #dafbe1;
+            font-size: 13px;
+        }
+
+        .status-message.visible { display: block; }
+        .status-message.error { color: var(--danger-color); background: #ffebe9; }
+
+        .editor-container {
+            flex: 1;
+            min-height: 540px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            border-radius: 7px;
+            background: var(--panel-bg);
+            box-shadow: 0 2px 8px rgba(27, 31, 36, 0.05);
+        }
+
+        .editor-header {
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 0 12px;
+            border-bottom: 1px solid var(--border-color);
+            background: #f6f8fa;
+        }
+
+        .view-tabs { align-self: stretch; display: flex; align-items: flex-end; gap: 3px; }
+
+        .view-tab {
+            height: 40px;
+            padding: 0 17px;
+            border: 1px solid transparent;
+            border-bottom: 0;
+            border-radius: 6px 6px 0 0;
+            color: var(--muted-color);
+            background: transparent;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .view-tab.active {
+            margin-bottom: -1px;
+            border-color: var(--border-color);
+            color: var(--accent-color);
             background: #fff;
         }
 
-        .editor-shell:focus-within {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
+        .structure-summary { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .summary-item { color: var(--muted-color); font-size: 12px; white-space: nowrap; }
+        .summary-item strong { margin-left: 4px; color: var(--text-color); font-size: 13px; }
+        #validation-status.error { color: var(--danger-color); }
+
+        .editor-content { flex: 1; min-height: 0; position: relative; }
+        .view-panel { position: absolute; inset: 0; display: none; }
+        .view-panel.active { display: block; }
+
+        .editor-shell {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: 52px minmax(0, 1fr);
+            overflow: hidden;
+            background: #fff;
         }
 
         .line-numbers {
-            padding: 12px 8px;
+            padding: 14px 9px;
             overflow: hidden;
-            border-right: 1px solid var(--border);
+            border-right: 1px solid var(--border-color);
             color: #8c959f;
             background: #f6f8fa;
             text-align: right;
             white-space: pre;
-            line-height: 1.55;
             font: 13px/1.55 "SFMono-Regular", Consolas, monospace;
             user-select: none;
         }
@@ -104,63 +189,18 @@
         textarea {
             width: 100%;
             height: 100%;
-            padding: 12px;
+            padding: 14px;
             resize: none;
             border: 0;
             outline: 0;
-            color: var(--text);
+            color: var(--text-color);
             background: transparent;
             white-space: pre;
             overflow: auto;
-            line-height: 1.55;
-            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-            font-size: 13px;
+            font: 13px/1.55 "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
         }
 
         #html-output { background: #fbfcfd; }
-
-        .toolbar {
-            align-self: center;
-            flex-direction: column;
-            gap: 9px;
-            padding: 14px 10px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--panel);
-        }
-
-        .toolbar label { color: var(--muted); font-size: 12px; font-weight: 600; }
-        select, .btn {
-            width: 100%;
-            padding: 8px 10px;
-            border: 1px solid rgba(27, 31, 36, 0.15);
-            border-radius: 6px;
-            color: var(--text);
-            background: #fff;
-        }
-
-        .btn { font-weight: 600; cursor: pointer; }
-        .btn:hover { background: #f3f4f6; }
-        .btn-primary { border-color: var(--accent); color: #fff; background: var(--accent); }
-        .btn-danger { color: var(--danger); border-color: var(--danger); }
-
-        .summary {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 12px;
-            margin-top: 14px;
-        }
-
-        .metric {
-            padding: 12px 14px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--panel);
-        }
-
-        .metric-label { color: var(--muted); font-size: 12px; font-weight: 700; }
-        .metric-value { margin-top: 5px; font-size: 18px; font-weight: 700; }
-        .metric-value.error { color: var(--danger); font-size: 13px; line-height: 1.5; }
 
         .modal-overlay {
             position: fixed;
@@ -171,80 +211,86 @@
             justify-content: center;
             padding: 16px;
             background: rgba(0, 0, 0, 0.42);
+            backdrop-filter: blur(4px);
         }
 
-        .modal-content { width: min(620px, 100%); border-radius: 10px; background: #fff; overflow: hidden; }
-        .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+        .modal-content { width: min(650px, 100%); max-height: 85vh; overflow: hidden; border-radius: 10px; background: #fff; }
+        .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border-color); }
         .modal-header h3 { margin: 0; font-size: 18px; }
         .close-modal { border: 0; background: transparent; font-size: 22px; cursor: pointer; }
-        .modal-body { padding: 20px; }
-        .changelog-date { display: inline-block; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid var(--accent); font-weight: 700; }
-        .changelog-entry { display: flex; gap: 12px; }
-        .changelog-version { flex: 0 0 56px; color: var(--accent); font-weight: 700; }
+        .modal-body { max-height: calc(85vh - 62px); padding: 20px; overflow-y: auto; }
+        .changelog-date { display: inline-block; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid var(--accent-color); font-weight: 700; }
+        .changelog-entry { display: flex; gap: 12px; margin-bottom: 12px; }
+        .changelog-version { flex: 0 0 56px; color: var(--accent-color); font-weight: 700; }
 
         @media (max-width: 900px) {
-            body { padding: 12px; }
-            .workspace { grid-template-columns: 1fr; }
-            .toolbar { flex-direction: row; flex-wrap: wrap; }
-            .toolbar label, .toolbar select, .toolbar .btn { width: auto; flex: 1 1 120px; }
-            .editor-shell { width: 100%; height: 340px; min-height: 340px; }
-        }
-
-        @media (max-width: 560px) {
-            .summary { grid-template-columns: 1fr; }
-            h1 { font-size: 20px; }
+            body { padding-right: 10px; padding-left: 10px; }
+            .page-shell { min-height: calc(100vh - 90px); }
+            .main-actions { gap: 7px; }
+            .btn { padding: 7px 9px; font-size: 13px; }
+            .action-separator { display: none; }
+            .version-info { margin-left: 0; }
+            .editor-header { align-items: stretch; flex-direction: column; padding-top: 8px; }
+            .structure-summary { padding-bottom: 9px; gap: 10px; }
+            .editor-container { min-height: 460px; }
         }
     </style>
 </head>
 
 <body>
-    <main class="container">
-        <div class="tool-title">
-            <h1>HTML 元素格式化</h1>
+    <main class="page-shell">
+        <div class="main-actions" aria-label="HTML 格式化操作">
+            <button class="btn" id="paste-format-btn" type="button" title="从剪贴板读取 HTML 并立即格式化">📋 粘贴并格式化</button>
+            <button class="btn btn-primary" id="format-btn" type="button" title="按所选缩进美化 HTML">⚡ 格式化</button>
+            <button class="btn" id="edit-btn" type="button" title="编辑当前 HTML 源码">✏️ 编辑</button>
+            <button class="btn" id="compress-btn" type="button" title="移除标签之间多余空白并压缩为单行">📦 压缩</button>
+            <button class="btn" id="repair-btn" type="button" title="补齐缺失的结束标签并移除无对应开始标签的结束标签">🔧 修复</button>
+            <button class="btn" id="clear-btn" type="button" title="清空输入和结果">🧹 清空</button>
+            <span class="action-separator" aria-hidden="true"></span>
+            <button class="btn" id="undo-btn" type="button" title="撤销源码修改 (Ctrl+Z)">↩️ 撤销</button>
+            <button class="btn" id="redo-btn" type="button" title="重做源码修改 (Ctrl+Y)">↪️ 重做</button>
+            <span class="action-separator" aria-hidden="true"></span>
+            <label class="indent-control" for="indent-size">缩进
+                <select class="indent-select" id="indent-size">
+                    <option value="2">2 空格</option>
+                    <option value="4">4 空格</option>
+                </select>
+            </label>
+            <button class="btn" id="copy-btn" type="button" title="复制当前可见内容">📋 复制</button>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新说明">
-                <span>V1.00</span><span>ℹ️</span>
+                <span>V1.01</span><span>ℹ️</span>
             </div>
         </div>
 
-        <section class="workspace">
-            <div class="panel">
-                <div class="panel-header">
-                    <h2>输入 HTML</h2>
-                    <button class="btn btn-danger" id="clear-btn" type="button">清空</button>
+        <div class="status-message" id="status-message" role="status"></div>
+
+        <section class="editor-container">
+            <div class="editor-header">
+                <div class="view-tabs" role="tablist" aria-label="HTML 编辑视图">
+                    <button class="view-tab active" id="source-tab" type="button" role="tab" aria-selected="true">源码编辑</button>
+                    <button class="view-tab" id="result-tab" type="button" role="tab" aria-selected="false">处理结果</button>
                 </div>
-                <div class="editor-shell">
-                    <div class="line-numbers" id="input-lines" aria-hidden="true">1</div>
-                    <textarea id="html-input" wrap="off" spellcheck="false" placeholder="粘贴 HTML 文档或元素片段..."></textarea>
+                <div class="structure-summary" aria-label="HTML 结构概览">
+                    <span class="summary-item">元素<strong id="element-count">0</strong></span>
+                    <span class="summary-item">最大层级<strong id="max-depth">0</strong></span>
+                    <span class="summary-item">结构<strong id="validation-status">等待输入</strong></span>
                 </div>
             </div>
 
-            <div class="toolbar" aria-label="格式化操作">
-                <label for="indent-size">缩进宽度</label>
-                <select id="indent-size">
-                    <option value="2">2 个空格</option>
-                    <option value="4">4 个空格</option>
-                </select>
-                <button class="btn btn-primary" id="format-btn" type="button">格式化</button>
-                <button class="btn" id="compress-btn" type="button">压缩单行</button>
-                <button class="btn" id="swap-btn" type="button">交换输入输出</button>
-            </div>
-
-            <div class="panel">
-                <div class="panel-header">
-                    <h2>处理结果</h2>
-                    <button class="btn" id="copy-btn" type="button">复制结果</button>
+            <div class="editor-content">
+                <div class="view-panel active" id="source-view">
+                    <div class="editor-shell">
+                        <div class="line-numbers" id="input-lines" aria-hidden="true">1</div>
+                        <textarea id="html-input" wrap="off" spellcheck="false" placeholder="请在此粘贴 HTML 文档或元素片段..."></textarea>
+                    </div>
                 </div>
-                <div class="editor-shell">
-                    <div class="line-numbers" id="output-lines" aria-hidden="true">1</div>
-                    <textarea id="html-output" wrap="off" spellcheck="false" readonly placeholder="格式化结果会显示在这里..."></textarea>
+                <div class="view-panel" id="result-view">
+                    <div class="editor-shell">
+                        <div class="line-numbers" id="output-lines" aria-hidden="true">1</div>
+                        <textarea id="html-output" wrap="off" spellcheck="false" readonly placeholder="格式化、压缩或修复结果会显示在这里..."></textarea>
+                    </div>
                 </div>
             </div>
-        </section>
-
-        <section class="summary" aria-label="HTML 结构概览">
-            <div class="metric"><div class="metric-label">元素数量</div><div class="metric-value" id="element-count">0</div></div>
-            <div class="metric"><div class="metric-label">最大嵌套层级</div><div class="metric-value" id="max-depth">0</div></div>
-            <div class="metric"><div class="metric-label">结构检查</div><div class="metric-value" id="validation-status">等待输入</div></div>
         </section>
     </main>
 
@@ -255,6 +301,11 @@
                 <button class="close-modal" type="button" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date">2026年7月14日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.01</div>
+                    <div>参考 JSON 格式化工具重构为顶部工具栏和全宽编辑区，新增粘贴并格式化、源码/结果切换、HTML 修复、撤销重做及当前视图复制。</div>
+                </div>
                 <div class="changelog-date">2026年7月13日</div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.00</div>
@@ -269,65 +320,201 @@
         const output = document.getElementById('html-output');
         const inputLines = document.getElementById('input-lines');
         const outputLines = document.getElementById('output-lines');
+        const sourceView = document.getElementById('source-view');
+        const resultView = document.getElementById('result-view');
+        const sourceTab = document.getElementById('source-tab');
+        const resultTab = document.getElementById('result-tab');
+        const statusMessage = document.getElementById('status-message');
         const validationStatus = document.getElementById('validation-status');
+        const undoButton = document.getElementById('undo-btn');
+        const redoButton = document.getElementById('redo-btn');
+        let activeView = 'source';
+        let history = [''];
+        let historyIndex = 0;
+        let applyingHistory = false;
 
         function refreshEditor(textarea, lineNumbers) {
             EditorLines.refreshLineNumbers(textarea, lineNumbers);
         }
 
+        function currentContent() {
+            return activeView === 'source' ? input.value : output.value;
+        }
+
         function refreshSummary() {
-            const analysis = HtmlFormatter.analyzeHtml(input.value);
+            const content = currentContent();
+            const analysis = HtmlFormatter.analyzeHtml(content);
             document.getElementById('element-count').textContent = String(analysis.elementCount);
             document.getElementById('max-depth').textContent = String(analysis.maxDepth);
-            validationStatus.textContent = analysis.issues.length ? analysis.issues.join('；') : (input.value.trim() ? '标签结构正常' : '等待输入');
+            validationStatus.textContent = analysis.issues.length ? `${analysis.issues.length} 个问题` : (content.trim() ? '结构正常' : '等待输入');
             validationStatus.classList.toggle('error', analysis.issues.length > 0);
             validationStatus.title = analysis.issues.join('\n');
+        }
+
+        function showStatus(message, isError = false) {
+            statusMessage.textContent = message;
+            statusMessage.classList.add('visible');
+            statusMessage.classList.toggle('error', isError);
+        }
+
+        function clearStatus() {
+            statusMessage.classList.remove('visible', 'error');
+        }
+
+        function showView(view) {
+            activeView = view;
+            const showSource = view === 'source';
+            sourceView.classList.toggle('active', showSource);
+            resultView.classList.toggle('active', !showSource);
+            sourceTab.classList.toggle('active', showSource);
+            resultTab.classList.toggle('active', !showSource);
+            sourceTab.setAttribute('aria-selected', String(showSource));
+            resultTab.setAttribute('aria-selected', String(!showSource));
+            refreshEditor(showSource ? input : output, showSource ? inputLines : outputLines);
+            refreshSummary();
         }
 
         function setOutput(value) {
             output.value = value;
             refreshEditor(output, outputLines);
+            showView('result');
+        }
+
+        function saveHistory() {
+            if (applyingHistory || history[historyIndex] === input.value) return;
+            history = history.slice(0, historyIndex + 1);
+            history.push(input.value);
+            if (history.length > 100) history.shift();
+            historyIndex = history.length - 1;
+            updateHistoryButtons();
+        }
+
+        function applyHistory(index) {
+            if (index < 0 || index >= history.length) return;
+            applyingHistory = true;
+            historyIndex = index;
+            input.value = history[historyIndex];
+            applyingHistory = false;
+            showView('source');
+            refreshEditor(input, inputLines);
+            updateHistoryButtons();
+            clearStatus();
+        }
+
+        function updateHistoryButtons() {
+            undoButton.disabled = historyIndex <= 0;
+            redoButton.disabled = historyIndex >= history.length - 1;
+        }
+
+        function requireInput() {
+            if (input.value.trim()) return true;
+            showStatus('请先输入 HTML 内容。', true);
+            showView('source');
+            input.focus();
+            return false;
         }
 
         function runFormat() {
-            setOutput(HtmlFormatter.formatHtml(input.value, { indentSize: Number(document.getElementById('indent-size').value) }));
-            refreshSummary();
+            if (!requireInput()) return;
+            const indentSize = Number(document.getElementById('indent-size').value);
+            setOutput(HtmlFormatter.formatHtml(input.value, { indentSize }));
+            showStatus('HTML 已格式化。');
+        }
+
+        function runCompress() {
+            if (!requireInput()) return;
+            setOutput(HtmlFormatter.compressHtml(input.value));
+            showStatus('HTML 已压缩为单行。');
+        }
+
+        function runRepair() {
+            if (!requireInput()) return;
+            const indentSize = Number(document.getElementById('indent-size').value);
+            setOutput(HtmlFormatter.repairHtml(input.value, { indentSize }));
+            showStatus('HTML 标签结构已修复并格式化。');
+        }
+
+        async function pasteAndFormat() {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (!text) {
+                    showStatus('剪贴板中没有可用文本。', true);
+                    return;
+                }
+                input.value = text;
+                saveHistory();
+                refreshEditor(input, inputLines);
+                runFormat();
+            } catch (error) {
+                showStatus('无法读取剪贴板，请手动粘贴后再格式化。', true);
+            }
         }
 
         input.addEventListener('input', () => {
+            saveHistory();
             refreshEditor(input, inputLines);
             refreshSummary();
+            clearStatus();
         });
         input.addEventListener('scroll', () => EditorLines.syncLineNumberScroll(input, inputLines));
         output.addEventListener('scroll', () => EditorLines.syncLineNumberScroll(output, outputLines));
+        sourceTab.addEventListener('click', () => showView('source'));
+        resultTab.addEventListener('click', () => showView('result'));
+        document.getElementById('paste-format-btn').addEventListener('click', pasteAndFormat);
         document.getElementById('format-btn').addEventListener('click', runFormat);
-        document.getElementById('compress-btn').addEventListener('click', () => setOutput(HtmlFormatter.compressHtml(input.value)));
-        document.getElementById('swap-btn').addEventListener('click', () => {
-            const previousInput = input.value;
-            input.value = output.value;
-            setOutput(previousInput);
-            refreshEditor(input, inputLines);
-            refreshSummary();
+        document.getElementById('compress-btn').addEventListener('click', runCompress);
+        document.getElementById('repair-btn').addEventListener('click', runRepair);
+        document.getElementById('edit-btn').addEventListener('click', () => {
+            if (activeView === 'result' && output.value) {
+                input.value = output.value;
+                saveHistory();
+                refreshEditor(input, inputLines);
+            }
+            showView('source');
+            input.focus();
+            clearStatus();
         });
         document.getElementById('clear-btn').addEventListener('click', () => {
             input.value = '';
-            setOutput('');
+            output.value = '';
+            saveHistory();
             refreshEditor(input, inputLines);
-            refreshSummary();
+            refreshEditor(output, outputLines);
+            showView('source');
+            showStatus('内容已清空。');
             input.focus();
         });
         document.getElementById('copy-btn').addEventListener('click', () => {
-            if (!output.value) {
+            const content = currentContent();
+            if (!content) {
                 ClipboardUtils.showToast('暂无可复制内容');
                 return;
             }
-            ClipboardUtils.copyText(output.value, { successMessage: 'HTML 结果已复制' });
+            ClipboardUtils.copyText(content, { successMessage: '当前 HTML 内容已复制' });
         });
-        document.getElementById('indent-size').addEventListener('change', runFormat);
+        undoButton.addEventListener('click', () => applyHistory(historyIndex - 1));
+        redoButton.addEventListener('click', () => applyHistory(historyIndex + 1));
+        document.getElementById('indent-size').addEventListener('change', () => {
+            if (input.value.trim()) runFormat();
+        });
+        document.addEventListener('keydown', (event) => {
+            if (!(event.ctrlKey || event.metaKey)) return;
+            if (event.key.toLowerCase() === 'z' && !event.shiftKey) {
+                event.preventDefault();
+                applyHistory(historyIndex - 1);
+            } else if (event.key.toLowerCase() === 'y' || (event.key.toLowerCase() === 'z' && event.shiftKey)) {
+                event.preventDefault();
+                applyHistory(historyIndex + 1);
+            } else if (event.key === 'Enter') {
+                event.preventDefault();
+                runFormat();
+            }
+        });
 
-        input.value = '<section class="profile"><h2>用户信息</h2><div class="content"><span>张三</span><br><a href="/detail">查看详情</a></div></section>';
         refreshEditor(input, inputLines);
-        runFormat();
+        refreshEditor(output, outputLines);
+        refreshSummary();
+        updateHistoryButtons();
     </script>
 </body>
 

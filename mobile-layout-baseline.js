@@ -32,7 +32,7 @@
         },
         {
             path: 'html-formatter.html',
-            requiredSnippets: ['@media (max-width: 900px)', 'grid-template-columns: 1fr', 'width: 100%'],
+            requiredSnippets: ['@media (max-width: 900px)', 'flex-direction: column', 'width: 100%'],
         },
     ];
 

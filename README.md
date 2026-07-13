@@ -23,7 +23,7 @@
 | [文本转义转换工具](text_escape_formatter_final.html) | 支持转义文本、可读文本、拼接字符串合并和输入输出差异对比。 |
 | [文本智能拆分](text-splitter.html) | 按指定长度智能拆分长文本，优先保留自然语义边界并支持逐段复制。 |
 | [正则表达式测试](regex-tester.html) | 支持正则匹配、替换、分组高亮和正则表达式可视化。 |
-| [HTML 元素格式化](html-formatter.html) | 格式化或压缩 HTML 文档与元素片段，支持缩进调整和标签结构检查。 |
+| [HTML 元素格式化](html-formatter.html) | 格式化、压缩或修复 HTML 文档与元素片段，支持缩进调整、结构检查和撤销重做。 |
 | [Neon Timer](neon-timer/dist/index.html) | 炫酷霓虹风格的倒计时与秒表应用。 |
 
 ## 📖 开发指南 (Development Guide)
