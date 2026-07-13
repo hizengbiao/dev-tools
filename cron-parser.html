@@ -4,13 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cron 表达式解析工具</title>
+    <title>Cron 表达式解析与生成工具</title>
     <link rel="stylesheet" href="nav.css">
     <script src="nav.js" defer></script>
     <script src="changelog.js"></script>
     <script src="clipboard-utils.js"></script>
     <script src="sample-data.js"></script>
     <script src="cron-parser.js"></script>
+    <script src="cron-generator.js"></script>
     <style>
         :root {
             --bg-color: #f4f6f8;
@@ -36,13 +37,14 @@
         }
 
         button,
-        input {
+        input,
+        select {
             font: inherit;
         }
 
         .container {
             width: 100%;
-            max-width: 980px;
+            max-width: 1180px;
             margin: 0 auto;
         }
 
@@ -148,6 +150,180 @@
             box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
         }
 
+        select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
+        }
+
+        .mode-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 14px;
+            padding: 4px;
+            width: fit-content;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: #eaeef2;
+        }
+
+        .mode-tab {
+            padding: 8px 18px;
+            border: 0;
+            border-radius: 6px;
+            background: transparent;
+            color: var(--muted-color);
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .mode-tab.active {
+            background: #fff;
+            color: var(--accent-color);
+            box-shadow: 0 1px 3px rgba(27, 31, 36, 0.12);
+        }
+
+        .mode-view {
+            display: none;
+        }
+
+        .mode-view.active {
+            display: block;
+        }
+
+        .generator-layout {
+            display: grid;
+            grid-template-columns: minmax(340px, 0.85fr) minmax(480px, 1.15fr);
+            gap: 16px;
+            align-items: start;
+        }
+
+        .generator-layout .panel + .panel {
+            margin-top: 0;
+        }
+
+        .generator-form {
+            display: grid;
+            gap: 14px;
+        }
+
+        .generator-field {
+            display: grid;
+            gap: 6px;
+        }
+
+        .generator-field label,
+        .generator-group-label {
+            color: var(--muted-color);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .generator-field input,
+        .generator-field select {
+            width: 100%;
+            padding: 9px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: #fff;
+            color: var(--text-color);
+        }
+
+        .generator-time-grid,
+        .generator-date-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .generator-date-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .weekday-options {
+            display: flex;
+            gap: 7px;
+            flex-wrap: wrap;
+        }
+
+        .weekday-option {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 7px 9px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: #f6f8fa;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .generator-summary {
+            margin-bottom: 12px;
+            padding: 12px 14px;
+            border-left: 3px solid var(--accent-color);
+            border-radius: 6px;
+            background: #f0f7ff;
+            line-height: 1.6;
+        }
+
+        .generator-results {
+            display: grid;
+            gap: 10px;
+        }
+
+        .cron-format-card {
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 7px;
+            background: #f6f8fa;
+        }
+
+        .cron-format-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .cron-format-label {
+            color: var(--accent-color);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .cron-format-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .cron-format-expression {
+            display: block;
+            padding: 9px 10px;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: #fff;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            white-space: nowrap;
+        }
+
+        .unsupported-format {
+            color: var(--danger-color);
+            font-size: 13px;
+        }
+
+        @media (max-width: 860px) {
+            .generator-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .generator-time-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .actions {
             gap: 10px;
             margin-top: 12px;
@@ -168,6 +344,11 @@
             border-color: var(--accent-color);
             background: var(--accent-color);
             color: #fff;
+        }
+
+        .btn-small {
+            padding: 5px 8px;
+            font-size: 12px;
         }
 
         .status {
@@ -299,13 +480,19 @@
 <body>
     <main class="container">
         <div class="tool-title">
-            <h1>Cron 表达式解析工具</h1>
+            <h1>Cron 表达式解析与生成工具</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.04</span>
+                <span>V1.05</span>
                 <span>ℹ️</span>
             </div>
         </div>
 
+        <div class="mode-tabs" role="tablist" aria-label="Cron 工具模式">
+            <button class="mode-tab active" id="parser-tab" type="button" role="tab" aria-selected="true">解析 Cron</button>
+            <button class="mode-tab" id="generator-tab" type="button" role="tab" aria-selected="false">生成 Cron</button>
+        </div>
+
+        <div class="mode-view active" id="parser-view">
         <section class="panel">
             <div class="panel-header">
                 <h2>表达式</h2>
@@ -338,6 +525,90 @@
                 <div class="hint">点击解析后显示最近 N 次执行时间。</div>
             </div>
         </section>
+        </div>
+
+        <div class="mode-view" id="generator-view">
+            <div class="generator-layout">
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2>执行需求</h2>
+                    </div>
+                    <div class="generator-form">
+                        <div class="generator-field">
+                            <label for="schedule-type">什么时候执行</label>
+                            <select id="schedule-type">
+                                <option value="every-minute">每分钟</option>
+                                <option value="minute-interval">每隔几分钟</option>
+                                <option value="hourly">每小时指定分钟</option>
+                                <option value="hour-interval">每隔几小时</option>
+                                <option value="daily" selected>每天</option>
+                                <option value="weekly">每周指定日期</option>
+                                <option value="monthly">每月指定日期</option>
+                                <option value="yearly">每年指定日期</option>
+                            </select>
+                        </div>
+
+                        <div class="generator-field generator-control" id="interval-control">
+                            <label for="schedule-interval" id="interval-label">分钟间隔</label>
+                            <input id="schedule-interval" type="number" min="1" max="59" value="5">
+                        </div>
+
+                        <div class="generator-control" id="time-control">
+                            <div class="generator-group-label">执行时间</div>
+                            <div class="generator-time-grid">
+                                <div class="generator-field" id="hour-control">
+                                    <label for="schedule-hour">小时</label>
+                                    <input id="schedule-hour" type="number" min="0" max="23" value="9">
+                                </div>
+                                <div class="generator-field" id="minute-control">
+                                    <label for="schedule-minute">分钟</label>
+                                    <input id="schedule-minute" type="number" min="0" max="59" value="0">
+                                </div>
+                                <div class="generator-field">
+                                    <label for="schedule-second">秒</label>
+                                    <input id="schedule-second" type="number" min="0" max="59" value="0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="generator-control" id="weekday-control">
+                            <div class="generator-group-label">执行星期</div>
+                            <div class="weekday-options">
+                                <label class="weekday-option"><input type="checkbox" name="schedule-weekday" value="MON" checked>周一</label>
+                                <label class="weekday-option"><input type="checkbox" name="schedule-weekday" value="TUE">周二</label>
+                                <label class="weekday-option"><input type="checkbox" name="schedule-weekday" value="WED">周三</label>
+                                <label class="weekday-option"><input type="checkbox" name="schedule-weekday" value="THU">周四</label>
+                                <label class="weekday-option"><input type="checkbox" name="schedule-weekday" value="FRI" checked>周五</label>
+                                <label class="weekday-option"><input type="checkbox" name="schedule-weekday" value="SAT">周六</label>
+                                <label class="weekday-option"><input type="checkbox" name="schedule-weekday" value="SUN">周日</label>
+                            </div>
+                        </div>
+
+                        <div class="generator-control generator-date-grid" id="date-control">
+                            <div class="generator-field" id="month-control">
+                                <label for="schedule-month">月份</label>
+                                <input id="schedule-month" type="number" min="1" max="12" value="1">
+                            </div>
+                            <div class="generator-field" id="day-control">
+                                <label for="schedule-day">日期</label>
+                                <input id="schedule-day" type="number" min="1" max="31" value="1">
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary" id="generate-btn" type="button">生成 Cron 表达式</button>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <div class="result-header">
+                        <h2>生成结果</h2>
+                        <button class="btn" id="copy-all-generated-btn" type="button">复制全部</button>
+                    </div>
+                    <div class="generator-summary" id="generator-summary">配置执行需求后生成表达式。</div>
+                    <div class="generator-results" id="generator-results"></div>
+                </section>
+            </div>
+        </div>
     </main>
 
     <div id="changelog-modal" class="modal-overlay">
@@ -348,6 +619,10 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date">2026年7月14日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.05</div>
+                    <div>新增 Cron 逆向生成：通过执行周期、时间和日期配置，同时生成 Linux、Spring 与 Quartz 格式，并支持复制和回填解析验证。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.04</div>
                     <div>统一使用年月日时分秒和 24 小时格式展示最近执行时间，并明确标注浏览器当前时区。</div>
@@ -381,7 +656,21 @@
         const cronExplanation = document.getElementById('cron-explanation');
         const resultList = document.getElementById('result-list');
         const timezoneLabel = document.getElementById('timezone-label');
+        const parserTab = document.getElementById('parser-tab');
+        const generatorTab = document.getElementById('generator-tab');
+        const parserView = document.getElementById('parser-view');
+        const generatorView = document.getElementById('generator-view');
+        const scheduleType = document.getElementById('schedule-type');
+        const scheduleInterval = document.getElementById('schedule-interval');
+        const scheduleHour = document.getElementById('schedule-hour');
+        const scheduleMinute = document.getElementById('schedule-minute');
+        const scheduleSecond = document.getElementById('schedule-second');
+        const scheduleMonth = document.getElementById('schedule-month');
+        const scheduleDay = document.getElementById('schedule-day');
+        const generatorSummary = document.getElementById('generator-summary');
+        const generatorResults = document.getElementById('generator-results');
         let currentRuns = [];
+        let currentGeneratedFormats = [];
 
         const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || '本地时区';
         timezoneLabel.textContent = `当前时区：${currentTimezone}`;
@@ -397,6 +686,88 @@
             resultList.innerHTML = runs.map((date, index) => `
                 <div class="run-item">#${index + 1} ${formatDateTime(date)}</div>
             `).join('');
+        }
+
+        function switchMode(mode) {
+            const showParser = mode === 'parser';
+            parserTab.classList.toggle('active', showParser);
+            generatorTab.classList.toggle('active', !showParser);
+            parserTab.setAttribute('aria-selected', String(showParser));
+            generatorTab.setAttribute('aria-selected', String(!showParser));
+            parserView.classList.toggle('active', showParser);
+            generatorView.classList.toggle('active', !showParser);
+        }
+
+        function setControlVisible(id, visible) {
+            document.getElementById(id).style.display = visible ? '' : 'none';
+        }
+
+        function updateGeneratorControls() {
+            const type = scheduleType.value;
+            const usesInterval = type === 'minute-interval' || type === 'hour-interval';
+            const usesHour = ['daily', 'weekly', 'monthly', 'yearly'].includes(type);
+            const usesMinute = type === 'hourly' || usesHour;
+            const visibleTimeFields = 1 + Number(usesHour) + Number(usesMinute);
+
+            setControlVisible('interval-control', usesInterval);
+            setControlVisible('hour-control', usesHour);
+            setControlVisible('minute-control', usesMinute);
+            setControlVisible('weekday-control', type === 'weekly');
+            setControlVisible('date-control', type === 'monthly' || type === 'yearly');
+            setControlVisible('month-control', type === 'yearly');
+            setControlVisible('day-control', type === 'monthly' || type === 'yearly');
+
+            document.querySelector('.generator-time-grid').style.gridTemplateColumns = `repeat(${visibleTimeFields}, minmax(0, 1fr))`;
+            document.getElementById('interval-label').textContent = type === 'hour-interval' ? '小时间隔' : '分钟间隔';
+            scheduleInterval.max = type === 'hour-interval' ? '23' : '59';
+            if (Number(scheduleInterval.value) > Number(scheduleInterval.max)) scheduleInterval.value = scheduleInterval.max;
+        }
+
+        function getGeneratorConfig() {
+            return {
+                type: scheduleType.value,
+                interval: scheduleInterval.value,
+                hour: scheduleHour.value,
+                minute: scheduleMinute.value,
+                second: scheduleSecond.value,
+                month: scheduleMonth.value,
+                day: scheduleDay.value,
+                weekdays: [...document.querySelectorAll('input[name="schedule-weekday"]:checked')].map(input => input.value)
+            };
+        }
+
+        function renderGeneratedFormats(formats) {
+            currentGeneratedFormats = formats;
+            generatorResults.innerHTML = formats.map(format => `
+                <div class="cron-format-card">
+                    <div class="cron-format-header">
+                        <span class="cron-format-label">${format.label}</span>
+                        ${format.supported ? `
+                            <div class="cron-format-actions">
+                                <button class="btn btn-small" type="button" data-copy-format="${format.id}">复制</button>
+                                <button class="btn btn-small" type="button" data-parse-format="${format.id}">解析验证</button>
+                            </div>
+                        ` : ''}
+                    </div>
+                    ${format.supported
+                        ? `<code class="cron-format-expression">${format.expression}</code>`
+                        : `<div class="unsupported-format">${format.reason}</div>`}
+                </div>
+            `).join('');
+        }
+
+        function generateCronExpressions() {
+            try {
+                const generated = CronGenerator.generateCron(getGeneratorConfig());
+                generatorSummary.textContent = generated.description;
+                generatorSummary.classList.remove('status', 'error');
+                renderGeneratedFormats(generated.formats);
+            } catch (error) {
+                currentGeneratedFormats = [];
+                generatorSummary.textContent = `生成失败：${error.message}`;
+                generatorSummary.classList.add('status', 'error');
+                generatorResults.innerHTML = '';
+            }
         }
 
         function parseCron() {
@@ -419,6 +790,41 @@
         }
 
         document.getElementById('parse-btn').addEventListener('click', parseCron);
+        parserTab.addEventListener('click', () => switchMode('parser'));
+        generatorTab.addEventListener('click', () => switchMode('generator'));
+        scheduleType.addEventListener('change', () => {
+            updateGeneratorControls();
+            generateCronExpressions();
+        });
+        document.getElementById('generate-btn').addEventListener('click', generateCronExpressions);
+        document.querySelectorAll('#generator-view input').forEach(input => {
+            input.addEventListener('change', generateCronExpressions);
+        });
+        generatorResults.addEventListener('click', (event) => {
+            const copyButton = event.target.closest('[data-copy-format]');
+            const parseButton = event.target.closest('[data-parse-format]');
+            const formatId = copyButton?.dataset.copyFormat || parseButton?.dataset.parseFormat;
+            if (!formatId) return;
+            const format = currentGeneratedFormats.find(item => item.id === formatId && item.supported);
+            if (!format) return;
+            if (copyButton) {
+                ClipboardUtils.copyText(format.expression, { successMessage: `${format.label}表达式已复制` });
+                return;
+            }
+            cronInput.value = format.expression;
+            switchMode('parser');
+            parseCron();
+            parserView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+        document.getElementById('copy-all-generated-btn').addEventListener('click', () => {
+            const supported = currentGeneratedFormats.filter(format => format.supported);
+            if (!supported.length) {
+                ClipboardUtils.showToast('暂无可复制的表达式');
+                return;
+            }
+            const text = supported.map(format => `${format.label}: ${format.expression}`).join('\n');
+            ClipboardUtils.copyText(text, { successMessage: '全部表达式已复制' });
+        });
         document.getElementById('sample-linux-btn').addEventListener('click', () => {
             cronInput.value = SampleData.getSample('cron.linuxEveryThirtyMinutes');
             parseCron();
@@ -436,6 +842,8 @@
         });
         cronInput.value = SampleData.getSample('cron.linuxEveryThirtyMinutes');
         parseCron();
+        updateGeneratorControls();
+        generateCronExpressions();
     </script>
 </body>
 

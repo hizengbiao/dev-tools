@@ -50,9 +50,9 @@
         },
         {
             path: 'cron-parser.html',
-            title: 'Cron 表达式解析工具',
-            markers: ['cron-input', 'parse-btn'],
-            selectors: ['#cron-input', '#parse-btn'],
+            title: 'Cron 表达式解析与生成工具',
+            markers: ['cron-input', 'parse-btn', 'generator-tab', 'schedule-type'],
+            selectors: ['#cron-input', '#parse-btn', '#generator-tab'],
         },
         {
             path: 'sql-formatter.html',

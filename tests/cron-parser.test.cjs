@@ -155,12 +155,13 @@ assert.strictEqual(farFutureRun.toISOString(), '2099-12-31T23:59:59.000Z');
 assert.throws(() => cron.getNextRuns('* * *', { from: new Date(), count: 1 }), /Cron expression must have 5, 6, or 7 fields/);
 
 const page = fs.readFileSync(path.join(root, 'cron-parser.html'), 'utf8');
-assert.match(page, /<title>Cron 表达式解析工具<\/title>/);
+assert.match(page, /<title>Cron 表达式解析与生成工具<\/title>/);
 assert.match(page, /<script src="cron-parser\.js"><\/script>/);
-assert.match(page, /<span>V1\.04<\/span>/);
+assert.match(page, /<script src="cron-generator\.js"><\/script>/);
+assert.match(page, /<span>V1\.05<\/span>/);
 assert.match(page, /id="cron-explanation"/);
 assert.match(page, /CronParser\.explainCron/);
-assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
+assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
 assert.match(page, /支持月份和星期英文缩写，以及 Quartz 的 \?、L、W、LW、# 语法/);
 assert.match(page, /Spring \/ Quartz 6 段/);
 assert.match(page, /id="timezone-label"/);
@@ -171,6 +172,10 @@ assert.match(page, /id="cron-input"/);
 assert.match(page, /id="count-input"/);
 assert.match(page, /id="result-list"/);
 assert.match(page, /CronParser\.getNextRuns/);
+assert.match(page, /id="generator-tab"/);
+assert.match(page, /id="schedule-type"/);
+assert.match(page, /id="generator-results"/);
+assert.match(page, /CronGenerator\.generateCron/);
 
 const nav = fs.readFileSync(path.join(root, 'nav.js'), 'utf8');
 const home = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
