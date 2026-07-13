@@ -6,8 +6,8 @@ const vm = require('node:vm');
 const pagePath = path.resolve(__dirname, '../timestamp-converter.html');
 const page = fs.readFileSync(pagePath, 'utf8');
 
-assert.match(page, /<span>V1\.06<\/span>/);
-assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.06<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>[\s\S]*?<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>/);
+assert.match(page, /<span>V1\.07<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.07<\/div>[\s\S]*?<div class="changelog-version">V1\.06<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>[\s\S]*?<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月10日<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年6月26日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
 assert.match(page, /id="tab-single"/);
@@ -37,6 +37,8 @@ assert.match(page, /function buildTimezoneComparison\(timestampValue, unit, zone
 assert.match(page, /function renderTimezoneComparison\(\)/);
 assert.match(page, /class="timezone-header"/);
 assert.match(page, /class="card live-clock-card"/);
+assert.match(page, /\.live-clock-card\s*\{[^}]*display:\s*block/);
+assert.match(page, /\.live-clock-card \.controls\s*\{[^}]*justify-content:\s*flex-start/);
 assert.match(page, /class="io-group timestamp-conversion-section"/);
 assert.match(page, /class="io-group date-conversion-section"/);
 assert.match(page, /class="io-group relative-time-section"/);

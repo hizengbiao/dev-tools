@@ -106,25 +106,22 @@
         }
 
         .live-clock-card {
-            display: grid;
-            grid-template-columns: 160px minmax(0, 1fr) auto;
-            gap: 20px;
-            align-items: center;
-            padding: 14px 18px;
+            display: block;
+            padding: 10px 18px;
             margin-bottom: 12px;
         }
 
-        .live-clock-card h2,
-        .live-clock-card .current-time-display {
-            margin-bottom: 0;
+        .live-clock-card h2 {
+            margin-bottom: 8px;
         }
 
         .live-clock-card .current-time-display {
-            font-size: 36px;
+            font-size: 44px;
+            margin-bottom: 8px;
         }
 
         .live-clock-card .controls {
-            justify-self: end;
+            justify-content: flex-start;
         }
 
         .conversion-card {
@@ -561,11 +558,13 @@
             }
 
             .live-clock-card {
-                display: block;
                 padding: 18px;
             }
 
-            .live-clock-card h2,
+            .live-clock-card h2 {
+                margin-bottom: 12px;
+            }
+
             .live-clock-card .current-time-display {
                 margin-bottom: 12px;
             }
@@ -759,7 +758,7 @@
         <div class="tool-title">
             <h1>时间戳转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.06</span>
+                <span>V1.07</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -967,6 +966,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月14日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.07</div>
+                        <div class="changelog-desc">恢复当前时间戳区域的纵向布局，依次展示标题、时间戳和操作按钮。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.06</div>
                         <div class="changelog-desc">优化宽屏布局，利用页面两侧空间将转换功能与时区对比横向排列，减少页面纵向滚动。</div>
