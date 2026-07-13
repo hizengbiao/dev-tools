@@ -29,6 +29,8 @@ const expectedLeadingPaths = [
     'regex-tester.html',
     'text_escape_formatter_final.html',
     'text-splitter.html',
+    'cron-parser.html',
+    'html-formatter.html',
     'timestamp-converter.html',
 ];
 assert.deepStrictEqual(
@@ -44,9 +46,13 @@ assert.match(nav, /scrollLeft \+= event\.deltaY/);
 assert.match(nav, /document\.body\.classList\.toggle\('nav-expanded'/);
 assert.match(nav, /NAV_CONFIG_STORAGE_KEY = 'dev-tools-nav-config-v1'/);
 assert.match(nav, /NAV_HTML_FORMATTER_MIGRATION_KEY = 'dev-tools-nav-html-formatter-default-v1'/);
+assert.match(nav, /NAV_PRIMARY_ORDER_MIGRATION_KEY = 'dev-tools-nav-primary-order-v1'/);
 assert.match(nav, /function migrateHtmlFormatterDefault/);
 assert.match(nav, /orderedPaths\.splice\(insertIndex, 0, 'html-formatter\.html'\)/);
 assert.match(nav, /window\.localStorage\.setItem\(NAV_HTML_FORMATTER_MIGRATION_KEY, '1'\)/);
+assert.match(nav, /function migratePrimaryDefaultOrder/);
+assert.match(nav, /const isLegacyDefault = legacyDefaultPaths\.length === normalized\.orderedPaths\.length/);
+assert.match(nav, /return migratePrimaryDefaultOrder\(migrateHtmlFormatterDefault\(config\)\)/);
 assert.match(nav, /function loadNavConfig/);
 assert.match(nav, /function saveNavConfig/);
 assert.match(nav, /function renderNavManager/);
@@ -89,6 +95,8 @@ const expectedHomeLeadingPaths = [
     'regex-tester.html',
     'text_escape_formatter_final.html',
     'text-splitter.html',
+    'cron-parser.html',
+    'html-formatter.html',
     'timestamp-converter.html',
 ];
 assert.match(home, /\.tools-grid\s*\{[^}]*grid-template-columns:\s*repeat\(5, minmax\(0, 1fr\)\)[^}]*max-width:\s*1500px/s);

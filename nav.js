@@ -7,19 +7,20 @@
         { name: '正则测试', path: 'regex-tester.html', icon: '🔎' },
         { name: '文本转义', path: 'text_escape_formatter_final.html', icon: '↔️' },
         { name: '文本拆分', path: 'text-splitter.html', icon: '✂️' },
+        { name: 'Cron 解析', path: 'cron-parser.html', icon: '🕒' },
+        { name: 'HTML 格式化', path: 'html-formatter.html', icon: '🌐' },
         { name: '时间戳转换', path: 'timestamp-converter.html', icon: '⏱️' },
         { name: 'URL 编解码', path: 'url-encoder.html', icon: '🔗' },
         { name: 'Base64', path: 'base64-encoder.html', icon: '🔐' },
         { name: '哈希摘要', path: 'hash-generator.html', icon: '🔎' },
         { name: 'JWT 解析', path: 'jwt-decoder.html', icon: '🎫' },
         { name: '随机生成', path: 'random-generator.html', icon: '🎲' },
-        { name: 'Cron 解析', path: 'cron-parser.html', icon: '🕒' },
         { name: 'SQL 格式化', path: 'sql-formatter.html', icon: '🧾' },
-        { name: 'HTML 格式化', path: 'html-formatter.html', icon: '🌐' },
         { name: 'Neon Timer', path: 'neon-timer/dist/index.html', icon: '⏲️' }
     ];
     const NAV_CONFIG_STORAGE_KEY = 'dev-tools-nav-config-v1';
     const NAV_HTML_FORMATTER_MIGRATION_KEY = 'dev-tools-nav-html-formatter-default-v1';
+    const NAV_PRIMARY_ORDER_MIGRATION_KEY = 'dev-tools-nav-primary-order-v1';
     const configurableTools = tools.filter(tool => tool.path !== 'index.html');
     const toolByPath = new Map(configurableTools.map(tool => [tool.path, tool]));
 
@@ -65,11 +66,45 @@
         return migrated;
     }
 
+    function migratePrimaryDefaultOrder(config) {
+        const normalized = normalizeNavConfig(config);
+        if (window.localStorage.getItem(NAV_PRIMARY_ORDER_MIGRATION_KEY) === '1') {
+            return normalized;
+        }
+
+        const legacyDefaultPaths = [
+            'json-parser.html',
+            'text-case-converter.html',
+            'regex-tester.html',
+            'text_escape_formatter_final.html',
+            'text-splitter.html',
+            'timestamp-converter.html',
+            'url-encoder.html',
+            'base64-encoder.html',
+            'hash-generator.html',
+            'jwt-decoder.html',
+            'random-generator.html',
+            'cron-parser.html',
+            'sql-formatter.html',
+            'html-formatter.html',
+            'neon-timer/dist/index.html'
+        ];
+        const isLegacyDefault = legacyDefaultPaths.length === normalized.orderedPaths.length
+            && legacyDefaultPaths.every((path, index) => normalized.orderedPaths[index] === path);
+        const migrated = isLegacyDefault ? getDefaultNavConfig() : normalized;
+
+        if (isLegacyDefault) {
+            window.localStorage.setItem(NAV_CONFIG_STORAGE_KEY, JSON.stringify(migrated));
+        }
+        window.localStorage.setItem(NAV_PRIMARY_ORDER_MIGRATION_KEY, '1');
+        return migrated;
+    }
+
     function loadNavConfig() {
         try {
             const rawConfig = window.localStorage.getItem(NAV_CONFIG_STORAGE_KEY);
             const config = rawConfig ? JSON.parse(rawConfig) : getDefaultNavConfig();
-            return migrateHtmlFormatterDefault(config);
+            return migratePrimaryDefaultOrder(migrateHtmlFormatterDefault(config));
         } catch (error) {
             console.warn('Failed to load navigation config.', error);
             return getDefaultNavConfig();
