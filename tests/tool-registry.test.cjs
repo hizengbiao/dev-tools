@@ -91,6 +91,10 @@ const expectedHomeLeadingPaths = [
     'text-splitter.html',
     'timestamp-converter.html',
 ];
+assert.match(home, /\.tools-grid\s*\{[^}]*grid-template-columns:\s*repeat\(5, minmax\(0, 1fr\)\)[^}]*max-width:\s*1500px/s);
+assert.match(home, /@media \(max-width: 1200px\)[\s\S]*?\.tools-grid\s*\{[^}]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
+assert.match(home, /@media \(max-width: 760px\)[\s\S]*?\.tools-grid\s*\{[^}]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/);
+assert.match(home, /@media \(max-width: 480px\)[\s\S]*?\.tools-grid\s*\{[^}]*grid-template-columns:\s*1fr/);
 assert.deepStrictEqual(
     homeToolOrder.slice(0, expectedHomeLeadingPaths.length),
     expectedHomeLeadingPaths,
