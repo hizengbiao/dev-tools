@@ -50,8 +50,21 @@ const tree = formatter.buildHtmlTree('<main><section><h2>标题</h2><br></sectio
 assert.strictEqual(tree.children[0].name, 'main');
 assert.strictEqual(tree.children[0].children[0].name, 'section');
 assert.strictEqual(tree.children[0].children[0].children[0].name, 'h2');
-assert.deepStrictEqual(tree.children[0].children[0].children[0].children[0], { type: 'text', value: '标题' });
+assert.strictEqual(tree.children[0].children[0].children[0].children[0].type, 'text');
+assert.strictEqual(tree.children[0].children[0].children[0].children[0].value, '标题');
 assert.strictEqual(tree.children[0].children[0].children[1].selfClosing, true);
+assert.strictEqual(tree.children[0].start, 0);
+assert.strictEqual(tree.children[0].end, '<main><section><h2>标题</h2><br></section></main>'.length);
+
+assert.strictEqual(
+    formatter.replaceHtmlBlock(
+        '<main><section><p>旧内容</p></section><footer>页脚</footer></main>',
+        [0, 0],
+        '<section class="updated"><h2>新内容</h2></section>'
+    ),
+    '<main><section class="updated"><h2>新内容</h2></section><footer>页脚</footer></main>'
+);
+assert.strictEqual(formatter.replaceHtmlBlock('<main></main>', [9], '<aside></aside>'), '<main></main>');
 
 const pairedTags = '<main><section><span>内容</span></section></main>';
 assert.deepStrictEqual(
@@ -113,14 +126,18 @@ assert.match(page, /id="collapse-all-btn"/);
 assert.match(page, /HtmlFormatter\.buildHtmlTree/);
 assert.match(page, /HtmlFormatter\.findMatchingTagAroundCursor/);
 assert.match(page, /function setupTagMatching\(textarea\)/);
+assert.match(page, /function beginBlockEdit\(wrapper, node, path\)/);
+assert.match(page, /function saveBlockEdit\(path, replacement\)/);
+assert.match(page, /className = 'tree-edit-btn'/);
+assert.match(page, /HtmlFormatter\.replaceHtmlBlock\(output\.value, path, replacement\)/);
 assert.match(page, /className = 'tag-highlight-overlay'/);
 assert.match(page, /\.html-tree-node:hover\s*\{/);
 assert.match(page, /\.tree-children\s*\{[^}]*padding:\s*2px 0 2px 10px;[^}]*margin-left:\s*2px;/s);
 assert.match(page, /\.html-tree\s*\{[^}]*font:\s*13px\/1\.6/s);
 assert.match(page, /textarea\s*\{[^}]*padding:\s*15px;[^}]*font:\s*13px\/1\.5/s);
 assert.doesNotMatch(page, /\.depth-1\s*\{/);
-assert.match(page, /<span>V1\.04<\/span>/);
-assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
+assert.match(page, /<span>V1\.05<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.00<\/div>/);
 
 const nav = fs.readFileSync(path.join(root, 'nav.js'), 'utf8');

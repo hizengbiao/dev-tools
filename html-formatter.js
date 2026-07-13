@@ -249,6 +249,8 @@
                     opening: token.value.trim(),
                     closing: token.selfClosing ? '' : `</${token.name}>`,
                     selfClosing: token.selfClosing,
+                    start: token.start,
+                    end: token.end,
                     children: []
                 };
                 parent.children.push(node);
@@ -258,7 +260,9 @@
             if (token.type === 'tag' && token.closing) {
                 const matchingIndex = stack.map(node => node.name).lastIndexOf(token.name);
                 if (matchingIndex > 0) {
-                    stack[matchingIndex].closing = token.value.trim();
+                    const matchedNode = stack[matchingIndex];
+                    matchedNode.closing = token.value.trim();
+                    matchedNode.end = token.end;
                     stack.length = matchingIndex;
                 }
                 return;
@@ -266,10 +270,24 @@
 
             const value = token.type === 'text' ? normalizeText(token.value) : token.value.trim();
             if (!value) return;
-            parent.children.push({ type: token.type, value });
+            parent.children.push({ type: token.type, value, start: token.start, end: token.end });
         });
 
         return root;
+    }
+
+    function replaceHtmlBlock(input, path, replacement) {
+        const source = String(input || '');
+        if (!Array.isArray(path)) return source;
+        let node = buildHtmlTree(source);
+        for (const index of path) {
+            if (!node || !Array.isArray(node.children) || !Number.isInteger(index) || !node.children[index]) {
+                return source;
+            }
+            node = node.children[index];
+        }
+        if (node.type !== 'element' || !Number.isInteger(node.start) || !Number.isInteger(node.end)) return source;
+        return source.slice(0, node.start) + String(replacement || '') + source.slice(node.end);
     }
 
     function findMatchingTagAroundCursor(input, cursorPos) {
@@ -350,5 +368,14 @@
         return { elementCount, maxDepth, issues };
     }
 
-    return { tokenizeHtml, formatHtml, compressHtml, repairHtml, buildHtmlTree, findMatchingTagAroundCursor, analyzeHtml };
+    return {
+        tokenizeHtml,
+        formatHtml,
+        compressHtml,
+        repairHtml,
+        buildHtmlTree,
+        replaceHtmlBlock,
+        findMatchingTagAroundCursor,
+        analyzeHtml,
+    };
 });
