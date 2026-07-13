@@ -140,8 +140,22 @@
             font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
         }
 
+        .count-field {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 0 0 auto;
+        }
+
+        .count-field label {
+            color: var(--muted-color);
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
         #count-input {
-            width: 110px;
+            width: 76px;
         }
 
         input:focus {
@@ -482,7 +496,7 @@
         <div class="tool-title">
             <h1>Cron 表达式解析与生成工具</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.05</span>
+                <span>V1.06</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -499,7 +513,10 @@
             </div>
             <div class="input-row">
                 <input id="cron-input" placeholder="例如 */30 * * * * 或 0 0 12 * * ?">
-                <input id="count-input" type="number" min="1" max="50" value="10" title="输出次数">
+                <div class="count-field" title="设置下方“最近执行时间”列表展示的条目数量，最多 50 条">
+                    <label for="count-input">最近执行时间条目数</label>
+                    <input id="count-input" type="number" min="1" max="50" value="5" title="最近执行时间列表的条目数量，默认为 5 条">
+                </div>
             </div>
             <div class="actions">
                 <button class="btn btn-primary" id="parse-btn" type="button">解析</button>
@@ -619,6 +636,10 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date">2026年7月14日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.06</div>
+                    <div>增加“最近执行时间条目数”配置和详细说明，默认展示 5 条执行时间。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.05</div>
                     <div>新增 Cron 逆向生成：通过执行周期、时间和日期配置，同时生成 Linux、Spring 与 Quartz 格式，并支持复制和回填解析验证。</div>
