@@ -21,8 +21,9 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            box-sizing: border-box;
             margin: 0;
-            padding: 20px;
+            padding: 14px 24px;
             background-color: var(--bg-color);
             color: var(--text-color);
             display: flex;
@@ -32,7 +33,7 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 1400px;
             width: 100%;
         }
 
@@ -92,7 +93,7 @@
             justify-content: space-between;
             align-items: center;
             gap: 12px;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
 
         .card {
@@ -102,6 +103,32 @@
             padding: 25px;
             margin-bottom: 20px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+
+        .live-clock-card {
+            display: grid;
+            grid-template-columns: 160px minmax(0, 1fr) auto;
+            gap: 20px;
+            align-items: center;
+            padding: 14px 18px;
+            margin-bottom: 12px;
+        }
+
+        .live-clock-card h2,
+        .live-clock-card .current-time-display {
+            margin-bottom: 0;
+        }
+
+        .live-clock-card .current-time-display {
+            font-size: 36px;
+        }
+
+        .live-clock-card .controls {
+            justify-self: end;
+        }
+
+        .conversion-card {
+            margin-bottom: 0;
         }
 
         .card h2 {
@@ -177,7 +204,7 @@
         .tabs {
             display: flex;
             border-bottom: 1px solid var(--border-color);
-            margin-bottom: 20px;
+            margin-bottom: 0;
             background: #f6f8fa;
             border-radius: 6px 6px 0 0;
         }
@@ -205,13 +232,65 @@
             background: white;
             border: 1px solid var(--border-color);
             border-top: none;
-            padding: 25px;
+            padding: 16px 20px;
             border-radius: 0 0 8px 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.04);
         }
 
         .panel.hidden {
             display: none;
+        }
+
+        #panel-single {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(560px, 1.05fr);
+            grid-template-areas:
+                "timestamp timezone"
+                "date timezone"
+                "relative timezone";
+            column-gap: 24px;
+            align-items: start;
+        }
+
+        #panel-single.hidden {
+            display: none;
+        }
+
+        #panel-single > hr {
+            display: none;
+        }
+
+        .timestamp-conversion-section {
+            grid-area: timestamp;
+        }
+
+        .date-conversion-section {
+            grid-area: date;
+        }
+
+        .relative-time-section {
+            grid-area: relative;
+        }
+
+        .timezone-comparison-section {
+            grid-area: timezone;
+            align-self: stretch;
+            padding-left: 24px !important;
+            border-left: 1px solid #eaeef2;
+        }
+
+        #panel-single .io-group {
+            margin-bottom: 0;
+            padding: 13px 0;
+        }
+
+        #panel-single .timestamp-conversion-section,
+        #panel-single .date-conversion-section {
+            border-bottom: 1px solid #eaeef2;
+        }
+
+        #panel-single .io-group label {
+            margin-bottom: 4px;
         }
 
         /* Conversion Rows */
@@ -430,7 +509,72 @@
             bottom: 50px;
         }
 
+        @media (min-width: 981px) {
+            .timestamp-conversion-section,
+            .date-conversion-section {
+                display: grid;
+                gap: 10px;
+            }
+
+            .timestamp-conversion-section {
+                grid-template-columns: minmax(0, 0.95fr) 88px auto minmax(0, 1.05fr) 135px;
+            }
+
+            .date-conversion-section {
+                grid-template-columns: minmax(0, 1.05fr) 135px auto minmax(0, 0.95fr) 88px;
+            }
+
+            .timestamp-conversion-section label,
+            .date-conversion-section label {
+                grid-column: 1 / -1;
+            }
+
+            .timestamp-conversion-section .input-wrapper,
+            .date-conversion-section .input-wrapper {
+                min-width: 0;
+            }
+
+            .timestamp-conversion-section .select-wrapper,
+            .date-conversion-section .select-wrapper {
+                width: 100% !important;
+            }
+        }
+
+        @media (max-width: 980px) {
+            #panel-single {
+                display: block;
+            }
+
+            .timezone-comparison-section {
+                padding-left: 0 !important;
+                border-left: none;
+            }
+
+            #panel-single .relative-time-section {
+                border-bottom: 1px solid #eaeef2;
+            }
+        }
+
         @media (max-width: 600px) {
+            body {
+                padding: 12px;
+            }
+
+            .live-clock-card {
+                display: block;
+                padding: 18px;
+            }
+
+            .live-clock-card h2,
+            .live-clock-card .current-time-display {
+                margin-bottom: 12px;
+            }
+
+            .live-clock-card .controls {
+                justify-content: flex-start;
+                flex-wrap: wrap;
+            }
+
             .current-time-display {
                 font-size: 32px;
             }
@@ -615,13 +759,13 @@
         <div class="tool-title">
             <h1>时间戳转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.05</span>
+                <span>V1.06</span>
                 <span>ℹ️</span>
             </div>
         </div>
 
         <!-- Live Clock Card -->
-        <div class="card">
+        <div class="card live-clock-card">
             <h2>当前时间戳</h2>
             <div class="current-time-display">
                 <span id="live-timestamp">0</span>
@@ -635,7 +779,7 @@
         </div>
 
         <!-- Conversion Card -->
-        <div class="card" style="padding: 0; border: none; background: none; box-shadow: none;">
+        <div class="card conversion-card" style="padding: 0; border: none; background: none; box-shadow: none;">
             <div class="tabs">
                 <button id="tab-single" class="tab-btn active" onclick="switchConversionTab('single')">单个转换</button>
                 <button id="tab-batch" class="tab-btn" onclick="switchConversionTab('batch')">批量转换</button>
@@ -644,7 +788,7 @@
             <div id="panel-single" class="panel">
 
                 <!-- Timestamp to Date -->
-                <div class="io-group">
+                <div class="io-group timestamp-conversion-section">
                     <label>🕓 时间戳转日期时间</label>
                     <div class="input-wrapper">
                         <input type="text" id="ts-input" placeholder="输入时间戳">
@@ -670,7 +814,7 @@
                 <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;">
 
                 <!-- Date to Timestamp -->
-                <div class="io-group">
+                <div class="io-group date-conversion-section">
                     <label>📅 日期时间转时间戳</label>
                     <div class="input-wrapper" style="flex: 2;">
                         <input type="text" id="date-input" placeholder="YYYY-MM-DD HH:mm:ss">
@@ -696,7 +840,7 @@
                 <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;">
 
                 <!-- Relative Time -->
-                <div class="io-group">
+                <div class="io-group relative-time-section">
                     <label>⏱️ 相对时间计算</label>
                     <div class="relative-toolbar">
                         <div class="select-wrapper">
@@ -744,7 +888,7 @@
                 <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;">
 
                 <!-- Timezone Comparison -->
-                <div class="io-group">
+                <div class="io-group timezone-comparison-section">
                     <label>🌐 常用时区对比</label>
                     <div class="timezone-toolbar">
                         <div class="input-wrapper">
@@ -823,6 +967,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月14日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.06</div>
+                        <div class="changelog-desc">优化宽屏布局，利用页面两侧空间将转换功能与时区对比横向排列，减少页面纵向滚动。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.05</div>
                         <div class="changelog-desc">页面打开时自动执行转换；相对时间支持选择加减方向和时间单位；统一全部时区配置并增加伦敦、东京。</div>
