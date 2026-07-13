@@ -311,14 +311,42 @@
             background: #fff;
         }
 
+        .timezone-toolbar {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 110px auto;
+            gap: 10px;
+            align-items: center;
+            width: 100%;
+        }
+
+        .timezone-toolbar .input-wrapper,
+        .timezone-toolbar .select-wrapper {
+            min-width: 0;
+            width: auto;
+        }
+
+        .timezone-header,
         .timezone-row {
             display: grid;
-            grid-template-columns: 1fr 1.5fr 1fr auto;
+            grid-template-columns: minmax(150px, 1.1fr) minmax(180px, 1.5fr) 90px auto;
             gap: 10px;
             align-items: center;
             padding: 10px 12px;
-            border-bottom: 1px solid #eaeef2;
             font-size: 13px;
+        }
+
+        .timezone-header {
+            padding-top: 8px;
+            padding-bottom: 8px;
+            background: #f6f8fa;
+            border-bottom: 1px solid #d8dee4;
+            color: #57606a;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .timezone-row {
+            border-bottom: 1px solid #eaeef2;
         }
 
         .timezone-row:last-child {
@@ -397,6 +425,34 @@
 
             .batch-toolbar .select-wrapper {
                 width: 100%;
+            }
+
+            .timezone-toolbar {
+                grid-template-columns: minmax(0, 1fr) auto;
+            }
+
+            .timezone-toolbar .input-wrapper {
+                grid-column: 1 / -1;
+            }
+
+            .timezone-header {
+                display: none;
+            }
+
+            .timezone-row {
+                grid-template-columns: minmax(0, 1fr) auto;
+                gap: 4px 10px;
+            }
+
+            .timezone-row .timezone-name,
+            .timezone-row .timezone-value {
+                grid-column: 1;
+            }
+
+            .timezone-row .btn {
+                grid-column: 2;
+                grid-row: 1 / span 3;
+                align-self: center;
             }
         }
         .version-info {
@@ -522,7 +578,7 @@
         <div class="tool-title">
             <h1>时间戳转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.03</span>
+                <span>V1.04</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -635,17 +691,26 @@
                 <!-- Timezone Comparison -->
                 <div class="io-group">
                     <label>🌐 常用时区对比</label>
-                    <div class="input-wrapper" style="flex: 2;">
-                        <input type="text" id="timezone-compare-input" placeholder="输入时间戳">
+                    <div class="timezone-toolbar">
+                        <div class="input-wrapper">
+                            <input type="text" id="timezone-compare-input" placeholder="输入时间戳">
+                        </div>
+                        <div class="select-wrapper">
+                            <select id="timezone-compare-unit">
+                                <option value="s">秒(s)</option>
+                                <option value="ms">毫秒(ms)</option>
+                            </select>
+                        </div>
+                        <button class="action-btn" onclick="renderTimezoneComparison()">对比</button>
                     </div>
-                    <div class="select-wrapper" style="width: 100px;">
-                        <select id="timezone-compare-unit">
-                            <option value="s">秒(s)</option>
-                            <option value="ms">毫秒(ms)</option>
-                        </select>
+                    <div id="timezone-compare-list" class="timezone-list">
+                        <div class="timezone-header">
+                            <span>时区</span>
+                            <span>当地时间</span>
+                            <span>UTC 偏移</span>
+                            <span>操作</span>
+                        </div>
                     </div>
-                    <button class="action-btn" onclick="renderTimezoneComparison()">对比</button>
-                    <div id="timezone-compare-list" class="timezone-list"></div>
                 </div>
 
             </div>
@@ -701,6 +766,13 @@
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年7月13日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.04</div>
+                        <div class="changelog-desc">优化常用时区对比布局，移除重复展示内容，增加 UTC 偏移信息和清晰的列表表头。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月10日</div>
                     <div class="changelog-entry">
@@ -775,6 +847,7 @@
         const elTimezoneCompareInput = document.getElementById('timezone-compare-input');
         const elTimezoneCompareUnit = document.getElementById('timezone-compare-unit');
         const elTimezoneCompareList = document.getElementById('timezone-compare-list');
+        let timezoneComparisonRows = [];
 
         // --- Init ---
         function init() {
@@ -1070,6 +1143,15 @@
             ];
         }
 
+        function formatTimezoneOffset(date, timezone) {
+            const totalMinutes = Math.round(getTimezoneOffsetMs(date, timezone) / 60000);
+            const sign = totalMinutes >= 0 ? '+' : '-';
+            const absoluteMinutes = Math.abs(totalMinutes);
+            const hours = String(Math.floor(absoluteMinutes / 60)).padStart(2, '0');
+            const minutes = String(absoluteMinutes % 60).padStart(2, '0');
+            return `UTC${sign}${hours}:${minutes}`;
+        }
+
         function buildTimezoneComparison(timestampValue, unit, zones) {
             const raw = String(timestampValue || '').trim();
             const converted = convertTimestampLineToDate(raw, unit, 'UTC');
@@ -1086,6 +1168,7 @@
                     label: zone.label,
                     timezone: zone.value,
                     dateText: formatDate(date, zone.value),
+                    offsetText: formatTimezoneOffset(date, zone.value),
                     timestamp: unit === 's' ? String(Math.floor(timestampMs / 1000)) : String(timestampMs)
                 }))
             };
@@ -1108,28 +1191,34 @@
                 getCommonComparisonZones()
             );
             if (!result.ok) {
+                timezoneComparisonRows = [];
                 elTimezoneCompareList.innerHTML = `<div class="timezone-row"><span class="timezone-value">错误：${escapeHtml(result.error)}</span></div>`;
                 showToast(result.error);
                 return;
             }
-            elTimezoneCompareList.innerHTML = result.rows.map((row, index) => {
-                const copyValue = `${row.label} ${row.dateText} (${row.timestamp})`;
-                return `
+            timezoneComparisonRows = result.rows;
+            elTimezoneCompareList.innerHTML = `
+                <div class="timezone-header">
+                    <span>时区</span>
+                    <span>当地时间</span>
+                    <span>UTC 偏移</span>
+                    <span>操作</span>
+                </div>
+                ${result.rows.map((row, index) => `
                     <div class="timezone-row">
                         <span class="timezone-name">${escapeHtml(row.label)}</span>
                         <span class="timezone-value">${escapeHtml(row.dateText)}</span>
-                        <span class="timezone-value">${escapeHtml(row.timestamp)}</span>
+                        <span class="timezone-value">${escapeHtml(row.offsetText)}</span>
                         <button class="btn" onclick="copyTimezoneComparison(${index})">复制</button>
                     </div>
-                    <span class="hidden" id="timezone-copy-${index}">${escapeHtml(copyValue)}</span>
-                `;
-            }).join('');
+                `).join('')}
+            `;
         }
 
         function copyTimezoneComparison(index) {
-            const node = document.getElementById(`timezone-copy-${index}`);
-            if (node) {
-                copyText(node.textContent);
+            const row = timezoneComparisonRows[index];
+            if (row) {
+                copyText(`${row.label} ${row.dateText} ${row.offsetText} (${row.timestamp})`);
             }
         }
 

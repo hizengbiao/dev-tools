@@ -6,7 +6,8 @@ const vm = require('node:vm');
 const pagePath = path.resolve(__dirname, '../timestamp-converter.html');
 const page = fs.readFileSync(pagePath, 'utf8');
 
-assert.match(page, /<span>V1\.03<\/span>/);
+assert.match(page, /<span>V1\.04<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月10日<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年6月26日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
 assert.match(page, /id="tab-single"/);
@@ -29,6 +30,8 @@ assert.match(page, /function convertRelativeTimeExpression\(value, unit, timezon
 assert.match(page, /function convertRelativeTime\(\)/);
 assert.match(page, /function buildTimezoneComparison\(timestampValue, unit, zones\)/);
 assert.match(page, /function renderTimezoneComparison\(\)/);
+assert.match(page, /class="timezone-header"/);
+assert.doesNotMatch(page, /timezone-copy-/);
 
 function createElement(id = '') {
     return {
@@ -135,8 +138,8 @@ const comparison = JSON.parse(JSON.stringify(context.buildTimezoneComparison('17
 assert.deepEqual(comparison, {
     ok: true,
     rows: [
-        { label: 'UTC', timezone: 'UTC', dateText: '2024-03-09 16:00:00', timestamp: '1710000000' },
-        { label: 'Asia/Shanghai', timezone: 'Asia/Shanghai', dateText: '2024-03-10 00:00:00', timestamp: '1710000000' }
+        { label: 'UTC', timezone: 'UTC', dateText: '2024-03-09 16:00:00', offsetText: 'UTC+00:00', timestamp: '1710000000' },
+        { label: 'Asia/Shanghai', timezone: 'Asia/Shanghai', dateText: '2024-03-10 00:00:00', offsetText: 'UTC+08:00', timestamp: '1710000000' }
     ]
 });
 
