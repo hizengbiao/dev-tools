@@ -33,7 +33,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
         }
 
-        button, textarea, select { font: inherit; }
+        button, textarea { font: inherit; }
 
         .page-shell {
             width: 100%;
@@ -54,7 +54,7 @@
             white-space: nowrap;
         }
 
-        .btn, .indent-select {
+        .btn {
             padding: 8px 12px;
             border: 1px solid rgba(27, 31, 36, 0.15);
             border-radius: 6px;
@@ -78,17 +78,6 @@
             margin: 0 2px;
             background: var(--border-color);
         }
-
-        .indent-control {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            color: var(--muted-color);
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        .indent-select { padding: 7px 9px; }
 
         .version-info {
             display: inline-flex;
@@ -419,7 +408,7 @@
     <main class="page-shell">
         <div class="main-actions" aria-label="HTML 格式化操作">
             <button class="btn" id="paste-format-btn" type="button" title="从剪贴板读取 HTML 并立即格式化">📋 粘贴并格式化</button>
-            <button class="btn btn-primary" id="format-btn" type="button" title="按所选缩进美化 HTML">⚡ 格式化</button>
+            <button class="btn btn-primary" id="format-btn" type="button" title="使用 2 空格缩进美化 HTML">⚡ 格式化</button>
             <button class="btn" id="edit-btn" type="button" title="编辑当前 HTML 源码">✏️ 编辑</button>
             <button class="btn" id="preview-btn" type="button" title="在受限页面中预览当前 HTML">👁️ 预览</button>
             <button class="btn" id="compress-btn" type="button" title="移除标签之间多余空白并压缩为单行">📦 压缩</button>
@@ -429,17 +418,11 @@
             <button class="btn" id="undo-btn" type="button" title="撤销源码修改 (Ctrl+Z)">↩️ 撤销</button>
             <button class="btn" id="redo-btn" type="button" title="重做源码修改 (Ctrl+Y)">↪️ 重做</button>
             <span class="action-separator" aria-hidden="true"></span>
-            <label class="indent-control" for="indent-size">缩进
-                <select class="indent-select" id="indent-size">
-                    <option value="2">2 空格</option>
-                    <option value="4">4 空格</option>
-                </select>
-            </label>
             <button class="btn" id="copy-btn" type="button" title="复制当前可见内容">📋 复制</button>
             <button class="btn tree-action" id="expand-all-btn" type="button" title="展开全部 HTML 层级">📖 展开</button>
             <button class="btn tree-action" id="collapse-all-btn" type="button" title="收起全部 HTML 层级">📕 收起</button>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新说明">
-                <span>V1.05</span><span>ℹ️</span>
+                <span>V1.06</span><span>ℹ️</span>
             </div>
         </div>
 
@@ -492,6 +475,10 @@
             <div class="modal-body">
                 <div class="changelog-date">2026年7月14日</div>
                 <div class="changelog-entry">
+                    <div class="changelog-version">V1.06</div>
+                    <div>移除缩进选项，格式化、修复及区块保存统一使用 2 空格缩进。</div>
+                </div>
+                <div class="changelog-entry">
                     <div class="changelog-version">V1.05</div>
                     <div>层级树中的每个 HTML 元素支持就地编辑完整区块，保存后自动校验、重新格式化，并同步源码、处理结果和页面预览。</div>
                 </div>
@@ -541,6 +528,7 @@
         const validationStatus = document.getElementById('validation-status');
         const undoButton = document.getElementById('undo-btn');
         const redoButton = document.getElementById('redo-btn');
+        const HTML_INDENT_SIZE = 2;
         let activeView = 'source';
         let resultMode = 'tree';
         let previewHtml = '';
@@ -649,8 +637,7 @@
                 return false;
             }
             const replaced = HtmlFormatter.replaceHtmlBlock(output.value, path, replacement);
-            const indentSize = Number(document.getElementById('indent-size').value);
-            const formatted = HtmlFormatter.formatHtml(replaced, { indentSize });
+            const formatted = HtmlFormatter.formatHtml(replaced, { indentSize: HTML_INDENT_SIZE });
             input.value = formatted;
             saveHistory();
             refreshEditor(input, inputLines);
@@ -896,8 +883,7 @@
 
         function runFormat() {
             if (!requireInput()) return;
-            const indentSize = Number(document.getElementById('indent-size').value);
-            setOutput(HtmlFormatter.formatHtml(input.value, { indentSize }), 'tree');
+            setOutput(HtmlFormatter.formatHtml(input.value, { indentSize: HTML_INDENT_SIZE }), 'tree');
             showStatus('HTML 已格式化。');
         }
 
@@ -909,8 +895,7 @@
 
         function runRepair() {
             if (!requireInput()) return;
-            const indentSize = Number(document.getElementById('indent-size').value);
-            setOutput(HtmlFormatter.repairHtml(input.value, { indentSize }), 'tree');
+            setOutput(HtmlFormatter.repairHtml(input.value, { indentSize: HTML_INDENT_SIZE }), 'tree');
             showStatus('HTML 标签结构已修复并格式化。');
         }
 
@@ -989,9 +974,6 @@
         collapseAllButton.addEventListener('click', () => setAllTreeNodesCollapsed(true));
         undoButton.addEventListener('click', () => applyHistory(historyIndex - 1));
         redoButton.addEventListener('click', () => applyHistory(historyIndex + 1));
-        document.getElementById('indent-size').addEventListener('change', () => {
-            if (input.value.trim()) runFormat();
-        });
         document.addEventListener('keydown', (event) => {
             if (!(event.ctrlKey || event.metaKey)) return;
             if (event.key.toLowerCase() === 'z' && !event.shiftKey) {
