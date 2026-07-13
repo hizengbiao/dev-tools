@@ -6,8 +6,8 @@ const vm = require('node:vm');
 const pagePath = path.resolve(__dirname, '../timestamp-converter.html');
 const page = fs.readFileSync(pagePath, 'utf8');
 
-assert.match(page, /<span>V1\.04<\/span>/);
-assert.match(page, /<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>/);
+assert.match(page, /<span>V1\.05<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>[\s\S]*?<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月10日<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年6月26日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
 assert.match(page, /id="tab-single"/);
@@ -16,7 +16,10 @@ assert.match(page, /id="panel-single"/);
 assert.match(page, /id="panel-batch"/);
 assert.match(page, /id="batch-input"/);
 assert.match(page, /id="batch-output"/);
-assert.match(page, /id="relative-input"/);
+assert.match(page, /id="relative-operation"/);
+assert.match(page, /id="relative-amount"/);
+assert.match(page, /id="relative-offset-unit"/);
+assert.doesNotMatch(page, /id="relative-input"/);
 assert.match(page, /id="relative-date-output"/);
 assert.match(page, /id="relative-ts-output"/);
 assert.match(page, /id="timezone-compare-input"/);
@@ -27,6 +30,8 @@ assert.match(page, /function convertBatchTimestampsToDates\(raw, unit, timezone\
 assert.match(page, /function convertBatchDatesToTimestamps\(raw, unit, timezone\)/);
 assert.match(page, /function parseRelativeTimeExpression\(value, baseDate = new Date\(\)\)/);
 assert.match(page, /function convertRelativeTimeExpression\(value, unit, timezone, baseDate = new Date\(\)\)/);
+assert.match(page, /function buildRelativeTimeExpression\(operation, amount, unit\)/);
+assert.match(page, /function createTimezoneOptions\(localTimezone/);
 assert.match(page, /function convertRelativeTime\(\)/);
 assert.match(page, /function buildTimezoneComparison\(timestampValue, unit, zones\)/);
 assert.match(page, /function renderTimezoneComparison\(\)/);
@@ -48,6 +53,7 @@ function createElement(id = '') {
         appendChild(child) {
             this.children = this.children || [];
             this.children.push(child);
+            if (child.selected || !this.value) this.value = child.value || '';
         },
         addEventListener() {},
     };
@@ -131,6 +137,22 @@ assert.deepEqual(JSON.parse(JSON.stringify(context.convertRelativeTimeExpression
     timestamp: '1710027000000'
 });
 
+assert.equal(context.buildRelativeTimeExpression('-', 7, 'd'), '-7d');
+assert.equal(context.buildRelativeTimeExpression('+', 3, 'h'), '+3h');
+
+const timezoneOptions = JSON.parse(JSON.stringify(context.createTimezoneOptions('Asia/Singapore')));
+assert.deepEqual(timezoneOptions.map((zone) => zone.value), [
+    'Asia/Singapore',
+    'Asia/Shanghai',
+    'UTC',
+    'America/New_York',
+    'Europe/London',
+    'Asia/Tokyo'
+]);
+const shanghaiOptions = JSON.parse(JSON.stringify(context.createTimezoneOptions('Asia/Shanghai')));
+assert.equal(shanghaiOptions.filter((zone) => zone.value === 'Asia/Shanghai').length, 1);
+assert.equal(shanghaiOptions[0].label, '本地 (Asia/Shanghai)');
+
 const comparison = JSON.parse(JSON.stringify(context.buildTimezoneComparison('1710000000', 's', [
     { label: 'UTC', value: 'UTC' },
     { label: 'Asia/Shanghai', value: 'Asia/Shanghai' },
@@ -147,5 +169,17 @@ assert.deepEqual(JSON.parse(JSON.stringify(context.buildTimezoneComparison('abc'
     ok: false,
     error: '无效的数字时间戳'
 });
+
+const timezoneSelectIds = ['timezone-select-1', 'timezone-select-2', 'batch-timezone', 'relative-timezone'];
+const optionValues = timezoneSelectIds.map((id) => element(id).children.map((option) => option.value));
+optionValues.slice(1).forEach((values) => assert.deepEqual(values, optionValues[0]));
+assert.ok(optionValues[0].includes('Europe/London'));
+assert.ok(optionValues[0].includes('Asia/Tokyo'));
+assert.notEqual(element('date-output').value, '');
+assert.notEqual(element('ts-output').value, '');
+assert.notEqual(element('relative-date-output').value, '');
+assert.notEqual(element('relative-ts-output').value, '');
+assert.match(element('timezone-compare-list').innerHTML, /Europe\/London/);
+assert.match(element('timezone-compare-list').innerHTML, /Asia\/Tokyo/);
 
 console.log('timestamp converter batch behavior passed');

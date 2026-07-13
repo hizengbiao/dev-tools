@@ -240,6 +240,7 @@
         }
 
         input[type="text"],
+        input[type="number"],
         textarea,
         select {
             width: 100%;
@@ -253,6 +254,7 @@
         }
 
         input[type="text"]:focus,
+        input[type="number"]:focus,
         textarea:focus,
         select:focus {
             border-color: #0969da;
@@ -301,6 +303,30 @@
         .batch-summary {
             color: #57606a;
             font-size: 13px;
+        }
+
+        .relative-toolbar,
+        .relative-results {
+            display: grid;
+            gap: 10px;
+            align-items: center;
+            width: 100%;
+        }
+
+        .relative-toolbar {
+            grid-template-columns: 92px minmax(90px, 0.7fr) 110px minmax(180px, 1.5fr) auto;
+        }
+
+        .relative-results {
+            grid-template-columns: minmax(220px, 1.4fr) minmax(180px, 1fr) 120px;
+        }
+
+        .relative-toolbar .select-wrapper,
+        .relative-results .select-wrapper,
+        .relative-toolbar .input-wrapper,
+        .relative-results .input-wrapper {
+            width: auto;
+            min-width: 0;
         }
 
         .timezone-list {
@@ -425,6 +451,17 @@
 
             .batch-toolbar .select-wrapper {
                 width: 100%;
+            }
+
+            .relative-toolbar,
+            .relative-results {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .relative-toolbar .timezone-select-wrapper,
+            .relative-toolbar .action-btn,
+            .relative-results .input-wrapper:first-child {
+                grid-column: 1 / -1;
             }
 
             .timezone-toolbar {
@@ -578,7 +615,7 @@
         <div class="tool-title">
             <h1>时间戳转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.04</span>
+                <span>V1.05</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -661,28 +698,46 @@
                 <!-- Relative Time -->
                 <div class="io-group">
                     <label>⏱️ 相对时间计算</label>
-                    <div class="input-wrapper" style="flex: 2;">
-                        <input type="text" id="relative-input" placeholder="now-7d、+3h、-30m">
+                    <div class="relative-toolbar">
+                        <div class="select-wrapper">
+                            <select id="relative-operation" title="选择相对当前时间的加减方向">
+                                <option value="-">减去</option>
+                                <option value="+">加上</option>
+                            </select>
+                        </div>
+                        <div class="input-wrapper">
+                            <input type="number" id="relative-amount" value="7" min="0" step="1" placeholder="数量" title="输入相对时间数量">
+                        </div>
+                        <div class="select-wrapper">
+                            <select id="relative-offset-unit" title="选择相对时间单位">
+                                <option value="d">天</option>
+                                <option value="h">小时</option>
+                                <option value="m">分钟</option>
+                                <option value="s">秒</option>
+                            </select>
+                        </div>
+                        <div class="select-wrapper timezone-select-wrapper">
+                            <select id="relative-timezone" title="选择结果展示时区">
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+                        <button class="action-btn" onclick="convertRelativeTime()">计算</button>
                     </div>
-                    <div class="select-wrapper">
-                        <select id="relative-timezone">
-                            <!-- Populated by JS -->
-                        </select>
-                    </div>
-                    <button class="action-btn" onclick="convertRelativeTime()">计算</button>
-                    <div class="input-wrapper" style="flex: 2;">
-                        <input type="text" id="relative-date-output" placeholder="日期时间结果" readonly
-                            style="background-color: #f6f8fa;">
-                    </div>
-                    <div class="input-wrapper">
-                        <input type="text" id="relative-ts-output" placeholder="时间戳结果" readonly
-                            style="background-color: #f6f8fa;">
-                    </div>
-                    <div class="select-wrapper" style="width: 100px;">
-                        <select id="relative-unit">
-                            <option value="s">秒(s)</option>
-                            <option value="ms">毫秒(ms)</option>
-                        </select>
+                    <div class="relative-results">
+                        <div class="input-wrapper">
+                            <input type="text" id="relative-date-output" placeholder="日期时间结果" readonly
+                                style="background-color: #f6f8fa;">
+                        </div>
+                        <div class="input-wrapper">
+                            <input type="text" id="relative-ts-output" placeholder="时间戳结果" readonly
+                                style="background-color: #f6f8fa;">
+                        </div>
+                        <div class="select-wrapper">
+                            <select id="relative-unit" title="选择输出时间戳单位">
+                                <option value="s">秒时间戳</option>
+                                <option value="ms">毫秒时间戳</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -767,6 +822,13 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date-group">
+                    <div class="changelog-date">2026年7月14日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.05</div>
+                        <div class="changelog-desc">页面打开时自动执行转换；相对时间支持选择加减方向和时间单位；统一全部时区配置并增加伦敦、东京。</div>
+                    </div>
+                </div>
+                <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月13日</div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.04</div>
@@ -806,13 +868,25 @@
     <script src="clipboard-utils.js"></script>
     <script>
         // --- Configuration ---
-        const timezones = [
+        const commonTimezoneDefinitions = [
             { label: 'Asia/Shanghai (CST)', value: 'Asia/Shanghai' },
             { label: 'UTC', value: 'UTC' },
-            { label: 'America/New_York (EST)', value: 'America/New_York' },
-            { label: 'Europe/London (GMT)', value: 'Europe/London' },
+            { label: 'America/New_York (ET)', value: 'America/New_York' },
+            { label: 'Europe/London (UK)', value: 'Europe/London' },
             { label: 'Asia/Tokyo (JST)', value: 'Asia/Tokyo' }
         ];
+
+        function createTimezoneOptions(localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC') {
+            const options = [
+                { label: `本地 (${localTimezone})`, value: localTimezone },
+                ...commonTimezoneDefinitions
+            ];
+            return options.filter((option, index) =>
+                options.findIndex((candidate) => candidate.value === option.value) === index
+            );
+        }
+
+        const timezoneOptions = createTimezoneOptions();
 
         // --- State ---
         let timerId = null;
@@ -839,7 +913,9 @@
         const elBatchInput = document.getElementById('batch-input');
         const elBatchOutput = document.getElementById('batch-output');
         const elBatchSummary = document.getElementById('batch-summary');
-        const elRelativeInput = document.getElementById('relative-input');
+        const elRelativeOperation = document.getElementById('relative-operation');
+        const elRelativeAmount = document.getElementById('relative-amount');
+        const elRelativeOffsetUnit = document.getElementById('relative-offset-unit');
         const elRelativeTz = document.getElementById('relative-timezone');
         const elRelativeDateOutput = document.getElementById('relative-date-output');
         const elRelativeTsOutput = document.getElementById('relative-ts-output');
@@ -851,18 +927,14 @@
 
         // --- Init ---
         function init() {
-            // Populate Timezones
-            const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
             [elTz1, elTz2, elBatchTz, elRelativeTz].forEach(select => {
-                timezones.forEach(tz => {
+                timezoneOptions.forEach(tz => {
                     const opt = document.createElement('option');
                     opt.value = tz.value;
                     opt.textContent = tz.label;
-                    if (tz.value === 'Asia/Shanghai') opt.selected = true; // Default to Shanghai as per screenshot
+                    if (tz.value === 'Asia/Shanghai') opt.selected = true;
                     select.appendChild(opt);
                 });
-                // Add local if not exists? simplified for now.
             });
 
             // Start Clock
@@ -871,10 +943,19 @@
 
             // Init Inputs
             const now = new Date();
-            elTsInput.value = Math.floor(now.getTime() / 1000);
-            elDateInput.value = formatDate(now, 'Asia/Shanghai');
-            elRelativeInput.value = 'now-7d';
-            elTimezoneCompareInput.value = Math.floor(now.getTime() / 1000);
+            elTsUnit.value ||= 's';
+            elDateUnit.value ||= 's';
+            elRelativeOperation.value ||= '-';
+            elRelativeAmount.value ||= '7';
+            elRelativeOffsetUnit.value ||= 'd';
+            elRelativeUnit.value ||= 's';
+            elTimezoneCompareUnit.value ||= 's';
+            elTsInput.value = String(Math.floor(now.getTime() / 1000));
+            elDateInput.value = formatDate(now, elTz2.value);
+            elTimezoneCompareInput.value = String(Math.floor(now.getTime() / 1000));
+            convertTsToDate();
+            convertDateToTs();
+            convertRelativeTime();
             renderTimezoneComparison();
         }
 
@@ -959,7 +1040,11 @@
 
         function convertRelativeTime() {
             const result = convertRelativeTimeExpression(
-                elRelativeInput.value,
+                buildRelativeTimeExpression(
+                    elRelativeOperation.value,
+                    elRelativeAmount.value,
+                    elRelativeOffsetUnit.value
+                ),
                 elRelativeUnit.value,
                 elRelativeTz.value
             );
@@ -1120,6 +1205,10 @@
             };
         }
 
+        function buildRelativeTimeExpression(operation, amount, unit) {
+            return `${operation}${amount}${unit}`;
+        }
+
         function convertRelativeTimeExpression(value, unit, timezone, baseDate = new Date()) {
             const parsed = parseRelativeTimeExpression(value, baseDate);
             if (!parsed.ok) {
@@ -1131,16 +1220,6 @@
                 dateText: formatDate(parsed.date, timezone),
                 timestamp: unit === 's' ? String(Math.floor(timestampMs / 1000)) : String(timestampMs)
             };
-        }
-
-        function getCommonComparisonZones() {
-            const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-            return [
-                { label: `本地 (${localTz})`, value: localTz },
-                { label: 'UTC', value: 'UTC' },
-                { label: 'Asia/Shanghai', value: 'Asia/Shanghai' },
-                { label: 'America/New_York', value: 'America/New_York' }
-            ];
         }
 
         function formatTimezoneOffset(date, timezone) {
@@ -1188,7 +1267,7 @@
             const result = buildTimezoneComparison(
                 elTimezoneCompareInput.value,
                 elTimezoneCompareUnit.value,
-                getCommonComparisonZones()
+                timezoneOptions
             );
             if (!result.ok) {
                 timezoneComparisonRows = [];
