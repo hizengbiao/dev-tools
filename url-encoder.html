@@ -19,6 +19,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            box-sizing: border-box;
             margin: 0;
             padding: 20px;
             background-color: var(--bg-color);
@@ -195,8 +196,8 @@
         .editor-shell {
             display: grid;
             grid-template-columns: 48px minmax(0, 1fr);
-            height: min(62vh, 560px);
-            min-height: 420px;
+            height: min(32vh, 300px);
+            min-height: 240px;
             overflow: hidden;
             border: 1px solid #d0d7de;
             border-radius: 6px;
@@ -613,7 +614,7 @@
         <div class="tool-title">
             <h1>URL 编解码</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.05</span>
+                <span>V1.06</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -722,6 +723,13 @@
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年7月14日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.06</div>
+                        <div class="changelog-desc">缩小输入输出编辑区高度，使 URL 参数分析区域能够在桌面端首屏完整展示。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月5日</div>
                     <div class="changelog-entry">
