@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML 元素格式化工具</title>
+    <link rel="stylesheet" href="nav.css">
+    <script src="nav.js" defer></script>
+    <script src="changelog.js"></script>
+    <script src="clipboard-utils.js"></script>
+    <script src="editor-lines.js"></script>
+    <script src="html-formatter.js"></script>
+    <style>
+        :root {
+            --bg: #f4f6f8;
+            --panel: #fff;
+            --border: #d0d7de;
+            --text: #24292f;
+            --muted: #57606a;
+            --accent: #0969da;
+            --danger: #cf222e;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 18px;
+            min-height: 100vh;
+            color: var(--text);
+            background: var(--bg);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        }
+
+        button, textarea, select { font: inherit; }
+
+        .container { width: 100%; max-width: 1500px; margin: 0 auto; }
+        .tool-title, .panel-header, .toolbar { display: flex; align-items: center; }
+        .tool-title { justify-content: space-between; margin-bottom: 14px; }
+        h1 { margin: 0; font-size: 24px; }
+
+        .version-info {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            color: var(--muted);
+            background: #f6f8fa;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: minmax(360px, 1fr) 150px minmax(360px, 1fr);
+            gap: 14px;
+            align-items: stretch;
+        }
+
+        .panel {
+            min-width: 0;
+            padding: 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--panel);
+            box-shadow: 0 1px 3px rgba(27, 31, 36, 0.06);
+        }
+
+        .panel-header { justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+        .panel-header h2 { margin: 0; font-size: 16px; }
+
+        .editor-shell {
+            display: grid;
+            grid-template-columns: 48px minmax(0, 1fr);
+            height: min(68vh, 680px);
+            min-height: 480px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: #fff;
+        }
+
+        .editor-shell:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
+        }
+
+        .line-numbers {
+            padding: 12px 8px;
+            overflow: hidden;
+            border-right: 1px solid var(--border);
+            color: #8c959f;
+            background: #f6f8fa;
+            text-align: right;
+            white-space: pre;
+            line-height: 1.55;
+            font: 13px/1.55 "SFMono-Regular", Consolas, monospace;
+            user-select: none;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100%;
+            padding: 12px;
+            resize: none;
+            border: 0;
+            outline: 0;
+            color: var(--text);
+            background: transparent;
+            white-space: pre;
+            overflow: auto;
+            line-height: 1.55;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 13px;
+        }
+
+        #html-output { background: #fbfcfd; }
+
+        .toolbar {
+            align-self: center;
+            flex-direction: column;
+            gap: 9px;
+            padding: 14px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--panel);
+        }
+
+        .toolbar label { color: var(--muted); font-size: 12px; font-weight: 600; }
+        select, .btn {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid rgba(27, 31, 36, 0.15);
+            border-radius: 6px;
+            color: var(--text);
+            background: #fff;
+        }
+
+        .btn { font-weight: 600; cursor: pointer; }
+        .btn:hover { background: #f3f4f6; }
+        .btn-primary { border-color: var(--accent); color: #fff; background: var(--accent); }
+        .btn-danger { color: var(--danger); border-color: var(--danger); }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .metric {
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--panel);
+        }
+
+        .metric-label { color: var(--muted); font-size: 12px; font-weight: 700; }
+        .metric-value { margin-top: 5px; font-size: 18px; font-weight: 700; }
+        .metric-value.error { color: var(--danger); font-size: 13px; line-height: 1.5; }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.42);
+        }
+
+        .modal-content { width: min(620px, 100%); border-radius: 10px; background: #fff; overflow: hidden; }
+        .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+        .modal-header h3 { margin: 0; font-size: 18px; }
+        .close-modal { border: 0; background: transparent; font-size: 22px; cursor: pointer; }
+        .modal-body { padding: 20px; }
+        .changelog-date { display: inline-block; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid var(--accent); font-weight: 700; }
+        .changelog-entry { display: flex; gap: 12px; }
+        .changelog-version { flex: 0 0 56px; color: var(--accent); font-weight: 700; }
+
+        @media (max-width: 900px) {
+            body { padding: 12px; }
+            .workspace { grid-template-columns: 1fr; }
+            .toolbar { flex-direction: row; flex-wrap: wrap; }
+            .toolbar label, .toolbar select, .toolbar .btn { width: auto; flex: 1 1 120px; }
+            .editor-shell { width: 100%; height: 340px; min-height: 340px; }
+        }
+
+        @media (max-width: 560px) {
+            .summary { grid-template-columns: 1fr; }
+            h1 { font-size: 20px; }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="container">
+        <div class="tool-title">
+            <h1>HTML 元素格式化</h1>
+            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明">
+                <span>V1.00</span><span>ℹ️</span>
+            </div>
+        </div>
+
+        <section class="workspace">
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>输入 HTML</h2>
+                    <button class="btn btn-danger" id="clear-btn" type="button">清空</button>
+                </div>
+                <div class="editor-shell">
+                    <div class="line-numbers" id="input-lines" aria-hidden="true">1</div>
+                    <textarea id="html-input" wrap="off" spellcheck="false" placeholder="粘贴 HTML 文档或元素片段..."></textarea>
+                </div>
+            </div>
+
+            <div class="toolbar" aria-label="格式化操作">
+                <label for="indent-size">缩进宽度</label>
+                <select id="indent-size">
+                    <option value="2">2 个空格</option>
+                    <option value="4">4 个空格</option>
+                </select>
+                <button class="btn btn-primary" id="format-btn" type="button">格式化</button>
+                <button class="btn" id="compress-btn" type="button">压缩单行</button>
+                <button class="btn" id="swap-btn" type="button">交换输入输出</button>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>处理结果</h2>
+                    <button class="btn" id="copy-btn" type="button">复制结果</button>
+                </div>
+                <div class="editor-shell">
+                    <div class="line-numbers" id="output-lines" aria-hidden="true">1</div>
+                    <textarea id="html-output" wrap="off" spellcheck="false" readonly placeholder="格式化结果会显示在这里..."></textarea>
+                </div>
+            </div>
+        </section>
+
+        <section class="summary" aria-label="HTML 结构概览">
+            <div class="metric"><div class="metric-label">元素数量</div><div class="metric-value" id="element-count">0</div></div>
+            <div class="metric"><div class="metric-label">最大嵌套层级</div><div class="metric-value" id="max-depth">0</div></div>
+            <div class="metric"><div class="metric-label">结构检查</div><div class="metric-value" id="validation-status">等待输入</div></div>
+        </section>
+    </main>
+
+    <div id="changelog-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🚀 版本更新说明</h3>
+                <button class="close-modal" type="button" onclick="closeChangelog()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="changelog-date">2026年7月13日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.00</div>
+                    <div>版本初始化：支持 HTML 元素格式化、单行压缩、缩进调整、结构检查及输入输出快速交换。</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const input = document.getElementById('html-input');
+        const output = document.getElementById('html-output');
+        const inputLines = document.getElementById('input-lines');
+        const outputLines = document.getElementById('output-lines');
+        const validationStatus = document.getElementById('validation-status');
+
+        function refreshEditor(textarea, lineNumbers) {
+            EditorLines.refreshLineNumbers(textarea, lineNumbers);
+        }
+
+        function refreshSummary() {
+            const analysis = HtmlFormatter.analyzeHtml(input.value);
+            document.getElementById('element-count').textContent = String(analysis.elementCount);
+            document.getElementById('max-depth').textContent = String(analysis.maxDepth);
+            validationStatus.textContent = analysis.issues.length ? analysis.issues.join('；') : (input.value.trim() ? '标签结构正常' : '等待输入');
+            validationStatus.classList.toggle('error', analysis.issues.length > 0);
+            validationStatus.title = analysis.issues.join('\n');
+        }
+
+        function setOutput(value) {
+            output.value = value;
+            refreshEditor(output, outputLines);
+        }
+
+        function runFormat() {
+            setOutput(HtmlFormatter.formatHtml(input.value, { indentSize: Number(document.getElementById('indent-size').value) }));
+            refreshSummary();
+        }
+
+        input.addEventListener('input', () => {
+            refreshEditor(input, inputLines);
+            refreshSummary();
+        });
+        input.addEventListener('scroll', () => EditorLines.syncLineNumberScroll(input, inputLines));
+        output.addEventListener('scroll', () => EditorLines.syncLineNumberScroll(output, outputLines));
+        document.getElementById('format-btn').addEventListener('click', runFormat);
+        document.getElementById('compress-btn').addEventListener('click', () => setOutput(HtmlFormatter.compressHtml(input.value)));
+        document.getElementById('swap-btn').addEventListener('click', () => {
+            const previousInput = input.value;
+            input.value = output.value;
+            setOutput(previousInput);
+            refreshEditor(input, inputLines);
+            refreshSummary();
+        });
+        document.getElementById('clear-btn').addEventListener('click', () => {
+            input.value = '';
+            setOutput('');
+            refreshEditor(input, inputLines);
+            refreshSummary();
+            input.focus();
+        });
+        document.getElementById('copy-btn').addEventListener('click', () => {
+            if (!output.value) {
+                ClipboardUtils.showToast('暂无可复制内容');
+                return;
+            }
+            ClipboardUtils.copyText(output.value, { successMessage: 'HTML 结果已复制' });
+        });
+        document.getElementById('indent-size').addEventListener('change', runFormat);
+
+        input.value = '<section class="profile"><h2>用户信息</h2><div class="content"><span>张三</span><br><a href="/detail">查看详情</a></div></section>';
+        refreshEditor(input, inputLines);
+        runFormat();
+    </script>
+</body>
+
+</html>

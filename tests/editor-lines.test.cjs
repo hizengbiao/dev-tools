@@ -29,7 +29,7 @@ textarea.scrollTop = 64;
 EditorLines.syncLineNumberScroll(textarea, lineNumbers);
 assert.equal(lineNumbers.scrollTop, 64);
 
-for (const file of ['url-encoder.html', 'text_escape_formatter_final.html', 'regex-tester.html', 'text-splitter.html']) {
+for (const file of ['url-encoder.html', 'text_escape_formatter_final.html', 'regex-tester.html', 'text-splitter.html', 'html-formatter.html']) {
     const html = fs.readFileSync(path.join(rootDir, file), 'utf8');
     assert.match(html, /<script src="editor-lines\.js"><\/script>/, `${file} should include editor-lines.js`);
 }

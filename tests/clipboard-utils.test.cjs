@@ -104,6 +104,7 @@ function loadClipboardUtils(overrides = {}) {
 
 for (const file of [
     'base64-encoder.html',
+    'html-formatter.html',
     'json-parser.html',
     'regex-tester.html',
     'text-case-converter.html',

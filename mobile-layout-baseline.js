@@ -31,7 +31,7 @@
             requiredSnippets: ['@media (max-width: 960px)', 'grid-template-columns: 1fr', 'min-height: 260px'],
         },
         {
-            path: 'tool-config-manager.html',
+            path: 'html-formatter.html',
             requiredSnippets: ['@media (max-width: 900px)', 'grid-template-columns: 1fr', 'width: 100%'],
         },
     ];

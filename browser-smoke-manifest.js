@@ -85,10 +85,10 @@
             selectors: ['#testText', '#patternInput'],
         },
         {
-            path: 'tool-config-manager.html',
-            title: '工具配置管理',
-            markers: ['export-config-btn', 'import-config-btn'],
-            selectors: ['#export-config-btn', '#import-config-btn'],
+            path: 'html-formatter.html',
+            title: 'HTML 元素格式化工具',
+            markers: ['html-input', 'format-btn'],
+            selectors: ['#html-input', '#format-btn'],
         },
     ];
 

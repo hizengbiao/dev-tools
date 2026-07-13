@@ -15,7 +15,7 @@
         { name: '随机生成', path: 'random-generator.html', icon: '🎲' },
         { name: 'Cron 解析', path: 'cron-parser.html', icon: '🕒' },
         { name: 'SQL 格式化', path: 'sql-formatter.html', icon: '🧾' },
-        { name: '配置管理', path: 'tool-config-manager.html', icon: '⚙️' },
+        { name: 'HTML 格式化', path: 'html-formatter.html', icon: '🌐' },
         { name: 'Neon Timer', path: 'neon-timer/dist/index.html', icon: '⏲️' }
     ];
     const NAV_CONFIG_STORAGE_KEY = 'dev-tools-nav-config-v1';
