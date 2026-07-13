@@ -180,21 +180,21 @@
         }
 
         .line-numbers {
-            padding: 14px 9px;
+            padding: 15px 9px;
             overflow: hidden;
             border-right: 1px solid var(--border-color);
             color: #8c959f;
             background: #f6f8fa;
             text-align: right;
             white-space: pre;
-            font: 13px/1.55 "SFMono-Regular", Consolas, monospace;
+            font: 13px/1.5 "SFMono-Regular", Consolas, monospace;
             user-select: none;
         }
 
         textarea {
             width: 100%;
             height: 100%;
-            padding: 14px;
+            padding: 15px;
             resize: none;
             border: 0;
             outline: 0;
@@ -202,7 +202,7 @@
             background: transparent;
             white-space: pre;
             overflow: auto;
-            font: 13px/1.55 "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font: 13px/1.5 "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
         }
 
         #html-output { background: #fbfcfd; }
@@ -210,10 +210,12 @@
         .html-tree {
             display: none;
             height: 100%;
-            padding: 12px 14px 30px;
+            width: 100%;
+            padding: 10px 10px 30px 50px;
             overflow: auto;
+            box-sizing: border-box;
             background: #fff;
-            font: 13px/1.55 "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font: 13px/1.6 "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
         }
 
         .html-tree.active { display: block; }
@@ -221,48 +223,49 @@
 
         .html-tree-node {
             margin: 3px 0;
-            border: 1px solid rgba(27, 31, 36, 0.09);
-            border-left: 3px solid rgba(9, 105, 218, 0.28);
-            border-radius: 5px;
-            overflow: hidden;
+            padding: 5px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 4px;
+            background-color: transparent;
+            transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
         }
 
-        .depth-0 { background: #ffffff; }
-        .depth-1 { background: #f0f7ff; }
-        .depth-2 { background: #f0fff4; }
-        .depth-3 { background: #fff8c5; }
-        .depth-4 { background: #f6f8fa; }
+        .html-tree-node:hover {
+            border-color: rgba(0, 0, 0, 0.2);
+            background-color: rgba(0, 0, 0, 0.04);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
 
         .tree-node-row,
         .tree-closing,
         .tree-leaf {
-            min-height: 30px;
             display: flex;
             align-items: center;
-            padding: 4px 9px;
         }
 
-        .tree-node-row { gap: 6px; }
-        .tree-closing { padding-left: 32px; }
-        .tree-children { padding: 2px 8px 2px 24px; }
+        .tree-node-row { gap: 0; }
+        .tree-closing { padding-left: 16px; }
+        .tree-children { width: 100%; padding: 2px 0 2px 10px; margin-left: 2px; box-sizing: border-box; }
+        .tree-leaf { padding-left: 5px; }
 
         .tree-toggle,
         .tree-toggle-spacer {
-            flex: 0 0 18px;
-            width: 18px;
-            height: 18px;
+            flex: 0 0 14px;
+            width: 14px;
+            margin-right: 2px;
         }
 
         .tree-toggle {
             padding: 0;
-            border: 1px solid var(--border-color);
-            border-radius: 3px;
-            color: var(--accent-color);
-            background: #fff;
+            border: 0;
+            color: #57606a;
+            background: transparent;
             font-weight: 700;
-            line-height: 15px;
+            line-height: inherit;
             cursor: pointer;
         }
+
+        .tree-toggle:hover { color: var(--accent-color); }
 
         .tree-tag { color: #cf222e; white-space: pre-wrap; overflow-wrap: anywhere; }
         .tree-text { color: #0550ae; white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -273,6 +276,30 @@
         .html-tree-node.collapsed > .tree-children,
         .html-tree-node.collapsed > .tree-closing { display: none; }
         .html-tree-node.collapsed > .tree-node-row .tree-ellipsis { display: inline; }
+
+        .tag-highlight-overlay {
+            position: absolute;
+            z-index: 10;
+            pointer-events: none;
+            border: 2px solid #ff4500;
+            border-radius: 3px;
+            background: rgba(255, 100, 0, 0.7);
+            animation: tagPulse 0.4s ease-out;
+            box-shadow: 0 0 8px rgba(255, 69, 0, 0.6);
+        }
+
+        @keyframes tagPulse {
+            0% {
+                transform: scale(1.8);
+                opacity: 0.2;
+                box-shadow: 0 0 20px rgba(255, 69, 0, 0.8);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+                box-shadow: 0 0 8px rgba(255, 69, 0, 0.6);
+            }
+        }
 
         .modal-overlay {
             position: fixed;
@@ -332,7 +359,7 @@
             <button class="btn tree-action" id="expand-all-btn" type="button" title="展开全部 HTML 层级">📖 展开</button>
             <button class="btn tree-action" id="collapse-all-btn" type="button" title="收起全部 HTML 层级">📕 收起</button>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新说明">
-                <span>V1.02</span><span>ℹ️</span>
+                <span>V1.03</span><span>ℹ️</span>
             </div>
         </div>
 
@@ -377,6 +404,10 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date">2026年7月14日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.03</div>
+                    <div>交互与 JSON 格式化工具保持一致：层级使用嵌套背景和悬停深度反馈，统一缩进及文字尺寸；源码编辑时点击开始或结束标签会以脉冲动画提示配对标签位置。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.02</div>
                     <div>新增 HTML 层级结构树，支持节点及全部展开收起，并使用不同背景色区分嵌套深度；压缩结果继续使用纯文本视图。</div>
@@ -463,7 +494,7 @@
 
         function createTreeLeaf(node, depth) {
             const leaf = document.createElement('div');
-            leaf.className = `tree-leaf depth-${depth % 5}`;
+            leaf.className = 'tree-leaf';
             const content = document.createElement('span');
             content.className = node.type === 'comment' ? 'tree-comment'
                 : node.type === 'raw' ? 'tree-raw'
@@ -476,7 +507,7 @@
         function createTreeElement(node, depth) {
             if (node.type !== 'element') return createTreeLeaf(node, depth);
             const wrapper = document.createElement('div');
-            wrapper.className = `html-tree-node depth-${depth % 5}`;
+            wrapper.className = 'html-tree-node';
 
             const row = document.createElement('div');
             row.className = 'tree-node-row';
@@ -545,6 +576,87 @@
             setResultMode(mode);
             if (mode === 'tree') renderTree(value);
             showView('result');
+        }
+
+        function setupTagMatching(textarea) {
+            let highlightOverlay = null;
+
+            function removeHighlight() {
+                if (!highlightOverlay) return;
+                highlightOverlay.remove();
+                highlightOverlay = null;
+            }
+
+            function getTextRangePosition(start, end) {
+                const mirror = document.createElement('div');
+                const computedStyle = window.getComputedStyle(textarea);
+                Object.assign(mirror.style, {
+                    position: 'absolute',
+                    visibility: 'hidden',
+                    whiteSpace: 'pre',
+                    fontFamily: computedStyle.fontFamily,
+                    fontSize: computedStyle.fontSize,
+                    lineHeight: computedStyle.lineHeight,
+                    padding: computedStyle.padding,
+                    width: `${Math.max(textarea.clientWidth, textarea.scrollWidth)}px`,
+                    boxSizing: 'border-box',
+                    left: '0',
+                    top: '0',
+                });
+                mirror.appendChild(document.createTextNode(textarea.value.slice(0, start)));
+                const marker = document.createElement('span');
+                marker.textContent = textarea.value.slice(start, end);
+                marker.style.backgroundColor = 'transparent';
+                mirror.appendChild(marker);
+                mirror.appendChild(document.createTextNode(textarea.value.slice(end)));
+                document.body.appendChild(mirror);
+                const markerRect = marker.getBoundingClientRect();
+                const mirrorRect = mirror.getBoundingClientRect();
+                const position = {
+                    left: markerRect.left - mirrorRect.left,
+                    top: markerRect.top - mirrorRect.top,
+                    width: markerRect.width,
+                    height: markerRect.height,
+                };
+                mirror.remove();
+                return position;
+            }
+
+            function highlightTag(match) {
+                removeHighlight();
+                const container = textarea.parentElement;
+                if (!container) return;
+                if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
+                const position = getTextRangePosition(match.start, match.end);
+                highlightOverlay = document.createElement('div');
+                highlightOverlay.className = 'tag-highlight-overlay';
+                Object.assign(highlightOverlay.style, {
+                    left: `${textarea.offsetLeft + position.left - textarea.scrollLeft}px`,
+                    top: `${textarea.offsetTop + position.top - textarea.scrollTop}px`,
+                    width: `${Math.max(position.width, 8)}px`,
+                    height: `${position.height}px`,
+                });
+                container.appendChild(highlightOverlay);
+                setTimeout(removeHighlight, 1500);
+            }
+
+            function checkTagMatch() {
+                const match = HtmlFormatter.findMatchingTagAroundCursor(textarea.value, textarea.selectionStart);
+                if (match) {
+                    highlightTag(match);
+                    return;
+                }
+                removeHighlight();
+            }
+
+            textarea.addEventListener('click', checkTagMatch);
+            textarea.addEventListener('keyup', (event) => {
+                if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', '<', '>'].includes(event.key)) {
+                    checkTagMatch();
+                }
+            });
+            textarea.addEventListener('blur', removeHighlight);
+            textarea.addEventListener('scroll', removeHighlight);
         }
 
         function saveHistory() {
@@ -690,6 +802,7 @@
         refreshEditor(input, inputLines);
         refreshEditor(output, outputLines);
         refreshSummary();
+        setupTagMatching(input);
         updateHistoryButtons();
     </script>
 </body>

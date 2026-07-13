@@ -61,15 +61,17 @@
 
         while (index < source.length) {
             if (source[index] !== '<') {
+                const start = index;
                 const nextTag = source.indexOf('<', index);
                 const end = nextTag < 0 ? source.length : nextTag;
-                tokens.push({ type: 'text', value: source.slice(index, end) });
+                tokens.push({ type: 'text', value: source.slice(index, end), start, end });
                 index = end;
                 continue;
             }
 
+            const start = index;
             const tag = readTag(source, index);
-            const token = describeTag(tag.value);
+            const token = { ...describeTag(tag.value), start, end: tag.end };
             tokens.push(token);
             index = tag.end;
 
@@ -78,11 +80,21 @@
                 closingPattern.lastIndex = index;
                 const closingMatch = closingPattern.exec(source);
                 if (closingMatch) {
-                    tokens.push({ type: 'raw', value: source.slice(index, closingMatch.index), name: token.name });
-                    tokens.push(describeTag(closingMatch[0]));
+                    tokens.push({
+                        type: 'raw',
+                        value: source.slice(index, closingMatch.index),
+                        name: token.name,
+                        start: index,
+                        end: closingMatch.index,
+                    });
+                    tokens.push({
+                        ...describeTag(closingMatch[0]),
+                        start: closingMatch.index,
+                        end: closingMatch.index + closingMatch[0].length,
+                    });
                     index = closingMatch.index + closingMatch[0].length;
                 } else {
-                    tokens.push({ type: 'raw', value: source.slice(index), name: token.name });
+                    tokens.push({ type: 'raw', value: source.slice(index), name: token.name, start: index, end: source.length });
                     index = source.length;
                 }
             }
@@ -260,6 +272,50 @@
         return root;
     }
 
+    function findMatchingTagAroundCursor(input, cursorPos) {
+        const source = String(input || '');
+        const tokens = tokenizeHtml(source);
+        const probes = [cursorPos - 1, cursorPos].filter((value, index, values) => (
+            value >= 0 && value < source.length && values.indexOf(value) === index
+        ));
+        const tokenIndex = probes.reduce((found, probe) => {
+            if (found >= 0) return found;
+            return tokens.findIndex(token => (
+                token.type === 'tag'
+                && !token.selfClosing
+                && probe >= token.start
+                && probe < token.end
+            ));
+        }, -1);
+        if (tokenIndex < 0) return null;
+
+        const pairs = new Map();
+        const stack = [];
+        tokens.forEach((token, index) => {
+            if (token.type !== 'tag' || token.selfClosing) return;
+            if (!token.closing) {
+                stack.push(index);
+                return;
+            }
+            const stackIndex = stack.map(openIndex => tokens[openIndex].name).lastIndexOf(token.name);
+            if (stackIndex < 0) return;
+            const openIndex = stack[stackIndex];
+            pairs.set(openIndex, index);
+            pairs.set(index, openIndex);
+            stack.length = stackIndex;
+        });
+
+        const match = tokens[pairs.get(tokenIndex)];
+        if (!match) return null;
+        return {
+            start: match.start,
+            end: match.end,
+            value: match.value,
+            name: match.name,
+            closing: Boolean(match.closing),
+        };
+    }
+
     function analyzeHtml(input) {
         const stack = [];
         const issues = [];
@@ -294,5 +350,5 @@
         return { elementCount, maxDepth, issues };
     }
 
-    return { tokenizeHtml, formatHtml, compressHtml, repairHtml, buildHtmlTree, analyzeHtml };
+    return { tokenizeHtml, formatHtml, compressHtml, repairHtml, buildHtmlTree, findMatchingTagAroundCursor, analyzeHtml };
 });

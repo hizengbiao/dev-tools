@@ -27,7 +27,7 @@
 | **文本转义转换工具** | `text_escape_formatter_final.html` | 转义文本与可读文本互转、拼接字符串合并和输入输出差异对比。 | Vanilla JS |
 | **文本智能拆分** | `text-splitter.html` | 按指定长度智能拆分文本，优先保留自然边界并支持逐段复制。 | Vanilla JS |
 | **正则表达式测试** | `regex-tester.html` | 正则匹配、替换、分组高亮和可视化。 | Vanilla JS |
-| **HTML 元素格式化** | `html-formatter.html` | 格式化、压缩或修复 HTML 文档与元素片段，支持层级展开收起、深度背景、结构检查和撤销重做。 | Vanilla JS |
+| **HTML 元素格式化** | `html-formatter.html` | 格式化、压缩或修复 HTML 文档与元素片段，支持层级展开收起、悬停深度反馈、标签配对提示和结构检查。 | Vanilla JS |
 | **Neon Timer** | `neon-timer/dist/index.html` | 霓虹风格倒计时/秒表 (独立 App)。 | React + Vite |
 
 **公共组件：**

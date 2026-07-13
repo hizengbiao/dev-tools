@@ -53,6 +53,29 @@ assert.strictEqual(tree.children[0].children[0].children[0].name, 'h2');
 assert.deepStrictEqual(tree.children[0].children[0].children[0].children[0], { type: 'text', value: '标题' });
 assert.strictEqual(tree.children[0].children[0].children[1].selfClosing, true);
 
+const pairedTags = '<main><section><span>内容</span></section></main>';
+assert.deepStrictEqual(
+    formatter.findMatchingTagAroundCursor(pairedTags, pairedTags.indexOf('<section>') + 2),
+    {
+        start: pairedTags.indexOf('</section>'),
+        end: pairedTags.indexOf('</section>') + '</section>'.length,
+        value: '</section>',
+        name: 'section',
+        closing: true,
+    }
+);
+assert.deepStrictEqual(
+    formatter.findMatchingTagAroundCursor(pairedTags, pairedTags.indexOf('</span>') + 3),
+    {
+        start: pairedTags.indexOf('<span>'),
+        end: pairedTags.indexOf('<span>') + '<span>'.length,
+        value: '<span>',
+        name: 'span',
+        closing: false,
+    }
+);
+assert.strictEqual(formatter.findMatchingTagAroundCursor('<main><br></main>', 8), null);
+
 assert.deepStrictEqual(formatter.analyzeHtml('<main><div><span>内容</span></div></main>'), {
     elementCount: 3,
     maxDepth: 3,
@@ -79,9 +102,16 @@ assert.match(page, /id="html-tree-output"/);
 assert.match(page, /id="expand-all-btn"/);
 assert.match(page, /id="collapse-all-btn"/);
 assert.match(page, /HtmlFormatter\.buildHtmlTree/);
-assert.match(page, /depth-1/);
-assert.match(page, /<span>V1\.02<\/span>/);
-assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
+assert.match(page, /HtmlFormatter\.findMatchingTagAroundCursor/);
+assert.match(page, /function setupTagMatching\(textarea\)/);
+assert.match(page, /className = 'tag-highlight-overlay'/);
+assert.match(page, /\.html-tree-node:hover\s*\{/);
+assert.match(page, /\.tree-children\s*\{[^}]*padding:\s*2px 0 2px 10px;[^}]*margin-left:\s*2px;/s);
+assert.match(page, /\.html-tree\s*\{[^}]*font:\s*13px\/1\.6/s);
+assert.match(page, /textarea\s*\{[^}]*padding:\s*15px;[^}]*font:\s*13px\/1\.5/s);
+assert.doesNotMatch(page, /\.depth-1\s*\{/);
+assert.match(page, /<span>V1\.03<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.00<\/div>/);
 
 const nav = fs.readFileSync(path.join(root, 'nav.js'), 'utf8');
