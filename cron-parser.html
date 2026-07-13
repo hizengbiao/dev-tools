@@ -289,7 +289,7 @@
         <div class="tool-title">
             <h1>Cron 表达式解析工具</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.02</span>
+                <span>V1.03</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -307,7 +307,7 @@
                 <button class="btn" id="sample-linux-btn" type="button">Linux 示例</button>
                 <button class="btn" id="sample-quartz-btn" type="button">Quartz 示例</button>
             </div>
-            <div class="status" id="parse-status">支持 5 段 Linux cron 和 6/7 段 Quartz cron。复杂 L/W/# 语法暂不处理。</div>
+            <div class="status" id="parse-status">支持 5 段 Linux、6 段 Spring / Quartz 和 7 段 Quartz Cron；支持月份和星期英文缩写，以及 Quartz 的 ?、L、W、LW、# 语法。</div>
             <div class="cron-explanation" id="cron-explanation">
                 <strong>执行说明</strong>
                 <span>解析后将在这里说明表达式的执行时间。</span>
@@ -333,6 +333,10 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date">2026年7月14日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.03</div>
+                    <div>依据完整 Cron 测试样例扩展解析与说明，新增英文月份/星期、Quartz L/W/LW/#、日期有效性校验和特殊日期执行时间支持。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.02</div>
                     <div>优化常见 Cron 表达式的自然语言说明，支持直观描述每小时整点、指定分钟和小时区间等执行周期。</div>
@@ -371,7 +375,10 @@
                 const info = CronParser.detectCronType(cronInput.value);
                 const runs = CronParser.getNextRuns(cronInput.value, { count: Number(countInput.value) || 10 });
                 const explanation = CronParser.explainCron(cronInput.value);
-                parseStatus.textContent = `解析成功：${info.type === 'linux' ? 'Linux 5 段' : `Quartz ${info.fields} 段`} 表达式`;
+                const typeLabel = info.type === 'linux'
+                    ? 'Linux 5 段'
+                    : info.fields === 6 ? 'Spring / Quartz 6 段' : 'Quartz 7 段';
+                parseStatus.textContent = `解析成功：${typeLabel}表达式`;
                 parseStatus.className = 'status';
                 cronExplanation.innerHTML = `<strong>执行说明</strong><span>${explanation}</span>`;
                 renderRuns(runs);

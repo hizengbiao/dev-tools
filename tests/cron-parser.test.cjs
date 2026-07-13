@@ -25,6 +25,69 @@ assert.strictEqual(
 );
 assert.strictEqual(cron.explainCron('5,20 8-10 * * *'), '每天在 8 至 10 点的第 5、20 分钟执行。');
 
+const validLinuxExpressions = [
+    '* * * * *', '*/5 * * * *', '0 * * * *', '0 0 * * *', '30 8 * * *',
+    '0 9 * * 1-5', '0 0 1 * *', '0 0 1 1 *', '0,15,30,45 * * * *', '0 8,12,18 * * *'
+];
+const validSpringExpressions = [
+    '* * * * * *', '*/5 * * * * *', '0 * * * * *', '0 */5 * * * *', '0 0 * * * *',
+    '0 0 0 * * *', '0 30 8 * * *', '0 0 9 * * MON-FRI', '0 0 0 1 * *', '0 0 0 1 JAN *'
+];
+const validQuartzExpressions = [
+    '* * * * * ?', '0/5 * * * * ?', '0 * * * * ?', '0 0/5 * * * ?', '0 0 * * * ?',
+    '0 0 0 * * ?', '0 30 8 * * ?', '0 0 9 ? * MON', '0 0 0 L * ?', '0 0 18 LW * ?',
+    '0 0 9 ? * MON#2', '0 0 0 1 1 ? 2027'
+];
+
+for (const expression of [...validLinuxExpressions, ...validSpringExpressions, ...validQuartzExpressions]) {
+    assert.doesNotThrow(() => cron.parseCron(expression), `expected valid expression: ${expression}`);
+    assert.doesNotThrow(() => cron.explainCron(expression), `expected explainable expression: ${expression}`);
+}
+
+const invalidExpressions = [
+    '', '* * * *', '* * * * * * * *', '60 * * * *', '0 24 * * *', '0 0 32 * *',
+    '0 0 1 13 *', '61 * * * * *', '0 60 * * * *', '0 0 25 * * *',
+    '*/0 * * * *', '*/-1 * * * *', '*/abc * * * *', '1/0 * * * *',
+    '10-5 * * * *', '0 18-9 * * *', '0 0 20-10 * *', '0 0 1 12-1 *',
+    'abc * * * *', '0 xx * * *', '0 0 上午9点 * * *', '0 0 9 ? UNKNOWN', '0 0 9 ? * MONDAYYYY',
+    '0 0 9 ? * ?', '0 0 9 ? * MON#0', '0 0 9 ? * MON#6', '0 0 9 32W * ?',
+    '0 0 9 15L * ?', '0 0 9 ? * L#2', '0 0 30 2 *', '0 0 31 4 *', '0 0 31 6 *',
+    '0 0 0 29 2 ? 2027'
+];
+for (const expression of invalidExpressions) {
+    assert.throws(() => cron.parseCron(expression), undefined, `expected invalid expression: ${expression}`);
+}
+
+const validBoundaryExpressions = [
+    '0 0 1 1 0', '59 23 31 12 6', '0 0 0 1 1 SUN', '59 59 23 31 12 SAT',
+    '59 59 23 31 12 ? 2099', '0 0 29 2 *', '0 0 31 12 *', '0 0 0 29 2 ? 2028'
+];
+for (const expression of validBoundaryExpressions) {
+    assert.doesNotThrow(() => cron.parseCron(expression), `expected valid boundary expression: ${expression}`);
+}
+assert.doesNotThrow(() => cron.parseCron('0 0 31 2 MON'));
+
+assert.strictEqual(cron.explainCron('* * * * *'), '每分钟执行一次。');
+assert.strictEqual(cron.explainCron('0 0 * * *'), '每天 00:00 执行。');
+assert.strictEqual(cron.explainCron('0 0 1 * *'), '每月 1 日 00:00 执行。');
+assert.strictEqual(cron.explainCron('0 0 1 1 *'), '每年 1 月 1 日 00:00 执行。');
+assert.strictEqual(cron.explainCron('0 9 * * 1-5'), '每周一至周五 09:00 执行。');
+assert.strictEqual(cron.explainCron('0,15,30,45 * * * *'), '每小时第 0、15、30、45 分钟执行。');
+assert.strictEqual(cron.explainCron('0 8,12,18 * * *'), '每天在 8、12、18 点整点执行。');
+assert.strictEqual(cron.explainCron('0-9 * * * *'), '每小时第 0 至 9 分钟内每分钟执行。');
+assert.strictEqual(cron.explainCron('0 9-18 * * *'), '每天在 9 至 18 点整点执行。');
+assert.strictEqual(cron.explainCron('0 9-18 * * 1-5'), '每周一至周五，在 9 至 18 点整点执行。');
+assert.strictEqual(cron.explainCron('0 0 1,10,20 * *'), '每月 1、10、20 日 00:00 执行。');
+assert.strictEqual(cron.explainCron('0 0 */3 * *'), '每隔 3 天在 00:00 执行一次。');
+assert.strictEqual(cron.explainCron('0 0 1 */2 *'), '每隔 2 个月的 1 日 00:00 执行一次。');
+assert.strictEqual(cron.explainCron('*/5 * * * * *'), '每隔 5 秒执行一次。');
+assert.strictEqual(cron.explainCron('0 * * * * *'), '每分钟整点执行。');
+assert.strictEqual(cron.explainCron('0,20,40 * * * * *'), '每分钟第 0、20、40 秒执行。');
+assert.strictEqual(cron.explainCron('0 0 9 * * MON-FRI'), '每周一至周五 09:00:00 执行。');
+assert.strictEqual(cron.explainCron('0 0 0 L * ?'), '每月最后一天 00:00:00 执行。');
+assert.strictEqual(cron.explainCron('0 0 18 LW * ?'), '每月最后一个工作日 18:00:00 执行。');
+assert.strictEqual(cron.explainCron('0 0 9 ? * MON#2'), '每月第二个周一 09:00:00 执行。');
+
 const nextLinux = cron.getNextRuns('*/30 * * * *', {
     from: new Date('2026-07-11T10:05:00Z'),
     count: 3,
@@ -43,15 +106,63 @@ assert.deepStrictEqual(
     ['2026-07-11T12:00:00.000Z', '2026-07-12T12:00:00.000Z']
 );
 
+const calendarRunCases = [
+    {
+        expression: '0 0 9 * * MON-FRI',
+        from: '2026-07-10T10:00:00Z',
+        expected: '2026-07-13T09:00:00.000Z'
+    },
+    {
+        expression: '0 0 0 L * ?',
+        from: '2026-07-30T00:00:00Z',
+        expected: '2026-07-31T00:00:00.000Z'
+    },
+    {
+        expression: '0 0 9 15W * ?',
+        from: '2026-08-13T00:00:00Z',
+        expected: '2026-08-14T09:00:00.000Z'
+    },
+    {
+        expression: '0 0 18 LW * ?',
+        from: '2026-07-30T00:00:00Z',
+        expected: '2026-07-31T18:00:00.000Z'
+    },
+    {
+        expression: '0 0 9 ? * MON#2',
+        from: '2026-08-01T00:00:00Z',
+        expected: '2026-08-10T09:00:00.000Z'
+    },
+    {
+        expression: '0 0 0 29 2 ? 2028',
+        from: '2027-12-31T00:00:00Z',
+        expected: '2028-02-29T00:00:00.000Z'
+    }
+];
+for (const testCase of calendarRunCases) {
+    const [nextRun] = cron.getNextRuns(testCase.expression, {
+        from: new Date(testCase.from),
+        count: 1
+    });
+    assert.strictEqual(nextRun.toISOString(), testCase.expected, `unexpected next run for ${testCase.expression}`);
+}
+
+const [farFutureRun] = cron.getNextRuns('59 59 23 31 12 ? 2099', {
+    from: new Date('2026-07-14T00:00:00Z'),
+    count: 10
+});
+assert.strictEqual(farFutureRun.toISOString(), '2099-12-31T23:59:59.000Z');
+
 assert.throws(() => cron.getNextRuns('* * *', { from: new Date(), count: 1 }), /Cron expression must have 5, 6, or 7 fields/);
 
 const page = fs.readFileSync(path.join(root, 'cron-parser.html'), 'utf8');
 assert.match(page, /<title>Cron 表达式解析工具<\/title>/);
 assert.match(page, /<script src="cron-parser\.js"><\/script>/);
-assert.match(page, /<span>V1\.02<\/span>/);
+assert.match(page, /<span>V1\.03<\/span>/);
 assert.match(page, /id="cron-explanation"/);
 assert.match(page, /CronParser\.explainCron/);
-assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
+assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
+assert.match(page, /支持月份和星期英文缩写，以及 Quartz 的 \?、L、W、LW、# 语法/);
+assert.match(page, /Spring \/ Quartz 6 段/);
 assert.match(page, /<div class="changelog-date">2026年7月11日<\/div>[\s\S]*?<div class="changelog-version">V1\.00<\/div>/);
 assert.match(page, /id="cron-input"/);
 assert.match(page, /id="count-input"/);
