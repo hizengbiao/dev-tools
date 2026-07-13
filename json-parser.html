@@ -787,7 +787,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V1.90</span>
+            <span>V1.91</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -820,6 +820,13 @@
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年7月13日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.91</div>
+                        <div class="changelog-desc">修复增强：支持从带中文说明前缀的日志内容中提取真正的 JSON 根对象，避免将说明文字误识别为 JSON 键。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月4日</div>
                     <div class="changelog-entry">
@@ -1500,6 +1507,9 @@
 
                 // 0e. Remove trailing comma or period again after stripping
                 raw = raw.replace(/[,，.。]+\s*$/, "");
+
+                // Drop a human-readable log label before a root JSON object/array.
+                raw = JsonRepairNormalizer.stripLeadingLabelBeforeJson(raw);
 
                 // 1. Remove backslash-newline continuations (line continuation)
                 raw = raw.replace(/\\\r?\n/g, "");

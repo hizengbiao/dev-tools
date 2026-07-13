@@ -10,6 +10,7 @@ assert.match(page, /JsonRepairNormalizer\.stripCommentsOutsideStrings\(raw\)/);
 assert.match(page, /JsonRepairNormalizer\.fixChineseColons\(raw\)/);
 assert.match(page, /JsonRepairNormalizer\.addMissingCommas\(raw\)/);
 assert.match(page, /JsonRepairNormalizer\.addQuotesToUnquotedStrings\(raw\)/);
+assert.match(page, /JsonRepairNormalizer\.stripLeadingLabelBeforeJson\(raw\)/);
 assert.doesNotMatch(page, /function stripCommentsOutsideStrings\(raw\)/);
 assert.doesNotMatch(page, /function fixChineseColons\(raw\)/);
 assert.doesNotMatch(page, /function addMissingCommas\(raw\)/);
@@ -23,6 +24,15 @@ assert.strictEqual(
 assert.strictEqual(
     normalizer.fixChineseColons('logType ： TCPSNOOP\n_searchSort : 1768352359227000000,-9223372036854775808\nenabled: true'),
     '"logType": "TCPSNOOP"\n"_searchSort": ["1768352359227000000","-9223372036854775808"]\n"enabled": true'
+);
+
+assert.strictEqual(
+    normalizer.stripLeadingLabelBeforeJson('消费到云见各决策子系统异常信号：{"objectType":"K8sWorker","impactRangeObjectIdList":[]}'),
+    '{"objectType":"K8sWorker","impactRangeObjectIdList":[]}'
+);
+assert.strictEqual(
+    normalizer.stripLeadingLabelBeforeJson('{"outer":{"inner":1}}'),
+    '{"outer":{"inner":1}}'
 );
 
 assert.strictEqual(

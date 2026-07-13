@@ -9,7 +9,8 @@ const script = [...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>
     .map((match) => match[1])
     .join('\n');
 
-assert.match(page, /<span>V1\.90<\/span>/);
+assert.match(page, /<span>V1\.91<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.91<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月4日<\/div>[\s\S]*?<div class="changelog-version">V1\.90<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.90<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.89<\/div>/);
@@ -245,6 +246,17 @@ assert.deepStrictEqual(JSON.parse(bracketPrefixHarness.elements.get('json-input'
     appName: 'cta',
     artifactId: 'cmata',
     serviceUuid: 'L.03@cata_UAT_UAT',
+});
+
+const descriptivePrefixHarness = createHarness();
+descriptivePrefixHarness.elements.get('json-input').value = '消费到云见各决策子系统异常信号：{"objectType":"K8sWorker","objectId":"node-01","impactRangeObjectIdList":[]}';
+descriptivePrefixHarness.context.fixJson();
+
+assert.equal(descriptivePrefixHarness.elements.get('error-msg').style.display, 'none');
+assert.deepStrictEqual(JSON.parse(descriptivePrefixHarness.elements.get('json-input').value), {
+    objectType: 'K8sWorker',
+    objectId: 'node-01',
+    impactRangeObjectIdList: [],
 });
 
 const stringFieldHarness = createHarness();

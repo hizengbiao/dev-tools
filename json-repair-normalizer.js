@@ -120,6 +120,43 @@
         return result.join('\n');
     }
 
+    function stripLeadingLabelBeforeJson(raw) {
+        const source = String(raw || '');
+        const trimmedSource = source.trimStart();
+        if (trimmedSource.startsWith('{') || trimmedSource.startsWith('[')) {
+            return source;
+        }
+        let inString = false;
+        let stringChar = '';
+        let escaped = false;
+
+        for (let index = 0; index < source.length; index += 1) {
+            const char = source[index];
+            if (inString) {
+                if (escaped) {
+                    escaped = false;
+                } else if (char === '\\') {
+                    escaped = true;
+                } else if (char === stringChar) {
+                    inString = false;
+                }
+                continue;
+            }
+            if (char === '"' || char === "'") {
+                inString = true;
+                stringChar = char;
+                continue;
+            }
+            if (char !== ':' && char !== '：') continue;
+
+            const rest = source.slice(index + 1).trimStart();
+            if (rest.startsWith('{') || rest.startsWith('[')) {
+                return rest;
+            }
+        }
+        return source;
+    }
+
     function isCommasSeparatedNumbers(value) {
         if (!value.includes(',')) return false;
 
@@ -276,6 +313,7 @@
     const api = {
         stripCommentsOutsideStrings,
         fixChineseColons,
+        stripLeadingLabelBeforeJson,
         isCommasSeparatedNumbers,
         isJsonPrimitive,
         addMissingCommas,
