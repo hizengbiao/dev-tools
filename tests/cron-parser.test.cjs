@@ -157,12 +157,15 @@ assert.throws(() => cron.getNextRuns('* * *', { from: new Date(), count: 1 }), /
 const page = fs.readFileSync(path.join(root, 'cron-parser.html'), 'utf8');
 assert.match(page, /<title>Cron 表达式解析工具<\/title>/);
 assert.match(page, /<script src="cron-parser\.js"><\/script>/);
-assert.match(page, /<span>V1\.03<\/span>/);
+assert.match(page, /<span>V1\.04<\/span>/);
 assert.match(page, /id="cron-explanation"/);
 assert.match(page, /CronParser\.explainCron/);
-assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
+assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
 assert.match(page, /支持月份和星期英文缩写，以及 Quartz 的 \?、L、W、LW、# 语法/);
 assert.match(page, /Spring \/ Quartz 6 段/);
+assert.match(page, /id="timezone-label"/);
+assert.match(page, /function formatDateTime\(date\)/);
+assert.doesNotMatch(page, /date\.toLocaleString\(\).*date\.toISOString\(\)/);
 assert.match(page, /<div class="changelog-date">2026年7月11日<\/div>[\s\S]*?<div class="changelog-version">V1\.00<\/div>/);
 assert.match(page, /id="cron-input"/);
 assert.match(page, /id="count-input"/);

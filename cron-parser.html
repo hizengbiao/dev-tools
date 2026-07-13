@@ -107,6 +107,18 @@
             font-size: 16px;
         }
 
+        .result-title {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .timezone-label {
+            color: var(--muted-color);
+            font-size: 12px;
+        }
+
         .input-row {
             gap: 10px;
             flex-wrap: wrap;
@@ -289,7 +301,7 @@
         <div class="tool-title">
             <h1>Cron 表达式解析工具</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.03</span>
+                <span>V1.04</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -316,7 +328,10 @@
 
         <section class="panel">
             <div class="result-header">
-                <h2>最近执行时间</h2>
+                <div class="result-title">
+                    <h2>最近执行时间</h2>
+                    <span class="timezone-label" id="timezone-label"></span>
+                </div>
                 <button class="btn" id="copy-result-btn" type="button">复制结果</button>
             </div>
             <div class="result-list" id="result-list">
@@ -333,6 +348,10 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date">2026年7月14日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.04</div>
+                    <div>统一使用年月日时分秒和 24 小时格式展示最近执行时间，并明确标注浏览器当前时区。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.03</div>
                     <div>依据完整 Cron 测试样例扩展解析与说明，新增英文月份/星期、Quartz L/W/LW/#、日期有效性校验和特殊日期执行时间支持。</div>
@@ -361,12 +380,22 @@
         const parseStatus = document.getElementById('parse-status');
         const cronExplanation = document.getElementById('cron-explanation');
         const resultList = document.getElementById('result-list');
+        const timezoneLabel = document.getElementById('timezone-label');
         let currentRuns = [];
+
+        const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || '本地时区';
+        timezoneLabel.textContent = `当前时区：${currentTimezone}`;
+
+        function formatDateTime(date) {
+            const pad = (value) => String(value).padStart(2, '0');
+            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} `
+                + `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+        }
 
         function renderRuns(runs) {
             currentRuns = runs;
             resultList.innerHTML = runs.map((date, index) => `
-                <div class="run-item">#${index + 1} ${date.toLocaleString()} (${date.toISOString()})</div>
+                <div class="run-item">#${index + 1} ${formatDateTime(date)}</div>
             `).join('');
         }
 
@@ -403,7 +432,7 @@
                 ClipboardUtils.showToast('暂无执行时间');
                 return;
             }
-            ClipboardUtils.copyText(currentRuns.map((date) => date.toISOString()).join('\n'), { successMessage: '执行时间已复制' });
+            ClipboardUtils.copyText(currentRuns.map(formatDateTime).join('\n'), { successMessage: '执行时间已复制' });
         });
         cronInput.value = SampleData.getSample('cron.linuxEveryThirtyMinutes');
         parseCron();
