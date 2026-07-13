@@ -19,6 +19,7 @@
         { name: 'Neon Timer', path: 'neon-timer/dist/index.html', icon: '⏲️' }
     ];
     const NAV_CONFIG_STORAGE_KEY = 'dev-tools-nav-config-v1';
+    const NAV_HTML_FORMATTER_MIGRATION_KEY = 'dev-tools-nav-html-formatter-default-v1';
     const configurableTools = tools.filter(tool => tool.path !== 'index.html');
     const toolByPath = new Map(configurableTools.map(tool => [tool.path, tool]));
 
@@ -43,11 +44,32 @@
         return { orderedPaths };
     }
 
+    function migrateHtmlFormatterDefault(config) {
+        const normalized = normalizeNavConfig(config);
+        if (window.localStorage.getItem(NAV_HTML_FORMATTER_MIGRATION_KEY) === '1') {
+            return normalized;
+        }
+
+        const orderedPaths = [...normalized.orderedPaths];
+        if (!orderedPaths.includes('html-formatter.html')) {
+            const defaultPaths = configurableTools.map(tool => tool.path);
+            const htmlIndex = defaultPaths.indexOf('html-formatter.html');
+            const nextVisiblePath = defaultPaths.slice(htmlIndex + 1).find(path => orderedPaths.includes(path));
+            const insertIndex = nextVisiblePath ? orderedPaths.indexOf(nextVisiblePath) : orderedPaths.length;
+            orderedPaths.splice(insertIndex, 0, 'html-formatter.html');
+        }
+
+        const migrated = normalizeNavConfig({ orderedPaths });
+        window.localStorage.setItem(NAV_CONFIG_STORAGE_KEY, JSON.stringify(migrated));
+        window.localStorage.setItem(NAV_HTML_FORMATTER_MIGRATION_KEY, '1');
+        return migrated;
+    }
+
     function loadNavConfig() {
         try {
             const rawConfig = window.localStorage.getItem(NAV_CONFIG_STORAGE_KEY);
-            if (!rawConfig) return getDefaultNavConfig();
-            return normalizeNavConfig(JSON.parse(rawConfig));
+            const config = rawConfig ? JSON.parse(rawConfig) : getDefaultNavConfig();
+            return migrateHtmlFormatterDefault(config);
         } catch (error) {
             console.warn('Failed to load navigation config.', error);
             return getDefaultNavConfig();
