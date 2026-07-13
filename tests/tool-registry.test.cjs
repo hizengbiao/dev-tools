@@ -105,6 +105,12 @@ assert.notStrictEqual(
     toolByPath.get('sql-formatter.html').icon,
     'text escape and SQL formatter should use different icons'
 );
+assert.strictEqual(toolByPath.get('hash-generator.html').icon, '#️⃣');
+assert.notStrictEqual(
+    toolByPath.get('regex-tester.html').icon,
+    toolByPath.get('hash-generator.html').icon,
+    'regex tester and hash generator should use different icons'
+);
 assert.strictEqual(
     (home.match(/<span class="tool-icon" aria-hidden="true"><\/span>/g) || []).length,
     nonHomeTools.length,

@@ -12,7 +12,7 @@
         { name: '时间戳转换', path: 'timestamp-converter.html', icon: '⏱️' },
         { name: 'URL 编解码', path: 'url-encoder.html', icon: '🔗' },
         { name: 'Base64', path: 'base64-encoder.html', icon: '🔐' },
-        { name: '哈希摘要', path: 'hash-generator.html', icon: '🔎' },
+        { name: '哈希摘要', path: 'hash-generator.html', icon: '#️⃣' },
         { name: 'JWT 解析', path: 'jwt-decoder.html', icon: '🎫' },
         { name: '随机生成', path: 'random-generator.html', icon: '🎲' },
         { name: 'SQL 格式化', path: 'sql-formatter.html', icon: '🧾' },
