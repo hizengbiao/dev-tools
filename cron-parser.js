@@ -445,10 +445,16 @@
         if (!Number.isInteger(count) || count <= 0) {
             throw new Error('count must be positive');
         }
+        const timezoneOffsetMinutes = Number(options.timezoneOffsetMinutes ?? 0);
+        if (!Number.isFinite(timezoneOffsetMinutes) || Math.abs(timezoneOffsetMinutes) > 14 * 60) {
+            throw new Error('timezone offset is invalid');
+        }
+        const timezoneOffsetMs = timezoneOffsetMinutes * 60 * 1000;
         const requiresSecondGranularity = parsed.type === 'quartz'
             && !(parsed.secondValues.length === 1 && parsed.secondValues[0] === 0);
         const stepMs = requiresSecondGranularity ? 1000 : 60 * 1000;
-        let cursor = new Date((options.from ? new Date(options.from) : new Date()).getTime() + stepMs);
+        const fromTime = (options.from ? new Date(options.from) : new Date()).getTime();
+        let cursor = new Date(fromTime + timezoneOffsetMs + stepMs);
         if (!requiresSecondGranularity) {
             cursor.setUTCSeconds(0, 0);
         } else {
@@ -526,7 +532,7 @@
             }
 
             if (matches(cursor, parsed)) {
-                result.push(new Date(cursor));
+                result.push(new Date(cursor.getTime() - timezoneOffsetMs));
             }
             cursor = new Date(cursor.getTime() + stepMs);
         }

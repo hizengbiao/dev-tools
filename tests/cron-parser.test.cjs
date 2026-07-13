@@ -106,6 +106,13 @@ assert.deepStrictEqual(
     ['2026-07-11T12:00:00.000Z', '2026-07-12T12:00:00.000Z']
 );
 
+const [singaporeRun] = cron.getNextRuns('30 8 * * *', {
+    from: new Date('2026-07-14T00:00:00Z'),
+    count: 1,
+    timezoneOffsetMinutes: 8 * 60
+});
+assert.strictEqual(singaporeRun.toISOString(), '2026-07-14T00:30:00.000Z');
+
 const calendarRunCases = [
     {
         expression: '0 0 9 * * MON-FRI',
@@ -158,10 +165,10 @@ const page = fs.readFileSync(path.join(root, 'cron-parser.html'), 'utf8');
 assert.match(page, /<title>Cron 表达式解析与生成工具<\/title>/);
 assert.match(page, /<script src="cron-parser\.js"><\/script>/);
 assert.match(page, /<script src="cron-generator\.js"><\/script>/);
-assert.match(page, /<span>V1\.06<\/span>/);
+assert.match(page, /<span>V1\.07<\/span>/);
 assert.match(page, /id="cron-explanation"/);
 assert.match(page, /CronParser\.explainCron/);
-assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.06<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
+assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.07<\/div>[\s\S]*?<div class="changelog-version">V1\.06<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
 assert.match(page, /支持月份和星期英文缩写，以及 Quartz 的 \?、L、W、LW、# 语法/);
 assert.match(page, /Spring \/ Quartz 6 段/);
 assert.match(page, /id="timezone-label"/);
@@ -172,6 +179,7 @@ assert.match(page, /id="cron-input"/);
 assert.match(page, /id="count-input"/);
 assert.match(page, /<label for="count-input">最近执行时间条目数<\/label>/);
 assert.match(page, /id="count-input"[^>]*value="5"/);
+assert.match(page, /timezoneOffsetMinutes: currentTimezoneOffsetMinutes/);
 assert.match(page, /id="result-list"/);
 assert.match(page, /CronParser\.getNextRuns/);
 assert.match(page, /id="generator-tab"/);
