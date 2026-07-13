@@ -36,7 +36,7 @@
         }
 
         .container {
-            max-width: 1080px;
+            max-width: 1280px;
             width: 100%;
         }
 
@@ -64,7 +64,7 @@
 
         .workspace {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 160px minmax(0, 1fr);
+            grid-template-columns: minmax(0, 1fr) 140px minmax(0, 1fr);
             gap: 18px;
             align-items: stretch;
         }
@@ -72,7 +72,7 @@
         .panel {
             display: flex;
             flex-direction: column;
-            min-height: 390px;
+            min-height: 300px;
         }
 
         .panel-header {
@@ -92,7 +92,7 @@
         textarea {
             width: 100%;
             flex: 1;
-            min-height: 320px;
+            min-height: 250px;
             padding: 12px;
             border: 1px solid #d0d7de;
             border-radius: 6px;
@@ -215,8 +215,9 @@
 
         .affix-rules {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: minmax(190px, 0.7fr) minmax(0, 1fr) minmax(0, 1fr);
             gap: 12px;
+            align-items: center;
             margin: 12px 0 14px;
             padding: 12px;
             border: 1px solid #d0d7de;
@@ -231,6 +232,18 @@
             color: #57606a;
             font-size: 13px;
             font-weight: 600;
+        }
+
+        .affix-rule-field {
+            flex-direction: row !important;
+            align-items: center;
+            gap: 10px !important;
+            white-space: nowrap;
+        }
+
+        .affix-rule-field input[type="text"] {
+            flex: 1;
+            min-width: 0;
         }
 
         .affix-rules input[type="text"] {
@@ -434,6 +447,17 @@
             textarea {
                 min-height: 220px;
             }
+
+            .affix-rules {
+                grid-template-columns: 1fr;
+                align-items: stretch;
+            }
+
+            .affix-rule-field {
+                flex-direction: column !important;
+                align-items: stretch;
+                gap: 6px !important;
+            }
         }
     </style>
 </head>
@@ -443,7 +467,7 @@
         <div class="tool-title">
             <h1>文本命名转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.07</span>
+                <span>V1.08</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -484,11 +508,11 @@
                         <input type="checkbox" id="enable-affix-rules">
                         启用前后缀规则
                     </label>
-                    <label>
+                    <label class="affix-rule-field">
                         移除前缀
                         <input type="text" id="prefix-rules" value="is,m" placeholder="例如 is,m">
                     </label>
-                    <label>
+                    <label class="affix-rule-field">
                         移除后缀
                         <input type="text" id="suffix-rules" value="DTO,VO" placeholder="例如 DTO,VO">
                     </label>
@@ -521,6 +545,13 @@
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年7月13日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.08</div>
+                        <div class="changelog-desc">优化页面空间利用：扩大输入输出区域、缩短编辑区高度，并将前缀和后缀规则的标签与输入框调整为同一行显示。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月10日</div>
                     <div class="changelog-entry">
