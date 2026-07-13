@@ -58,7 +58,12 @@ assert.match(nav, /orderedPaths\.splice\(insertIndex, 0, 'html-formatter\.html'\
 assert.match(nav, /window\.localStorage\.setItem\(NAV_HTML_FORMATTER_MIGRATION_KEY, '1'\)/);
 assert.match(nav, /function migratePrimaryDefaultOrder/);
 assert.match(nav, /const isLegacyDefault = legacyDefaultPaths\.length === normalized\.orderedPaths\.length/);
-assert.match(nav, /return migratePrimaryDefaultOrder\(migrateHtmlFormatterDefault\(config\)\)/);
+assert.match(nav, /function migrateNewTools\(config, initializeOnly = false\)/);
+assert.match(nav, /const newPaths = currentPaths\.filter\(path => !knownPathSet\.has\(path\)\)/);
+assert.match(nav, /orderedPaths: \[\.\.\.normalized\.orderedPaths, \.\.\.newPaths\]/);
+assert.match(nav, /knownPaths: currentPaths/);
+assert.match(nav, /const isLegacyConfig = Boolean\(rawConfig\) && !Array\.isArray\(config\.knownPaths\)/);
+assert.match(nav, /return migrateNewTools\(migrated, isLegacyConfig\)/);
 assert.match(nav, /function loadNavConfig/);
 assert.match(nav, /function saveNavConfig/);
 assert.match(nav, /function renderNavManager/);

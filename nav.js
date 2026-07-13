@@ -29,8 +29,10 @@
     const toolByPath = new Map(configurableTools.map(tool => [tool.path, tool]));
 
     function getDefaultNavConfig() {
+        const currentPaths = configurableTools.map(tool => tool.path);
         return {
-            orderedPaths: configurableTools.map(tool => tool.path)
+            orderedPaths: [...currentPaths],
+            knownPaths: [...currentPaths]
         };
     }
 
@@ -46,7 +48,15 @@
             return true;
         });
 
-        return { orderedPaths };
+        const currentPaths = configurableTools.map(tool => tool.path);
+        const knownSeen = new Set();
+        const knownPaths = (Array.isArray(config.knownPaths) ? config.knownPaths : currentPaths).filter(path => {
+            if (!toolByPath.has(path) || knownSeen.has(path)) return false;
+            knownSeen.add(path);
+            return true;
+        });
+
+        return { orderedPaths, knownPaths };
     }
 
     function migrateHtmlFormatterDefault(config) {
@@ -64,7 +74,7 @@
             orderedPaths.splice(insertIndex, 0, 'html-formatter.html');
         }
 
-        const migrated = normalizeNavConfig({ orderedPaths });
+        const migrated = normalizeNavConfig({ ...normalized, orderedPaths });
         window.localStorage.setItem(NAV_CONFIG_STORAGE_KEY, JSON.stringify(migrated));
         window.localStorage.setItem(NAV_HTML_FORMATTER_MIGRATION_KEY, '1');
         return migrated;
@@ -104,11 +114,38 @@
         return migrated;
     }
 
+    function migrateNewTools(config, initializeOnly = false) {
+        const normalized = normalizeNavConfig(config);
+        const currentPaths = configurableTools.map(tool => tool.path);
+
+        if (initializeOnly) {
+            const initialized = normalizeNavConfig({
+                ...normalized,
+                knownPaths: currentPaths
+            });
+            window.localStorage.setItem(NAV_CONFIG_STORAGE_KEY, JSON.stringify(initialized));
+            return initialized;
+        }
+
+        const knownPathSet = new Set(normalized.knownPaths);
+        const newPaths = currentPaths.filter(path => !knownPathSet.has(path));
+        if (!newPaths.length) return normalized;
+
+        const migrated = normalizeNavConfig({
+            orderedPaths: [...normalized.orderedPaths, ...newPaths],
+            knownPaths: currentPaths
+        });
+        window.localStorage.setItem(NAV_CONFIG_STORAGE_KEY, JSON.stringify(migrated));
+        return migrated;
+    }
+
     function loadNavConfig() {
         try {
             const rawConfig = window.localStorage.getItem(NAV_CONFIG_STORAGE_KEY);
             const config = rawConfig ? JSON.parse(rawConfig) : getDefaultNavConfig();
-            return migratePrimaryDefaultOrder(migrateHtmlFormatterDefault(config));
+            const isLegacyConfig = Boolean(rawConfig) && !Array.isArray(config.knownPaths);
+            const migrated = migratePrimaryDefaultOrder(migrateHtmlFormatterDefault(config));
+            return migrateNewTools(migrated, isLegacyConfig);
         } catch (error) {
             console.warn('Failed to load navigation config.', error);
             return getDefaultNavConfig();
