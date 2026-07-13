@@ -13,8 +13,8 @@ function parseRegisteredTools(source) {
     const toolsBlock = source.match(/const tools = \[([\s\S]*?)\];/);
     assert.ok(toolsBlock, 'nav.js should define a tools array');
 
-    const tools = [...toolsBlock[1].matchAll(/\{\s*name:\s*'([^']+)'\s*,\s*path:\s*'([^']+)'/g)]
-        .map((match) => ({ name: match[1], path: match[2] }));
+    const tools = [...toolsBlock[1].matchAll(/\{\s*name:\s*'([^']+)'\s*,\s*path:\s*'([^']+)'\s*,\s*icon:\s*'([^']+)'/g)]
+        .map((match) => ({ name: match[1], path: match[2], icon: match[3] }));
 
     assert.ok(tools.length > 0, 'nav.js should register at least one tool');
     return tools;
@@ -22,6 +22,7 @@ function parseRegisteredTools(source) {
 
 const tools = parseRegisteredTools(nav);
 const nonHomeTools = tools.filter((tool) => tool.path !== 'index.html');
+const toolByPath = new Map(tools.map((tool) => [tool.path, tool]));
 const expectedLeadingPaths = [
     'index.html',
     'json-parser.html',
@@ -39,6 +40,11 @@ assert.deepStrictEqual(
     'nav.js should put the main text tools first, then keep the other tools in their existing order'
 );
 assert.match(nav, /className = 'nav-expand-toggle'/);
+assert.match(nav, /window\.DevToolsRegistry = Object\.freeze/);
+assert.match(nav, /navScript\?\.dataset\.registryOnly === 'true'/);
+assert.match(nav, /iconElement\.textContent = tool\.icon/);
+assert.match(nav, /a\.append\(iconElement, labelElement\)/);
+assert.match(navCss, /\.nav-link-icon\s*\{/);
 assert.match(nav, /aria-expanded/);
 assert.match(nav, /nav\.classList\.toggle\('expanded'/);
 assert.match(nav, /linksDiv\.addEventListener\('wheel'/);
@@ -89,6 +95,21 @@ assert.match(nav, /恢复默认/);
 assert.doesNotMatch(nav, /placeholder = '.*链接/);
 
 const homeToolOrder = [...home.matchAll(/<a\s+href="([^"]+)"\s+class="tool-card"/g)].map((match) => match[1]);
+assert.match(home, /<script src="nav\.js" defer data-registry-only="true"><\/script>/);
+assert.match(home, /function syncHomeToolIcons\(\)/);
+assert.match(home, /iconElement\.textContent = tool\.icon/);
+assert.strictEqual(toolByPath.get('text_escape_formatter_final.html').icon, '↔️');
+assert.strictEqual(toolByPath.get('sql-formatter.html').icon, '🧾');
+assert.notStrictEqual(
+    toolByPath.get('text_escape_formatter_final.html').icon,
+    toolByPath.get('sql-formatter.html').icon,
+    'text escape and SQL formatter should use different icons'
+);
+assert.strictEqual(
+    (home.match(/<span class="tool-icon" aria-hidden="true"><\/span>/g) || []).length,
+    nonHomeTools.length,
+    'all home cards should receive their icons from the shared registry'
+);
 const expectedHomeLeadingPaths = [
     'json-parser.html',
     'text-case-converter.html',

@@ -92,6 +92,15 @@ body.nav-expanded {
     transition: all 0.2s;
     padding: 6px 12px;
     border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.nav-link-icon {
+    flex: 0 0 auto;
+    font-size: 1rem;
+    line-height: 1;
 }
 
 .nav-link:hover {

@@ -18,6 +18,10 @@
         { name: 'SQL 格式化', path: 'sql-formatter.html', icon: '🧾' },
         { name: 'Neon Timer', path: 'neon-timer/dist/index.html', icon: '⏲️' }
     ];
+    const navScript = document.currentScript || document.querySelector('script[src$="nav.js"]');
+    window.DevToolsRegistry = Object.freeze(tools.map(tool => Object.freeze({ ...tool })));
+    if (navScript?.dataset.registryOnly === 'true') return;
+
     const NAV_CONFIG_STORAGE_KEY = 'dev-tools-nav-config-v1';
     const NAV_HTML_FORMATTER_MIGRATION_KEY = 'dev-tools-nav-html-formatter-default-v1';
     const NAV_PRIMARY_ORDER_MIGRATION_KEY = 'dev-tools-nav-primary-order-v1';
@@ -116,7 +120,6 @@
     }
 
     // Determine current page
-    const navScript = document.currentScript || document.querySelector('script[src$="nav.js"]');
     const baseUrl = new URL('.', navScript ? navScript.src : window.location.href);
     const currentUrl = new URL(window.location.href);
     const currentPath = currentUrl.pathname.split('/').pop() || 'index.html';
@@ -156,7 +159,16 @@
                 const toolUrl = new URL(tool.path, baseUrl);
                 a.href = toolUrl.href;
                 a.className = 'nav-link';
-                a.textContent = tool.name;
+
+                const iconElement = document.createElement('span');
+                iconElement.className = 'nav-link-icon';
+                iconElement.setAttribute('aria-hidden', 'true');
+                iconElement.textContent = tool.icon;
+
+                const labelElement = document.createElement('span');
+                labelElement.className = 'nav-link-label';
+                labelElement.textContent = tool.name;
+                a.append(iconElement, labelElement);
 
                 if (isActiveTool(tool)) {
                     a.classList.add('active');

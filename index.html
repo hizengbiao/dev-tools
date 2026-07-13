@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>开发者工具箱</title>
+    <script src="nav.js" defer data-registry-only="true"></script>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -204,80 +205,80 @@
 
     <main class="tools-grid">
         <a href="json-parser.html" class="tool-card">
-            <span class="tool-icon">📑</span>
+            <span class="tool-icon" aria-hidden="true"></span>
             <h2>JSON 格式化工具</h2>
             <p>格式化、压缩、修复 JSON。支持语法高亮、折叠展开、按键排序等功能。</p>
         </a>
 
         <a href="text-case-converter.html" class="tool-card">
-            <span class="tool-icon">🔤</span>
+            <span class="tool-icon" aria-hidden="true"></span>
             <h2>文本命名转换</h2>
             <p>大小写、蛇峰、驼峰、短横线等常见命名格式互转，适合变量名和文案快速整理。</p>
         </a>
         <a href="regex-tester.html" class="tool-card">
-            <span class="tool-icon">🔎</span>
+            <span class="tool-icon" aria-hidden="true"></span>
             <h2>正则表达式测试</h2>
             <p>在线测试正则匹配与替换，支持常用标志位、匹配列表、分组详情和高亮预览。</p>
         </a>
         <a href="text_escape_formatter_final.html" class="tool-card">
-            <span class="tool-icon">🧾</span>
+            <span class="tool-icon" aria-hidden="true"></span>
             <h2>文本转义转换工具</h2>
             <p>转义字符串与可读多行文本互转，适合日志堆栈、JSON 字符串、配置字段等内容快速处理。</p>
         </a>
         <a href="text-splitter.html" class="tool-card">
-            <span class="tool-icon">✂️</span>
+            <span class="tool-icon" aria-hidden="true"></span>
             <h2>文本智能拆分</h2>
             <p>按指定长度将长文本拆分为多段，优先在换行、标点和单词空格处断开，并支持逐段快速复制。</p>
         </a>
         <a href="cron-parser.html" class="tool-card">
-            <span class="tool-icon">🕒</span>
+            <span class="tool-icon" aria-hidden="true"></span>
             <h2>Cron 表达式解析工具</h2>
             <p>解析 Linux 和 Quartz Cron 表达式，使用自然语言说明执行时间，并展示最近执行记录。</p>
         </a>
         <a href="html-formatter.html" class="tool-card">
-            <span class="tool-icon">🌐</span>
+            <span class="tool-icon" aria-hidden="true"></span>
             <h2>HTML 元素格式化</h2>
             <p>格式化或压缩 HTML 文档与元素片段，支持缩进调整、标签结构检查和输入输出交换。</p>
         </a>
         <a href="timestamp-converter.html" class="tool-card">
-            <span class="tool-icon">⏱️</span>
+            <span class="tool-icon" aria-hidden="true"></span>
             <h2>时间戳转换</h2>
             <p>Unix 时间戳与日期互转。支持秒/毫秒单位切换，多种时区选择。</p>
         </a>
 
         <a href="url-encoder.html" class="tool-card">
-            <span class="tool-icon">🔗</span>
+            <span class="tool-icon" aria-hidden="true"></span>
             <h2>URL 编解码</h2>
             <p>URL 编码与解码工具。可以对 URL 进行 Encode 和 Decode。</p>
         </a>
 
         <a href="base64-encoder.html" class="tool-card">
-            <span class="tool-icon">🔐</span>
+            <span class="tool-icon" aria-hidden="true"></span>
             <h2>Base64 编解码</h2>
             <p>Base64 字符串与文件转换。支持 UTF-8 文本和文件 Base64 编码。</p>
         </a>
         <a href="hash-generator.html" class="tool-card">
-            <span class="tool-icon">🔎</span>
+            <span class="tool-icon" aria-hidden="true"></span>
             <h2>哈希/摘要工具</h2>
             <p>计算文本和文件的 MD5、SHA-1、SHA-256、SHA-512 摘要，支持复制单项结果和摘要比对。</p>
         </a>
         <a href="jwt-decoder.html" class="tool-card">
-            <span class="tool-icon">🎫</span>
+            <span class="tool-icon" aria-hidden="true"></span>
             <h2>JWT 解析工具</h2>
             <p>本地解析 JWT Header 和 Payload，展示 exp、iat、nbf 等时间字段，并明确不做签名可信校验。</p>
         </a>
         <a href="random-generator.html" class="tool-card">
-            <span class="tool-icon">🎲</span>
+            <span class="tool-icon" aria-hidden="true"></span>
             <h2>UUID / 随机值生成器</h2>
             <p>生成 UUID v4、随机密码和随机数字，支持配置数量、长度、字符集并批量复制。</p>
         </a>
         <a href="sql-formatter.html" class="tool-card">
-            <span class="tool-icon">🧾</span>
+            <span class="tool-icon" aria-hidden="true"></span>
             <h2>SQL 格式化/压缩工具</h2>
             <p>格式化或压缩常见 SQL，并提取表名和参数占位符，适合快速整理日志中的 SQL 片段。</p>
         </a>
         <a href="neon-timer/dist/index.html" class="tool-card">
-            <span class="tool-icon">⏲️</span>
+            <span class="tool-icon" aria-hidden="true"></span>
             <h2>Neon Timer (React)</h2>
             <p>赛博朋克风格的计时器与倒计时。支持全屏、动态背景与大数字显示。</p>
         </a>
@@ -287,6 +288,18 @@
     <footer>
         <p>© 2024 开发者工具箱</p>
     </footer>
+    <script>
+        function syncHomeToolIcons() {
+            const toolByPath = new Map((window.DevToolsRegistry || []).map(tool => [tool.path, tool]));
+            document.querySelectorAll('.tool-card').forEach(card => {
+                const tool = toolByPath.get(card.getAttribute('href'));
+                const iconElement = card.querySelector('.tool-icon');
+                if (tool && iconElement) iconElement.textContent = tool.icon;
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', syncHomeToolIcons);
+    </script>
 </body>
 
 </html>
