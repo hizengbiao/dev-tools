@@ -84,6 +84,10 @@
         const pad = (value) => String(value).padStart(2, '0');
         const fixedTime = isNumber(fields.second) && isNumber(fields.minute) && isNumber(fields.hour);
         const timeText = fixedTime ? `${pad(fields.hour)}:${pad(fields.minute)}:${pad(fields.second)}` : '';
+        const unrestrictedCalendar = isAny(fields.day)
+            && isAny(fields.month)
+            && isAny(fields.week)
+            && isAny(fields.year);
 
         const minuteInterval = fields.minute.match(/^\*\/(\d+)$/);
         if (minuteInterval
@@ -94,6 +98,23 @@
             && isAny(fields.week)
             && isAny(fields.year)) {
             return `每隔 ${minuteInterval[1]} 分钟执行一次。`;
+        }
+
+        if (unrestrictedCalendar && isAny(fields.hour) && isNumber(fields.minute) && isNumber(fields.second)) {
+            const minute = Number(fields.minute);
+            const second = Number(fields.second);
+            if (minute === 0 && second === 0) return '每小时整点执行。';
+            if (second === 0) return `每小时第 ${minute} 分钟执行。`;
+            return `每小时第 ${minute} 分 ${second} 秒执行。`;
+        }
+
+        const hourInterval = fields.hour.match(/^\*\/(\d+)$/);
+        if (unrestrictedCalendar && hourInterval && isNumber(fields.minute) && isNumber(fields.second)) {
+            const minute = Number(fields.minute);
+            const second = Number(fields.second);
+            if (minute === 0 && second === 0) return `每隔 ${hourInterval[1]} 小时整点执行一次。`;
+            if (second === 0) return `每隔 ${hourInterval[1]} 小时，在第 ${minute} 分钟执行一次。`;
+            return `每隔 ${hourInterval[1]} 小时，在第 ${minute} 分 ${second} 秒执行一次。`;
         }
 
         if (fixedTime && isAny(fields.day) && isAny(fields.month) && isAny(fields.week) && isAny(fields.year)) {
@@ -110,6 +131,17 @@
             && isAny(fields.week)
             && isNumber(fields.year)) {
             return `在 ${fields.year} 年 ${Number(fields.month)} 月 ${Number(fields.day)} 日 ${timeText} 执行。`;
+        }
+
+        const explicitMinutes = /^\d+(?:,\d+)*$/.test(fields.minute);
+        const explicitHours = /^\d+(?:-\d+)?(?:,\d+(?:-\d+)?)*$/.test(fields.hour);
+        if (unrestrictedCalendar
+            && fields.second === '0'
+            && explicitMinutes
+            && explicitHours
+            && !isNumber(fields.hour)) {
+            if (fields.minute === '0') return `每天在 ${formatField(fields.hour)} 点整点执行。`;
+            return `每天在 ${formatField(fields.hour)} 点的第 ${formatField(fields.minute)} 分钟执行。`;
         }
 
         const descriptions = [];
