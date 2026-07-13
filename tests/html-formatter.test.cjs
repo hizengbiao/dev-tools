@@ -97,6 +97,15 @@ assert.match(page, /id="paste-format-btn"/);
 assert.match(page, /id="edit-btn"/);
 assert.match(page, /id="undo-btn"/);
 assert.match(page, /id="redo-btn"/);
+assert.match(page, /id="preview-btn"/);
+assert.match(page, /id="preview-tab"/);
+assert.match(page, /id="preview-view"/);
+assert.match(page, /id="html-preview"[^>]*sandbox="allow-same-origin"[^>]*referrerpolicy="no-referrer"/);
+assert.match(page, /function renderPreview\(\)/);
+assert.match(page, /function showPreview\(\)/);
+assert.match(page, /function sanitizePreviewHtml\(rawContent\)/);
+assert.match(page, /querySelectorAll\('script, meta\[http-equiv="refresh" i\]'\)/);
+assert.match(page, /previewFrame\.srcdoc = content/);
 assert.doesNotMatch(page, /id="swap-btn"/);
 assert.match(page, /id="html-tree-output"/);
 assert.match(page, /id="expand-all-btn"/);
@@ -110,8 +119,8 @@ assert.match(page, /\.tree-children\s*\{[^}]*padding:\s*2px 0 2px 10px;[^}]*marg
 assert.match(page, /\.html-tree\s*\{[^}]*font:\s*13px\/1\.6/s);
 assert.match(page, /textarea\s*\{[^}]*padding:\s*15px;[^}]*font:\s*13px\/1\.5/s);
 assert.doesNotMatch(page, /\.depth-1\s*\{/);
-assert.match(page, /<span>V1\.03<\/span>/);
-assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
+assert.match(page, /<span>V1\.04<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.00<\/div>/);
 
 const nav = fs.readFileSync(path.join(root, 'nav.js'), 'utf8');

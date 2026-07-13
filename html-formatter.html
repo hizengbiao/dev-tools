@@ -277,6 +277,33 @@
         .html-tree-node.collapsed > .tree-closing { display: none; }
         .html-tree-node.collapsed > .tree-node-row .tree-ellipsis { display: inline; }
 
+        .preview-shell {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .preview-frame {
+            width: 100%;
+            height: 100%;
+            border: 0;
+            background: #fff;
+        }
+
+        .preview-empty {
+            position: absolute;
+            inset: 0;
+            display: none;
+            place-items: center;
+            color: var(--muted-color);
+            background: #fbfcfd;
+            font-size: 14px;
+        }
+
+        .preview-empty.visible { display: grid; }
+
         .tag-highlight-overlay {
             position: absolute;
             z-index: 10;
@@ -342,6 +369,7 @@
             <button class="btn" id="paste-format-btn" type="button" title="从剪贴板读取 HTML 并立即格式化">📋 粘贴并格式化</button>
             <button class="btn btn-primary" id="format-btn" type="button" title="按所选缩进美化 HTML">⚡ 格式化</button>
             <button class="btn" id="edit-btn" type="button" title="编辑当前 HTML 源码">✏️ 编辑</button>
+            <button class="btn" id="preview-btn" type="button" title="在受限页面中预览当前 HTML">👁️ 预览</button>
             <button class="btn" id="compress-btn" type="button" title="移除标签之间多余空白并压缩为单行">📦 压缩</button>
             <button class="btn" id="repair-btn" type="button" title="补齐缺失的结束标签并移除无对应开始标签的结束标签">🔧 修复</button>
             <button class="btn" id="clear-btn" type="button" title="清空输入和结果">🧹 清空</button>
@@ -359,7 +387,7 @@
             <button class="btn tree-action" id="expand-all-btn" type="button" title="展开全部 HTML 层级">📖 展开</button>
             <button class="btn tree-action" id="collapse-all-btn" type="button" title="收起全部 HTML 层级">📕 收起</button>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新说明">
-                <span>V1.03</span><span>ℹ️</span>
+                <span>V1.04</span><span>ℹ️</span>
             </div>
         </div>
 
@@ -370,6 +398,7 @@
                 <div class="view-tabs" role="tablist" aria-label="HTML 编辑视图">
                     <button class="view-tab active" id="source-tab" type="button" role="tab" aria-selected="true">源码编辑</button>
                     <button class="view-tab" id="result-tab" type="button" role="tab" aria-selected="false">处理结果</button>
+                    <button class="view-tab" id="preview-tab" type="button" role="tab" aria-selected="false">页面预览</button>
                 </div>
                 <div class="structure-summary" aria-label="HTML 结构概览">
                     <span class="summary-item">元素<strong id="element-count">0</strong></span>
@@ -392,6 +421,12 @@
                         <textarea id="html-output" wrap="off" spellcheck="false" readonly placeholder="格式化、压缩或修复结果会显示在这里..."></textarea>
                     </div>
                 </div>
+                <div class="view-panel" id="preview-view">
+                    <div class="preview-shell">
+                        <iframe class="preview-frame" id="html-preview" sandbox="allow-same-origin" referrerpolicy="no-referrer" title="HTML 页面预览"></iframe>
+                        <div class="preview-empty visible" id="preview-empty">暂无可预览的 HTML 内容</div>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
@@ -404,6 +439,10 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date">2026年7月14日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.04</div>
+                    <div>新增 HTML 页面预览视图，可从顶部按钮或视图标签快速查看渲染效果；预览采用受限 iframe，不执行输入内容中的脚本。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.03</div>
                     <div>交互与 JSON 格式化工具保持一致：层级使用嵌套背景和悬停深度反馈，统一缩进及文字尺寸；源码编辑时点击开始或结束标签会以脉冲动画提示配对标签位置。</div>
@@ -432,8 +471,12 @@
         const outputLines = document.getElementById('output-lines');
         const sourceView = document.getElementById('source-view');
         const resultView = document.getElementById('result-view');
+        const previewView = document.getElementById('preview-view');
         const sourceTab = document.getElementById('source-tab');
         const resultTab = document.getElementById('result-tab');
+        const previewTab = document.getElementById('preview-tab');
+        const previewFrame = document.getElementById('html-preview');
+        const previewEmpty = document.getElementById('preview-empty');
         const treeOutput = document.getElementById('html-tree-output');
         const resultTextShell = document.getElementById('result-text-shell');
         const expandAllButton = document.getElementById('expand-all-btn');
@@ -444,6 +487,7 @@
         const redoButton = document.getElementById('redo-btn');
         let activeView = 'source';
         let resultMode = 'tree';
+        let previewHtml = '';
         let history = [''];
         let historyIndex = 0;
         let applyingHistory = false;
@@ -453,7 +497,9 @@
         }
 
         function currentContent() {
-            return activeView === 'source' ? input.value : output.value;
+            if (activeView === 'source') return input.value;
+            if (activeView === 'preview') return previewHtml;
+            return output.value;
         }
 
         function refreshSummary() {
@@ -479,17 +525,49 @@
         function showView(view) {
             activeView = view;
             const showSource = view === 'source';
+            const showResult = view === 'result';
+            const showPreview = view === 'preview';
             sourceView.classList.toggle('active', showSource);
-            resultView.classList.toggle('active', !showSource);
+            resultView.classList.toggle('active', showResult);
+            previewView.classList.toggle('active', showPreview);
             sourceTab.classList.toggle('active', showSource);
-            resultTab.classList.toggle('active', !showSource);
+            resultTab.classList.toggle('active', showResult);
+            previewTab.classList.toggle('active', showPreview);
             sourceTab.setAttribute('aria-selected', String(showSource));
-            resultTab.setAttribute('aria-selected', String(!showSource));
-            const showTreeActions = !showSource && resultMode === 'tree' && Boolean(output.value);
+            resultTab.setAttribute('aria-selected', String(showResult));
+            previewTab.setAttribute('aria-selected', String(showPreview));
+            const showTreeActions = showResult && resultMode === 'tree' && Boolean(output.value);
             expandAllButton.classList.toggle('visible', showTreeActions);
             collapseAllButton.classList.toggle('visible', showTreeActions);
-            refreshEditor(showSource ? input : output, showSource ? inputLines : outputLines);
+            if (showSource) refreshEditor(input, inputLines);
+            if (showResult) refreshEditor(output, outputLines);
             refreshSummary();
+        }
+
+        function sanitizePreviewHtml(rawContent) {
+            const previewDocument = new DOMParser().parseFromString(rawContent, 'text/html');
+            previewDocument.querySelectorAll('script, meta[http-equiv="refresh" i]').forEach(element => element.remove());
+            return `<!DOCTYPE html>\n${previewDocument.documentElement.outerHTML}`;
+        }
+
+        function renderPreview() {
+            const rawContent = previewHtml;
+            previewEmpty.classList.toggle('visible', !rawContent.trim());
+            const content = rawContent.trim() ? sanitizePreviewHtml(rawContent) : '';
+            previewFrame.srcdoc = content;
+        }
+
+        function showPreview() {
+            const content = previewHtml;
+            if (!content.trim()) {
+                showStatus('请先输入 HTML 内容。', true);
+                showView('source');
+                input.focus();
+                return;
+            }
+            renderPreview();
+            showView('preview');
+            clearStatus();
         }
 
         function createTreeLeaf(node, depth) {
@@ -572,6 +650,7 @@
 
         function setOutput(value, mode = 'text') {
             output.value = value;
+            previewHtml = value;
             refreshEditor(output, outputLines);
             setResultMode(mode);
             if (mode === 'tree') renderTree(value);
@@ -673,6 +752,7 @@
             applyingHistory = true;
             historyIndex = index;
             input.value = history[historyIndex];
+            previewHtml = input.value;
             applyingHistory = false;
             showView('source');
             refreshEditor(input, inputLines);
@@ -730,6 +810,7 @@
         }
 
         input.addEventListener('input', () => {
+            previewHtml = input.value;
             saveHistory();
             refreshEditor(input, inputLines);
             refreshSummary();
@@ -739,8 +820,10 @@
         output.addEventListener('scroll', () => EditorLines.syncLineNumberScroll(output, outputLines));
         sourceTab.addEventListener('click', () => showView('source'));
         resultTab.addEventListener('click', () => showView('result'));
+        previewTab.addEventListener('click', showPreview);
         document.getElementById('paste-format-btn').addEventListener('click', pasteAndFormat);
         document.getElementById('format-btn').addEventListener('click', runFormat);
+        document.getElementById('preview-btn').addEventListener('click', showPreview);
         document.getElementById('compress-btn').addEventListener('click', runCompress);
         document.getElementById('repair-btn').addEventListener('click', runRepair);
         document.getElementById('edit-btn').addEventListener('click', () => {
@@ -756,6 +839,9 @@
         document.getElementById('clear-btn').addEventListener('click', () => {
             input.value = '';
             output.value = '';
+            previewHtml = '';
+            previewFrame.srcdoc = '';
+            previewEmpty.classList.add('visible');
             saveHistory();
             refreshEditor(input, inputLines);
             refreshEditor(output, outputLines);
