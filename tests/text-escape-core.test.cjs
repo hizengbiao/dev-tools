@@ -10,8 +10,8 @@ assert.match(page, /TextEscapeCore\.decodeToReadableText/);
 assert.match(page, /TextEscapeCore\.mergeConcatenatedStrings/);
 assert.match(page, /TextEscapeCore\.restoreMappedVariables/);
 assert.match(page, /TextEscapeCore\.formatQuotedCopyText/);
-assert.match(page, /TextEscapeCore\.convertMultilineToCodeString/);
-assert.match(page, /TextEscapeCore\.cleanStackLog/);
+assert.doesNotMatch(page, /TextEscapeCore\.convertMultilineToCodeString/);
+assert.doesNotMatch(page, /TextEscapeCore\.cleanStackLog/);
 assert.match(page, /TextEscapeCore\.exportMappingPairs/);
 assert.match(page, /TextEscapeCore\.importMappingPairs/);
 
@@ -21,78 +21,8 @@ assert.strictEqual(
 );
 
 assert.strictEqual(
-    core.decodeToReadableText('\\x48\\x69 \\u{4e2d}', { languageMode: 'javascript' }),
-    'Hi 中'
-);
-
-assert.strictEqual(
-    core.decodeToReadableText('\\x48\\x69 \\U00004e2d', { languageMode: 'python' }),
-    'Hi 中'
-);
-
-assert.strictEqual(
-    core.decodeToReadableText("O''Reilly\\n", { languageMode: 'sql' }),
-    "O'Reilly\\n"
-);
-
-assert.strictEqual(
     core.encodeToEscapedString("O'Reilly\\path\n"),
     "O'Reilly\\\\path\\n"
-);
-
-assert.strictEqual(
-    core.encodeToEscapedString("O'Reilly\\path\n", { languageMode: 'sql' }),
-    "O''Reilly\\path\n"
-);
-
-assert.strictEqual(
-    core.convertMultilineToCodeString('alpha\nbeta', { languageMode: 'java', keepTrailingNewline: true }),
-    '"alpha\\n"\n        + "beta"'
-);
-
-assert.strictEqual(
-    core.convertMultilineToCodeString('alpha\nbeta\n', { languageMode: 'java', keepTrailingNewline: true }),
-    '"alpha\\n"\n        + "beta\\n"'
-);
-
-assert.strictEqual(
-    core.convertMultilineToCodeString('alpha\nbeta\n', { languageMode: 'java', keepTrailingNewline: false }),
-    '"alpha"\n        + "beta"'
-);
-
-assert.strictEqual(
-    core.convertMultilineToCodeString('He said "Hi"\nC:\\temp', { languageMode: 'java', keepTrailingNewline: true }),
-    '"He said \\"Hi\\"\\n"\n        + "C:\\\\temp"'
-);
-
-const noisyStack = [
-    '2026-07-04 10:00:00 ERROR [main] com.demo.App - java.lang.RuntimeException: boom',
-    '',
-    '2026-07-04 10:00:00 ERROR [main] com.demo.App -     at com.example.Service.run(Service.java:10)',
-    'requestId=abc',
-    '2026-07-04 10:00:00 ERROR [main] com.demo.App - Caused by: java.lang.IllegalStateException: bad',
-    '        at com.example.Dao.query(Dao.java:22)',
-].join('\n');
-
-assert.strictEqual(
-    core.cleanStackLog(noisyStack, { keepOriginalLines: false }),
-    [
-        'java.lang.RuntimeException: boom',
-        '\tat com.example.Service.run(Service.java:10)',
-        'Caused by: java.lang.IllegalStateException: bad',
-        '\tat com.example.Dao.query(Dao.java:22)',
-    ].join('\n')
-);
-
-assert.strictEqual(
-    core.cleanStackLog(noisyStack, { keepOriginalLines: true }),
-    [
-        'java.lang.RuntimeException: boom',
-        '\tat com.example.Service.run(Service.java:10)',
-        'requestId=abc',
-        'Caused by: java.lang.IllegalStateException: bad',
-        '\tat com.example.Dao.query(Dao.java:22)',
-    ].join('\n')
 );
 
 assert.strictEqual(
@@ -181,5 +111,8 @@ assert.strictEqual(
     ),
     '"数据库${objectName}的" + SVNM.getName() + "不在已知服务列表里"'
 );
+
+assert.strictEqual(core.convertMultilineToCodeString, undefined);
+assert.strictEqual(core.cleanStackLog, undefined);
 
 console.log('text escape core passed');

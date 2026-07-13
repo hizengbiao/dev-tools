@@ -42,59 +42,15 @@
         return text;
     }
 
-    function normalizeLanguageMode(options) {
-        if (typeof options === 'string') {
-            return options;
-        }
-
-        return options && options.languageMode || 'default';
-    }
-
-    function fromCodePoint(hex) {
-        const codePoint = parseInt(hex, 16);
-        if (!Number.isFinite(codePoint)) {
-            return '';
-        }
-
-        try {
-            return String.fromCodePoint(codePoint);
-        } catch (error) {
-            return '';
-        }
-    }
-
-    function decodeUnicodeEscapes(text, mode = 'default') {
-        let decoded = text.replace(/\\u([0-9a-fA-F]{4})/g, (_, code) => {
+    function decodeUnicodeEscapes(text) {
+        return text.replace(/\\u([0-9a-fA-F]{4})/g, (_, code) => {
             return String.fromCharCode(parseInt(code, 16));
         });
-
-        if (mode === 'javascript') {
-            decoded = decoded.replace(/\\u\{([0-9a-fA-F]{1,6})\}/g, (_, code) => fromCodePoint(code));
-        }
-
-        if (mode === 'python') {
-            decoded = decoded
-                .replace(/\\U([0-9a-fA-F]{8})/g, (_, code) => fromCodePoint(code))
-                .replace(/\\u([0-9a-fA-F]{4})/g, (_, code) => String.fromCharCode(parseInt(code, 16)));
-        }
-
-        if (mode === 'javascript' || mode === 'python') {
-            decoded = decoded.replace(/\\x([0-9a-fA-F]{2})/g, (_, code) => {
-                return String.fromCharCode(parseInt(code, 16));
-            });
-        }
-
-        return decoded;
     }
 
-    function decodeCommonEscapes(text, options = {}) {
-        const mode = normalizeLanguageMode(options);
+    function decodeCommonEscapes(text) {
         const withoutQuotes = stripWrappedQuote(text);
-        if (mode === 'sql') {
-            return withoutQuotes.replace(/''/g, "'");
-        }
-
-        const withUnicode = decodeUnicodeEscapes(withoutQuotes, mode);
+        const withUnicode = decodeUnicodeEscapes(withoutQuotes);
 
         return withUnicode
             .replace(/\\\\/g, '\u0000')
@@ -207,17 +163,12 @@
         return hasString && !expectString ? value : raw;
     }
 
-    function decodeToReadableText(raw, options = {}) {
-        const decoded = decodeCommonEscapes(getReadableDecodeSource(raw), options);
+    function decodeToReadableText(raw) {
+        const decoded = decodeCommonEscapes(getReadableDecodeSource(raw));
         return improveStackLikeLineBreaks(decoded);
     }
 
-    function encodeToEscapedString(raw, options = {}) {
-        const mode = normalizeLanguageMode(options);
-        if (mode === 'sql') {
-            return raw.replace(/'/g, "''");
-        }
-
+    function encodeToEscapedString(raw) {
         return raw
             .replace(/\\/g, '\\\\')
             .replace(/\r\n/g, '\\n')
@@ -225,97 +176,6 @@
             .replace(/\n/g, '\\n')
             .replace(/\t/g, '\\t')
             .replace(/"/g, '\\"');
-    }
-
-    function encodeCodeLineForJava(raw) {
-        return raw
-            .replace(/\\/g, '\\\\')
-            .replace(/\t/g, '\\t')
-            .replace(/"/g, '\\"');
-    }
-
-    function convertMultilineToCodeString(raw, options = {}) {
-        const mode = normalizeLanguageMode(options);
-        const keepTrailingNewline = options.keepTrailingNewline !== false;
-        const normalized = String(raw || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-        const source = keepTrailingNewline ? normalized : normalized.replace(/\n$/, '');
-        const segments = source.split('\n');
-        const trailingNewline = source.endsWith('\n');
-        if (trailingNewline) {
-            segments.pop();
-        }
-
-        const literalLines = segments.map((line, index) => {
-            const shouldAppendNewline = keepTrailingNewline && (index < segments.length - 1 || trailingNewline);
-            const value = mode === 'sql'
-                ? line.replace(/'/g, "''")
-                : encodeCodeLineForJava(line);
-            return `"${value}${shouldAppendNewline ? '\\n' : ''}"`;
-        });
-
-        return literalLines.length ? literalLines.join('\n        + ') : '""';
-    }
-
-    function stripLogPrefix(line) {
-        const trimmed = String(line || '').trim();
-        const dashPrefix = trimmed.match(/^(?:\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:[.,]\d{3})?\s+)?(?:TRACE|DEBUG|INFO|WARN|ERROR|FATAL)\b[\s\S]*?\s-\s+([\s\S]+)$/);
-        if (dashPrefix) {
-            return dashPrefix[1].trim();
-        }
-
-        const bracketPrefix = trimmed.match(/^\[[^\]]+\]\s*(?:TRACE|DEBUG|INFO|WARN|ERROR|FATAL)\b[\s\S]*?:\s*([\s\S]+)$/);
-        return bracketPrefix ? bracketPrefix[1].trim() : trimmed;
-    }
-
-    function normalizeStackLine(line) {
-        const content = stripLogPrefix(line);
-        if (!content) {
-            return null;
-        }
-
-        const atMatch = content.match(/^(?:at\s+|\s*at\s+)([\w$][\w$]*(?:\.[\w$<>]+)+\([^)]*\))$/);
-        if (atMatch) {
-            return { text: `\tat ${atMatch[1]}`, recognized: true };
-        }
-
-        const causedByMatch = content.match(/^Caused by:\s+(.+)$/);
-        if (causedByMatch) {
-            return { text: `Caused by: ${causedByMatch[1].trim()}`, recognized: true };
-        }
-
-        const suppressedMatch = content.match(/^Suppressed:\s+(.+)$/);
-        if (suppressedMatch) {
-            return { text: `Suppressed: ${suppressedMatch[1].trim()}`, recognized: true };
-        }
-
-        const moreMatch = content.match(/^\.{3}\s+\d+\s+more$/);
-        if (moreMatch) {
-            return { text: `\t${content}`, recognized: true };
-        }
-
-        const exceptionMatch = content.match(/^(?:Exception in thread "[^"]+"\s+)?(?:[\w$]+(?:\.[\w$]+)*(?:Exception|Error|Throwable|Failure))(?::\s*.*)?$/);
-        if (exceptionMatch) {
-            return { text: content, recognized: true };
-        }
-
-        return { text: content, recognized: false };
-    }
-
-    function cleanStackLog(raw, options = {}) {
-        const keepOriginalLines = options.keepOriginalLines === true;
-        const result = [];
-        String(raw || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').forEach((line) => {
-            const normalized = normalizeStackLine(line);
-            if (!normalized) {
-                return;
-            }
-
-            if (normalized.recognized || keepOriginalLines) {
-                result.push(normalized.text);
-            }
-        });
-
-        return result.join('\n');
     }
 
     function normalizeMappingPairs(pairs) {
@@ -543,8 +403,6 @@
         encodeToEscapedString,
         decodeStringLiteralForMerge,
         getReadableDecodeSource,
-        cleanStackLog,
-        convertMultilineToCodeString,
         exportMappingPairs,
         formatQuotedCopyText,
         importMappingPairs,

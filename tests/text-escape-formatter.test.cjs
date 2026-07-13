@@ -17,7 +17,8 @@ assert.match(page, /<script src="text-escape-core\.js"><\/script>/);
 assert.match(page, /<div class="container">/);
 assert.match(page, /<div class="tool-title">/);
 assert.match(page, /class="version-info" onclick="showChangelog\(\)"/);
-assert.match(page, /<span>V1\.13<\/span>/);
+assert.match(page, /<span>V1\.14<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.14<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月4日<\/div>[\s\S]*?<div class="changelog-version">V1\.13<\/div>[\s\S]*?<div class="changelog-version">V1\.12<\/div>[\s\S]*?<div class="changelog-version">V1\.11<\/div>[\s\S]*?<div class="changelog-version">V1\.10<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.13<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.12<\/div>/);
@@ -36,13 +37,14 @@ assert.match(page, /id="decodeBtn"/);
 assert.match(page, /id="encodeBtn"/);
 assert.match(page, /id="mergeStringsBtn"/);
 assert.match(page, /id="restoreVariablesBtn"/);
-assert.match(page, /id="codeStringBtn"/);
-assert.match(page, /id="keepTrailingNewline"/);
-assert.match(page, /id="cleanStackBtn"/);
-assert.match(page, /id="keepOriginalStackLines"/);
-assert.match(page, /id="languageMode"/);
-assert.match(page, /data-mode-tooltip="JavaScript/);
-assert.match(page, /data-mode-tooltip="SQL/);
+assert.doesNotMatch(page, /id="codeStringBtn"/);
+assert.doesNotMatch(page, /id="keepTrailingNewline"/);
+assert.doesNotMatch(page, /id="cleanStackBtn"/);
+assert.doesNotMatch(page, /id="keepOriginalStackLines"/);
+assert.doesNotMatch(page, /id="languageMode"/);
+assert.doesNotMatch(page, /function getSelectedLanguageMode\(\)/);
+assert.doesNotMatch(page, /function convertMultilineToCodeString\(raw, options = \{\}\)/);
+assert.doesNotMatch(page, /function cleanStackLog\(raw, options = \{\}\)/);
 assert.match(page, /id="mappingList"/);
 assert.match(page, /id="addMappingBtn"/);
 assert.match(page, /id="exportMappingsBtn"/);
@@ -55,11 +57,8 @@ assert.match(page, /id="diffSummary"/);
 assert.match(page, /class="editor-shell"/);
 assert.match(page, /class="editor-stage"/);
 assert.match(page, /data-tooltip=/);
-assert.match(page, /function decodeToReadableText\(raw, options = \{\}\)/);
-assert.match(page, /function encodeToEscapedString\(raw, options = \{\}\)/);
-assert.match(page, /function getSelectedLanguageMode\(\)/);
-assert.match(page, /function convertMultilineToCodeString\(raw, options = \{\}\)/);
-assert.match(page, /function cleanStackLog\(raw, options = \{\}\)/);
+assert.match(page, /function decodeToReadableText\(raw\)/);
+assert.match(page, /function encodeToEscapedString\(raw\)/);
 assert.match(page, /function decodeStringLiteralForMerge\(text\)/);
 assert.match(page, /function getReadableDecodeSource\(raw\)/);
 assert.match(page, /function formatQuotedCopyText\(text\)/);
@@ -188,55 +187,6 @@ assert.deepStrictEqual(
 assert.strictEqual(
     context.decodeToReadableText('"SQ#at com.huawei\\n"\n                + "\\tat com.mysql.ConnectionFactoryImpl\\n"'),
     'SQ#at com.huawei\n\tat com.mysql.ConnectionFactoryImpl\n'
-);
-
-assert.strictEqual(
-    context.decodeToReadableText('\\x48\\x69 \\u{4e2d}', { languageMode: 'javascript' }),
-    'Hi 中'
-);
-
-assert.strictEqual(
-    context.decodeToReadableText('\\x48\\x69 \\U00004e2d', { languageMode: 'python' }),
-    'Hi 中'
-);
-
-assert.strictEqual(
-    context.decodeToReadableText("O''Reilly\\n", { languageMode: 'sql' }),
-    "O'Reilly\\n"
-);
-
-assert.strictEqual(
-    context.encodeToEscapedString("O'Reilly\\path\n", { languageMode: 'sql' }),
-    "O''Reilly\\path\n"
-);
-
-assert.strictEqual(
-    context.convertMultilineToCodeString('alpha\nbeta', { languageMode: 'java', keepTrailingNewline: true }),
-    '"alpha\\n"\n        + "beta"'
-);
-
-assert.strictEqual(
-    context.convertMultilineToCodeString('alpha\nbeta\n', { languageMode: 'java', keepTrailingNewline: false }),
-    '"alpha"\n        + "beta"'
-);
-
-const noisyStack = [
-    '2026-07-04 10:00:00 ERROR [main] com.demo.App - java.lang.RuntimeException: boom',
-    '',
-    '2026-07-04 10:00:00 ERROR [main] com.demo.App -     at com.example.Service.run(Service.java:10)',
-    'requestId=abc',
-    '2026-07-04 10:00:00 ERROR [main] com.demo.App - Caused by: java.lang.IllegalStateException: bad',
-    '        at com.example.Dao.query(Dao.java:22)',
-].join('\n');
-
-assert.strictEqual(
-    context.cleanStackLog(noisyStack, { keepOriginalLines: false }),
-    [
-        'java.lang.RuntimeException: boom',
-        '\tat com.example.Service.run(Service.java:10)',
-        'Caused by: java.lang.IllegalStateException: bad',
-        '\tat com.example.Dao.query(Dao.java:22)',
-    ].join('\n')
 );
 
 assert.strictEqual(

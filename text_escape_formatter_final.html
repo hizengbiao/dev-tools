@@ -242,62 +242,6 @@
             padding-top: 34px;
         }
 
-        .mode-selector {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            padding: 10px;
-            border: 1px solid #d8dee4;
-            border-radius: 6px;
-            background: #f6f8fa;
-        }
-
-        .mode-selector label {
-            color: #24292f;
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        .mode-selector select {
-            width: 100%;
-            padding: 7px 8px;
-            border: 1px solid #d0d7de;
-            border-radius: 6px;
-            background: #fff;
-            color: #24292f;
-            font-size: 13px;
-            outline: none;
-        }
-
-        .mode-selector select:focus {
-            border-color: #0969da;
-            box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
-        }
-
-        .mode-help {
-            min-height: 58px;
-            color: var(--muted-color);
-            font-size: 12px;
-            line-height: 1.55;
-        }
-
-        .option-toggle {
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-            padding: 8px 10px;
-            border: 1px solid #d8dee4;
-            border-radius: 6px;
-            background: #f6f8fa;
-            color: #57606a;
-            font-size: 12px;
-            line-height: 1.45;
-        }
-
-        .option-toggle input {
-            margin-top: 2px;
-        }
-
         .diff-summary {
             min-height: 38px;
             color: var(--muted-color);
@@ -772,7 +716,7 @@
         <div class="tool-title">
             <h1>文本转义转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.13</span>
+                <span>V1.14</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -802,33 +746,10 @@ java.lang.RuntimeException: test
                 </section>
 
                 <section class="actions" aria-label="转换操作">
-                    <div class="mode-selector">
-                        <label for="languageMode">字符串模式</label>
-                        <select id="languageMode" aria-describedby="languageModeHelp">
-                            <option value="default" data-mode-tooltip="默认：保持原有规则，适合普通日志、JSON 字符串和 Java 双引号字符串。示例：a\nb 会展开成两行。">默认兼容</option>
-                            <option value="java" data-mode-tooltip="Java：按常见 Java 双引号字符串处理，支持 \n、\t、\u4e2d、\" 和 \\。适合 Java 代码里的字符串内容。">Java</option>
-                            <option value="javascript" data-mode-tooltip="JavaScript：在默认规则基础上支持 \x48 和 \u{4e2d}。适合 JS/TS 字符串字面量。">JavaScript</option>
-                            <option value="python" data-mode-tooltip="Python：在默认规则基础上支持 \x48、\u4e2d 和 \U00004e2d。适合 Python 字符串字面量。">Python</option>
-                            <option value="sql" data-mode-tooltip="SQL：只处理单引号转义，O''Reilly 会还原为 O'Reilly；转义输出会把单引号写成两个单引号。不会把 \n 展开成换行。">SQL</option>
-                        </select>
-                        <div class="mode-help" id="languageModeHelp"></div>
-                    </div>
                     <button class="btn btn-primary" id="decodeBtn" type="button"
                         data-tooltip="把转义内容还原成可读文本。&#10;示例：a\nb 会展开成两行；\t 会变成制表符；\u4e2d 会变成中文。&#10;适合处理日志字段、异常堆栈、JSON 字符串里的转义文本。">转为可读文本</button>
                     <button class="btn btn-primary" id="encodeBtn" type="button"
                         data-tooltip="把普通多行文本转换成可复制进代码或配置里的转义字符串。&#10;示例：两行文本会变成 a\nb，双引号会变成 \&quot;。&#10;适合放入 Java、JSON、配置字段或日志模板。">转为转义字符串</button>
-                    <button class="btn btn-primary" id="codeStringBtn" type="button"
-                        data-tooltip="把普通多行文本转换成代码里的字符串拼接形式。&#10;示例：alpha 换行 beta 会转换为 &quot;alpha\n&quot; + &quot;beta&quot;。&#10;适合把多行提示、SQL、日志片段复制到 Java 代码中。">多行转代码字符串</button>
-                    <label class="option-toggle" for="keepTrailingNewline">
-                        <input id="keepTrailingNewline" type="checkbox" checked>
-                        <span>保留每行末尾换行，生成的每段字符串会追加 <code>\n</code></span>
-                    </label>
-                    <button class="btn btn-primary" id="cleanStackBtn" type="button"
-                        data-tooltip="清理 Java 堆栈或日志堆栈。&#10;会去掉常见时间、日志级别、线程和类名前缀；统一 at 行缩进；保留 Caused by 和 Suppressed。&#10;示例：ERROR app - at demo.Service.run(...) 会整理为制表符缩进的 at demo.Service.run(...)。">清理堆栈日志</button>
-                    <label class="option-toggle" for="keepOriginalStackLines">
-                        <input id="keepOriginalStackLines" type="checkbox">
-                        <span>保留无法识别为堆栈的原始行，例如 requestId、traceId 或业务日志上下文</span>
-                    </label>
                     <button class="btn btn-primary" id="mergeStringsBtn" type="button"
                         data-tooltip="合并代码里多段引号字符串，已配置的映射可跨变量继续合并。&#10;示例：配置 SERVICE_NAME ↔ SVNM.getName() 后，&#10;&quot;数据库${objectName}的&quot; + SVNM.getName() + &quot;不在已知服务列表里&quot;&#10;会转换为：数据库${objectName}的SERVICE_NAME不在已知服务列表里。&#10;映射左右顺序可以互换，未配置的变量仍会保留拼接边界。">合并拼接字符串</button>
                     <button class="btn btn-primary" id="restoreVariablesBtn" type="button"
@@ -883,9 +804,8 @@ java.lang.RuntimeException: test
 
             <div class="hint">
                 <strong>说明：</strong>
-                “字符串模式”用于指定 Java、JavaScript、Python、SQL 等不同字面量规则；“转为可读文本”适合把一行转义字符串展开为正常多行内容；
-                “转为转义字符串”适合把多行文本转换成可直接复制到 Java、JSON、配置文件或日志字段里的字符串；“多行转代码字符串”适合把普通多行文本转换成 Java 风格的字符串拼接代码；
-                “清理堆栈日志”适合去除日志前缀、统一 Java 堆栈缩进并清理多余空行；
+                “转为可读文本”适合把转义字符串展开为正常多行内容；
+                “转为转义字符串”适合把多行文本转换成可直接复制到 Java、JSON、配置文件或日志字段里的字符串；
                 “合并拼接字符串”可结合变量映射把代码中的字符串和指定变量合并成普通文本；
                 “恢复变量拼接”可将普通文本中的映射内容重新转换成变量表达式拼接，未配置的变量仍会保留边界。
                 快捷键：<kbd>Ctrl</kbd> + <kbd>Enter</kbd> 转为可读文本，<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd> 转为转义字符串。
@@ -902,6 +822,13 @@ java.lang.RuntimeException: test
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年7月13日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.14</div>
+                        <div class="changelog-desc">移除字符串模式、多行转代码字符串和清理堆栈日志功能，保留转义文本互转、拼接字符串合并、变量映射与输入输出差异对比。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月4日</div>
                     <div class="changelog-entry">
@@ -995,16 +922,10 @@ java.lang.RuntimeException: test
         const inputHighlight = document.getElementById('inputHighlight');
         const outputHighlight = document.getElementById('outputHighlight');
         const diffSummary = document.getElementById('diffSummary');
-        const languageMode = document.getElementById('languageMode');
-        const languageModeHelp = document.getElementById('languageModeHelp');
         const toast = document.getElementById('toast');
 
         const decodeBtn = document.getElementById('decodeBtn');
         const encodeBtn = document.getElementById('encodeBtn');
-        const codeStringBtn = document.getElementById('codeStringBtn');
-        const keepTrailingNewline = document.getElementById('keepTrailingNewline');
-        const cleanStackBtn = document.getElementById('cleanStackBtn');
-        const keepOriginalStackLines = document.getElementById('keepOriginalStackLines');
         const mergeStringsBtn = document.getElementById('mergeStringsBtn');
         const restoreVariablesBtn = document.getElementById('restoreVariablesBtn');
         const mappingList = document.getElementById('mappingList');
@@ -1123,49 +1044,12 @@ java.lang.RuntimeException: test
             return TextEscapeCore.getReadableDecodeSource(raw);
         }
 
-        function getSelectedLanguageMode() {
-            return languageMode ? languageMode.value : 'default';
+        function decodeToReadableText(raw) {
+            return TextEscapeCore.decodeToReadableText(raw);
         }
 
-        function getLanguageOptions(options = {}) {
-            return {
-                languageMode: options.languageMode || getSelectedLanguageMode()
-            };
-        }
-
-        function refreshLanguageModeHelp() {
-            if (!languageMode || !languageModeHelp) {
-                return;
-            }
-
-            if (!languageMode.options) {
-                languageModeHelp.textContent = '';
-                return;
-            }
-
-            const selected = languageMode.options[languageMode.selectedIndex];
-            languageModeHelp.textContent = selected ? selected.dataset.modeTooltip || '' : '';
-        }
-
-        function decodeToReadableText(raw, options = {}) {
-            return TextEscapeCore.decodeToReadableText(raw, getLanguageOptions(options));
-        }
-
-        function encodeToEscapedString(raw, options = {}) {
-            return TextEscapeCore.encodeToEscapedString(raw, getLanguageOptions(options));
-        }
-
-        function convertMultilineToCodeString(raw, options = {}) {
-            return TextEscapeCore.convertMultilineToCodeString(raw, {
-                ...getLanguageOptions(options),
-                keepTrailingNewline: options.keepTrailingNewline ?? keepTrailingNewline.checked
-            });
-        }
-
-        function cleanStackLog(raw, options = {}) {
-            return TextEscapeCore.cleanStackLog(raw, {
-                keepOriginalLines: options.keepOriginalLines ?? keepOriginalStackLines.checked
-            });
+        function encodeToEscapedString(raw) {
+            return TextEscapeCore.encodeToEscapedString(raw);
         }
 
         function readQuotedString(raw, start) {
@@ -1296,18 +1180,6 @@ java.lang.RuntimeException: test
             showToast('已转为转义字符串。');
         }
 
-        function codeStringAction() {
-            outputText.value = convertMultilineToCodeString(inputText.value);
-            refreshStats();
-            showToast('已转为代码字符串。');
-        }
-
-        function cleanStackAction() {
-            outputText.value = cleanStackLog(inputText.value);
-            refreshStats();
-            showToast('已清理堆栈日志。');
-        }
-
         function mergeStringsAction() {
             outputText.value = mergeConcatenatedStrings(inputText.value, getConfiguredMappings());
             refreshStats();
@@ -1364,9 +1236,6 @@ java.lang.RuntimeException: test
 
         decodeBtn.addEventListener('click', decodeAction);
         encodeBtn.addEventListener('click', encodeAction);
-        codeStringBtn.addEventListener('click', codeStringAction);
-        cleanStackBtn.addEventListener('click', cleanStackAction);
-        languageMode.addEventListener('change', refreshLanguageModeHelp);
         mergeStringsBtn.addEventListener('click', mergeStringsAction);
         restoreVariablesBtn.addEventListener('click', restoreVariablesAction);
         exportMappingsBtn.addEventListener('click', exportMappingsAction);
@@ -1449,7 +1318,6 @@ java.lang.RuntimeException: test
         });
 
         loadVariableMappings();
-        refreshLanguageModeHelp();
         refreshStats();
     </script>
 </body>
