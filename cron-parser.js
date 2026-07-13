@@ -71,6 +71,80 @@
         return { type, secondValues, minuteValues, hourValues, dayValues, monthValues, weekValues, yearValues };
     }
 
+    function explainCron(expression) {
+        const parts = String(expression ?? '').trim().split(/\s+/).filter(Boolean);
+        const { type } = detectCronType(expression);
+        parseCron(expression);
+
+        const fields = type === 'linux'
+            ? { second: '0', minute: parts[0], hour: parts[1], day: parts[2], month: parts[3], week: parts[4], year: '*' }
+            : { second: parts[0], minute: parts[1], hour: parts[2], day: parts[3], month: parts[4], week: parts[5], year: parts[6] || '*' };
+        const isAny = (value) => value === '*' || value === '?';
+        const isNumber = (value) => /^\d+$/.test(value);
+        const pad = (value) => String(value).padStart(2, '0');
+        const fixedTime = isNumber(fields.second) && isNumber(fields.minute) && isNumber(fields.hour);
+        const timeText = fixedTime ? `${pad(fields.hour)}:${pad(fields.minute)}:${pad(fields.second)}` : '';
+
+        const minuteInterval = fields.minute.match(/^\*\/(\d+)$/);
+        if (minuteInterval
+            && fields.second === '0'
+            && isAny(fields.hour)
+            && isAny(fields.day)
+            && isAny(fields.month)
+            && isAny(fields.week)
+            && isAny(fields.year)) {
+            return `每隔 ${minuteInterval[1]} 分钟执行一次。`;
+        }
+
+        if (fixedTime && isAny(fields.day) && isAny(fields.month) && isAny(fields.week) && isAny(fields.year)) {
+            return `每天 ${timeText} 执行。`;
+        }
+
+        if (fixedTime && isAny(fields.day) && isAny(fields.month) && !isAny(fields.week) && isAny(fields.year)) {
+            return `每${formatWeek(fields.week)} ${timeText} 执行。`;
+        }
+
+        if (fixedTime
+            && isNumber(fields.day)
+            && isNumber(fields.month)
+            && isAny(fields.week)
+            && isNumber(fields.year)) {
+            return `在 ${fields.year} 年 ${Number(fields.month)} 月 ${Number(fields.day)} 日 ${timeText} 执行。`;
+        }
+
+        const descriptions = [];
+        if (!isAny(fields.year)) descriptions.push(`年份为 ${formatField(fields.year)}`);
+        if (!isAny(fields.month)) descriptions.push(`月份为 ${formatField(fields.month)}`);
+        if (!isAny(fields.day)) descriptions.push(`日期为 ${formatField(fields.day)}`);
+        if (!isAny(fields.week)) descriptions.push(`星期为 ${formatWeek(fields.week).replace(/^周/, '')}`);
+        if (!isAny(fields.hour)) descriptions.push(`小时为 ${formatField(fields.hour)}`);
+        if (!isAny(fields.minute)) descriptions.push(`分钟为 ${formatField(fields.minute)}`);
+        if (type === 'quartz' && !isAny(fields.second)) descriptions.push(`秒为 ${formatField(fields.second)}`);
+        return descriptions.length
+            ? `在${descriptions.join('，')}时执行。`
+            : type === 'linux' ? '每分钟执行一次。' : '每秒执行一次。';
+    }
+
+    function formatField(source) {
+        return source.split(',').map((part) => {
+            const stepMatch = part.match(/^(\*|\d+)-(\d+)\/(\d+)$/);
+            if (stepMatch) return `${stepMatch[1]} 至 ${stepMatch[2]}之间每隔 ${stepMatch[3]}`;
+            const simpleStep = part.match(/^(\*|\d+)\/(\d+)$/);
+            if (simpleStep) return simpleStep[1] === '*' ? `每隔 ${simpleStep[2]}` : `从 ${simpleStep[1]} 开始每隔 ${simpleStep[2]}`;
+            const range = part.match(/^(\d+)-(\d+)$/);
+            return range ? `${range[1]} 至 ${range[2]}` : part;
+        }).join('、');
+    }
+
+    function formatWeek(source) {
+        const names = ['周日', '周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+        return source.split(',').map((part) => {
+            const range = part.match(/^(\d+)-(\d+)$/);
+            if (range) return `${names[Number(range[1])] || range[1]}至${names[Number(range[2])] || range[2]}`;
+            return names[Number(part)] || formatField(part);
+        }).join('、');
+    }
+
     function matches(date, parsed) {
         return parsed.secondValues.includes(date.getUTCSeconds())
             && parsed.minuteValues.includes(date.getUTCMinutes())
@@ -113,6 +187,7 @@
         detectCronType,
         parseField,
         parseCron,
+        explainCron,
         matches,
         getNextRuns,
     };

@@ -172,6 +172,22 @@
             color: var(--danger-color);
         }
 
+        .cron-explanation {
+            margin-top: 12px;
+            padding: 12px 14px;
+            border-left: 3px solid var(--accent-color);
+            border-radius: 6px;
+            background: #f0f7ff;
+            line-height: 1.6;
+        }
+
+        .cron-explanation strong {
+            display: block;
+            margin-bottom: 3px;
+            font-size: 13px;
+            color: var(--muted-color);
+        }
+
         .result-list {
             display: grid;
             gap: 8px;
@@ -273,7 +289,7 @@
         <div class="tool-title">
             <h1>Cron 表达式解析工具</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.00</span>
+                <span>V1.01</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -292,6 +308,10 @@
                 <button class="btn" id="sample-quartz-btn" type="button">Quartz 示例</button>
             </div>
             <div class="status" id="parse-status">支持 5 段 Linux cron 和 6/7 段 Quartz cron。复杂 L/W/# 语法暂不处理。</div>
+            <div class="cron-explanation" id="cron-explanation">
+                <strong>执行说明</strong>
+                <span>解析后将在这里说明表达式的执行时间。</span>
+            </div>
         </section>
 
         <section class="panel">
@@ -312,6 +332,11 @@
                 <button class="close-modal" type="button" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date">2026年7月13日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.01</div>
+                    <div>新增执行说明：使用自然语言解释 Cron 表达式在什么时候执行。</div>
+                </div>
                 <div class="changelog-date">2026年7月11日</div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.00</div>
@@ -325,6 +350,7 @@
         const cronInput = document.getElementById('cron-input');
         const countInput = document.getElementById('count-input');
         const parseStatus = document.getElementById('parse-status');
+        const cronExplanation = document.getElementById('cron-explanation');
         const resultList = document.getElementById('result-list');
         let currentRuns = [];
 
@@ -339,12 +365,15 @@
             try {
                 const info = CronParser.detectCronType(cronInput.value);
                 const runs = CronParser.getNextRuns(cronInput.value, { count: Number(countInput.value) || 10 });
+                const explanation = CronParser.explainCron(cronInput.value);
                 parseStatus.textContent = `解析成功：${info.type === 'linux' ? 'Linux 5 段' : `Quartz ${info.fields} 段`} 表达式`;
                 parseStatus.className = 'status';
+                cronExplanation.innerHTML = `<strong>执行说明</strong><span>${explanation}</span>`;
                 renderRuns(runs);
             } catch (error) {
                 parseStatus.textContent = `解析失败：${error.message}`;
                 parseStatus.className = 'status error';
+                cronExplanation.innerHTML = '<strong>执行说明</strong><span>表达式无效，修正后可查看执行时间说明。</span>';
             }
         }
 

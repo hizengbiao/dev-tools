@@ -82,15 +82,15 @@ const homeToolOrder = [...home.matchAll(/<a\s+href="([^"]+)"\s+class="tool-card"
 const expectedHomeLeadingPaths = [
     'json-parser.html',
     'text-case-converter.html',
+    'regex-tester.html',
     'text_escape_formatter_final.html',
     'text-splitter.html',
-    'regex-tester.html',
     'timestamp-converter.html',
 ];
 assert.deepStrictEqual(
     homeToolOrder.slice(0, expectedHomeLeadingPaths.length),
     expectedHomeLeadingPaths,
-    'index.html should retain its existing leading tool order'
+    'index.html should use the same leading tool order as the default navigation'
 );
 
 const neonDist = fs.readFileSync(path.join(root, 'neon-timer', 'dist', 'index.html'), 'utf8');
