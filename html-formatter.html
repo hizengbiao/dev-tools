@@ -47,9 +47,11 @@
         .main-actions {
             display: flex;
             align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
+            gap: 8px;
+            flex-wrap: nowrap;
             margin-bottom: 12px;
+            overflow-x: auto;
+            white-space: nowrap;
         }
 
         .btn, .indent-select {
@@ -66,6 +68,9 @@
         .btn-primary { border-color: var(--accent-color); color: #fff; background: var(--accent-color); }
         .btn-primary:hover { background: #075fca; }
         .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        .tree-action { display: none; }
+        .tree-action.visible { display: inline-block; }
 
         .action-separator {
             width: 1px;
@@ -202,6 +207,73 @@
 
         #html-output { background: #fbfcfd; }
 
+        .html-tree {
+            display: none;
+            height: 100%;
+            padding: 12px 14px 30px;
+            overflow: auto;
+            background: #fff;
+            font: 13px/1.55 "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        }
+
+        .html-tree.active { display: block; }
+        .result-text-shell.hidden { display: none; }
+
+        .html-tree-node {
+            margin: 3px 0;
+            border: 1px solid rgba(27, 31, 36, 0.09);
+            border-left: 3px solid rgba(9, 105, 218, 0.28);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .depth-0 { background: #ffffff; }
+        .depth-1 { background: #f0f7ff; }
+        .depth-2 { background: #f0fff4; }
+        .depth-3 { background: #fff8c5; }
+        .depth-4 { background: #f6f8fa; }
+
+        .tree-node-row,
+        .tree-closing,
+        .tree-leaf {
+            min-height: 30px;
+            display: flex;
+            align-items: center;
+            padding: 4px 9px;
+        }
+
+        .tree-node-row { gap: 6px; }
+        .tree-closing { padding-left: 32px; }
+        .tree-children { padding: 2px 8px 2px 24px; }
+
+        .tree-toggle,
+        .tree-toggle-spacer {
+            flex: 0 0 18px;
+            width: 18px;
+            height: 18px;
+        }
+
+        .tree-toggle {
+            padding: 0;
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            color: var(--accent-color);
+            background: #fff;
+            font-weight: 700;
+            line-height: 15px;
+            cursor: pointer;
+        }
+
+        .tree-tag { color: #cf222e; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .tree-text { color: #0550ae; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .tree-comment { color: #1a7f37; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .tree-raw { color: #6639ba; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .tree-ellipsis { display: none; color: var(--muted-color); font-style: italic; }
+
+        .html-tree-node.collapsed > .tree-children,
+        .html-tree-node.collapsed > .tree-closing { display: none; }
+        .html-tree-node.collapsed > .tree-node-row .tree-ellipsis { display: inline; }
+
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -226,7 +298,7 @@
         @media (max-width: 900px) {
             body { padding-right: 10px; padding-left: 10px; }
             .page-shell { min-height: calc(100vh - 90px); }
-            .main-actions { gap: 7px; }
+            .main-actions { gap: 7px; flex-wrap: wrap; overflow-x: visible; white-space: normal; }
             .btn { padding: 7px 9px; font-size: 13px; }
             .action-separator { display: none; }
             .version-info { margin-left: 0; }
@@ -257,8 +329,10 @@
                 </select>
             </label>
             <button class="btn" id="copy-btn" type="button" title="复制当前可见内容">📋 复制</button>
+            <button class="btn tree-action" id="expand-all-btn" type="button" title="展开全部 HTML 层级">📖 展开</button>
+            <button class="btn tree-action" id="collapse-all-btn" type="button" title="收起全部 HTML 层级">📕 收起</button>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新说明">
-                <span>V1.01</span><span>ℹ️</span>
+                <span>V1.02</span><span>ℹ️</span>
             </div>
         </div>
 
@@ -285,7 +359,8 @@
                     </div>
                 </div>
                 <div class="view-panel" id="result-view">
-                    <div class="editor-shell">
+                    <div class="html-tree" id="html-tree-output"></div>
+                    <div class="editor-shell result-text-shell" id="result-text-shell">
                         <div class="line-numbers" id="output-lines" aria-hidden="true">1</div>
                         <textarea id="html-output" wrap="off" spellcheck="false" readonly placeholder="格式化、压缩或修复结果会显示在这里..."></textarea>
                     </div>
@@ -302,6 +377,10 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date">2026年7月14日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.02</div>
+                    <div>新增 HTML 层级结构树，支持节点及全部展开收起，并使用不同背景色区分嵌套深度；压缩结果继续使用纯文本视图。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.01</div>
                     <div>参考 JSON 格式化工具重构为顶部工具栏和全宽编辑区，新增粘贴并格式化、源码/结果切换、HTML 修复、撤销重做及当前视图复制。</div>
@@ -324,11 +403,16 @@
         const resultView = document.getElementById('result-view');
         const sourceTab = document.getElementById('source-tab');
         const resultTab = document.getElementById('result-tab');
+        const treeOutput = document.getElementById('html-tree-output');
+        const resultTextShell = document.getElementById('result-text-shell');
+        const expandAllButton = document.getElementById('expand-all-btn');
+        const collapseAllButton = document.getElementById('collapse-all-btn');
         const statusMessage = document.getElementById('status-message');
         const validationStatus = document.getElementById('validation-status');
         const undoButton = document.getElementById('undo-btn');
         const redoButton = document.getElementById('redo-btn');
         let activeView = 'source';
+        let resultMode = 'tree';
         let history = [''];
         let historyIndex = 0;
         let applyingHistory = false;
@@ -370,13 +454,96 @@
             resultTab.classList.toggle('active', !showSource);
             sourceTab.setAttribute('aria-selected', String(showSource));
             resultTab.setAttribute('aria-selected', String(!showSource));
+            const showTreeActions = !showSource && resultMode === 'tree' && Boolean(output.value);
+            expandAllButton.classList.toggle('visible', showTreeActions);
+            collapseAllButton.classList.toggle('visible', showTreeActions);
             refreshEditor(showSource ? input : output, showSource ? inputLines : outputLines);
             refreshSummary();
         }
 
-        function setOutput(value) {
+        function createTreeLeaf(node, depth) {
+            const leaf = document.createElement('div');
+            leaf.className = `tree-leaf depth-${depth % 5}`;
+            const content = document.createElement('span');
+            content.className = node.type === 'comment' ? 'tree-comment'
+                : node.type === 'raw' ? 'tree-raw'
+                    : node.type === 'text' ? 'tree-text' : 'tree-tag';
+            content.textContent = node.value;
+            leaf.appendChild(content);
+            return leaf;
+        }
+
+        function createTreeElement(node, depth) {
+            if (node.type !== 'element') return createTreeLeaf(node, depth);
+            const wrapper = document.createElement('div');
+            wrapper.className = `html-tree-node depth-${depth % 5}`;
+
+            const row = document.createElement('div');
+            row.className = 'tree-node-row';
+            if (node.children.length) {
+                wrapper.classList.add('has-children');
+                const toggle = document.createElement('button');
+                toggle.className = 'tree-toggle';
+                toggle.type = 'button';
+                toggle.textContent = '−';
+                toggle.title = `收起 <${node.name}>`;
+                toggle.addEventListener('click', () => {
+                    const collapsed = wrapper.classList.toggle('collapsed');
+                    toggle.textContent = collapsed ? '+' : '−';
+                    toggle.title = `${collapsed ? '展开' : '收起'} <${node.name}>`;
+                });
+                row.appendChild(toggle);
+            } else {
+                const spacer = document.createElement('span');
+                spacer.className = 'tree-toggle-spacer';
+                row.appendChild(spacer);
+            }
+
+            const opening = document.createElement('code');
+            opening.className = 'tree-tag';
+            opening.textContent = node.opening;
+            row.appendChild(opening);
+            const ellipsis = document.createElement('span');
+            ellipsis.className = 'tree-ellipsis';
+            ellipsis.textContent = `… ${node.children.length} 个子节点`;
+            row.appendChild(ellipsis);
+            wrapper.appendChild(row);
+
+            if (node.children.length) {
+                const children = document.createElement('div');
+                children.className = 'tree-children';
+                node.children.forEach(child => children.appendChild(createTreeElement(child, depth + 1)));
+                wrapper.appendChild(children);
+            }
+            if (node.closing) {
+                const closing = document.createElement('div');
+                closing.className = 'tree-closing';
+                const code = document.createElement('code');
+                code.className = 'tree-tag';
+                code.textContent = node.closing;
+                closing.appendChild(code);
+                wrapper.appendChild(closing);
+            }
+            return wrapper;
+        }
+
+        function renderTree(value) {
+            const model = HtmlFormatter.buildHtmlTree(value);
+            treeOutput.replaceChildren(...model.children.map(node => createTreeElement(node, 0)));
+        }
+
+        function setResultMode(mode) {
+            resultMode = mode;
+            const showTree = mode === 'tree';
+            treeOutput.classList.toggle('active', showTree);
+            resultTextShell.classList.toggle('hidden', showTree);
+        }
+
+        function setOutput(value, mode = 'text') {
             output.value = value;
             refreshEditor(output, outputLines);
+            setResultMode(mode);
+            if (mode === 'tree') renderTree(value);
             showView('result');
         }
 
@@ -417,20 +584,20 @@
         function runFormat() {
             if (!requireInput()) return;
             const indentSize = Number(document.getElementById('indent-size').value);
-            setOutput(HtmlFormatter.formatHtml(input.value, { indentSize }));
+            setOutput(HtmlFormatter.formatHtml(input.value, { indentSize }), 'tree');
             showStatus('HTML 已格式化。');
         }
 
         function runCompress() {
             if (!requireInput()) return;
-            setOutput(HtmlFormatter.compressHtml(input.value));
+            setOutput(HtmlFormatter.compressHtml(input.value), 'text');
             showStatus('HTML 已压缩为单行。');
         }
 
         function runRepair() {
             if (!requireInput()) return;
             const indentSize = Number(document.getElementById('indent-size').value);
-            setOutput(HtmlFormatter.repairHtml(input.value, { indentSize }));
+            setOutput(HtmlFormatter.repairHtml(input.value, { indentSize }), 'tree');
             showStatus('HTML 标签结构已修复并格式化。');
         }
 
@@ -492,6 +659,15 @@
             }
             ClipboardUtils.copyText(content, { successMessage: '当前 HTML 内容已复制' });
         });
+        function setAllTreeNodesCollapsed(collapsed) {
+            treeOutput.querySelectorAll('.html-tree-node.has-children').forEach(node => {
+                node.classList.toggle('collapsed', collapsed);
+                const toggle = node.querySelector(':scope > .tree-node-row > .tree-toggle');
+                if (toggle) toggle.textContent = collapsed ? '+' : '−';
+            });
+        }
+        expandAllButton.addEventListener('click', () => setAllTreeNodesCollapsed(false));
+        collapseAllButton.addEventListener('click', () => setAllTreeNodesCollapsed(true));
         undoButton.addEventListener('click', () => applyHistory(historyIndex - 1));
         redoButton.addEventListener('click', () => applyHistory(historyIndex + 1));
         document.getElementById('indent-size').addEventListener('change', () => {

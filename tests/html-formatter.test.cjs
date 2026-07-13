@@ -46,6 +46,13 @@ assert.strictEqual(
     '<main>\n  <p>内容</p>\n</main>'
 );
 
+const tree = formatter.buildHtmlTree('<main><section><h2>标题</h2><br></section></main>');
+assert.strictEqual(tree.children[0].name, 'main');
+assert.strictEqual(tree.children[0].children[0].name, 'section');
+assert.strictEqual(tree.children[0].children[0].children[0].name, 'h2');
+assert.deepStrictEqual(tree.children[0].children[0].children[0].children[0], { type: 'text', value: '标题' });
+assert.strictEqual(tree.children[0].children[0].children[1].selfClosing, true);
+
 assert.deepStrictEqual(formatter.analyzeHtml('<main><div><span>内容</span></div></main>'), {
     elementCount: 3,
     maxDepth: 3,
@@ -68,8 +75,13 @@ assert.match(page, /id="edit-btn"/);
 assert.match(page, /id="undo-btn"/);
 assert.match(page, /id="redo-btn"/);
 assert.doesNotMatch(page, /id="swap-btn"/);
-assert.match(page, /<span>V1\.01<\/span>/);
-assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
+assert.match(page, /id="html-tree-output"/);
+assert.match(page, /id="expand-all-btn"/);
+assert.match(page, /id="collapse-all-btn"/);
+assert.match(page, /HtmlFormatter\.buildHtmlTree/);
+assert.match(page, /depth-1/);
+assert.match(page, /<span>V1\.02<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.00<\/div>/);
 
 const nav = fs.readFileSync(path.join(root, 'nav.js'), 'utf8');

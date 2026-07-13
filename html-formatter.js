@@ -224,6 +224,42 @@
         return formatHtml(repaired.join(''), options);
     }
 
+    function buildHtmlTree(input) {
+        const root = { type: 'root', children: [] };
+        const stack = [root];
+
+        tokenizeHtml(input).forEach((token) => {
+            const parent = stack[stack.length - 1];
+            if (token.type === 'tag' && !token.closing) {
+                const node = {
+                    type: 'element',
+                    name: token.name,
+                    opening: token.value.trim(),
+                    closing: token.selfClosing ? '' : `</${token.name}>`,
+                    selfClosing: token.selfClosing,
+                    children: []
+                };
+                parent.children.push(node);
+                if (!token.selfClosing) stack.push(node);
+                return;
+            }
+            if (token.type === 'tag' && token.closing) {
+                const matchingIndex = stack.map(node => node.name).lastIndexOf(token.name);
+                if (matchingIndex > 0) {
+                    stack[matchingIndex].closing = token.value.trim();
+                    stack.length = matchingIndex;
+                }
+                return;
+            }
+
+            const value = token.type === 'text' ? normalizeText(token.value) : token.value.trim();
+            if (!value) return;
+            parent.children.push({ type: token.type, value });
+        });
+
+        return root;
+    }
+
     function analyzeHtml(input) {
         const stack = [];
         const issues = [];
@@ -258,5 +294,5 @@
         return { elementCount, maxDepth, issues };
     }
 
-    return { tokenizeHtml, formatHtml, compressHtml, repairHtml, analyzeHtml };
+    return { tokenizeHtml, formatHtml, compressHtml, repairHtml, buildHtmlTree, analyzeHtml };
 });
