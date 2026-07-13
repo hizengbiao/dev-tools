@@ -216,29 +216,6 @@
         return splitTextByEstimatedTokens(text, maxTokens);
     }
 
-    function renderTemplate(template, index, total) {
-        return String(template ?? '')
-            .replaceAll('{index}', String(index))
-            .replaceAll('{total}', String(total));
-    }
-
-    function applySegmentTemplates(segments, options = {}) {
-        const list = Array.from(segments ?? []);
-        const total = list.length;
-        const prefix = options.prefix ?? '';
-        const suffix = options.suffix ?? '';
-        return list.map((segment, index) => (
-            `${renderTemplate(prefix, index + 1, total)}${segment}${renderTemplate(suffix, index + 1, total)}`
-        ));
-    }
-
-    function getCopySegments(segments, options = {}) {
-        if (options.includeTemplateInCopy) {
-            return applySegmentTemplates(segments, options);
-        }
-        return Array.from(segments ?? []);
-    }
-
     function findFirstDifference(left, right) {
         const leftChars = Array.from(String(left ?? ''));
         const rightChars = Array.from(String(right ?? ''));
@@ -255,11 +232,9 @@
         return null;
     }
 
-    function validateMergedSegments(source, segments, options = {}) {
+    function validateMergedSegments(source, segments) {
         const expected = String(source ?? '');
-        const list = options.includeTemplateInValidation
-            ? applySegmentTemplates(segments, options)
-            : Array.from(segments ?? []);
+        const list = Array.from(segments ?? []);
         const merged = list.join('');
         const difference = findFirstDifference(expected, merged);
         return {
@@ -282,9 +257,6 @@
         splitTextByEstimatedTokens,
         splitTextByStrategy,
         splitTextByEstimatedTokensWithStrategy,
-        renderTemplate,
-        applySegmentTemplates,
-        getCopySegments,
         findFirstDifference,
         validateMergedSegments,
         getClipboardHistoryWriteOrder,

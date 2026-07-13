@@ -59,18 +59,6 @@ assert.deepStrictEqual(
     ['alpha beta\n', 'gamma delta']
 );
 assert.deepStrictEqual(
-    splitter.applySegmentTemplates(['alpha', 'beta'], { prefix: '第 {index}/{total} 段：', suffix: '\n---' }),
-    ['第 1/2 段：alpha\n---', '第 2/2 段：beta\n---']
-);
-assert.deepStrictEqual(
-    splitter.getCopySegments(['alpha', 'beta'], { includeTemplateInCopy: false, prefix: '第 {index}/{total} 段：' }),
-    ['alpha', 'beta']
-);
-assert.deepStrictEqual(
-    splitter.getCopySegments(['alpha', 'beta'], { includeTemplateInCopy: true, prefix: '第 {index}/{total} 段：' }),
-    ['第 1/2 段：alpha', '第 2/2 段：beta']
-);
-assert.deepStrictEqual(
     splitter.findFirstDifference('abcdef', 'abcxef'),
     { index: 3, left: 'd', right: 'x' }
 );
@@ -81,10 +69,6 @@ assert.deepStrictEqual(
 assert.deepStrictEqual(
     splitter.validateMergedSegments('alpha beta', ['alpha', 'beta']),
     { ok: false, sourceLength: 10, mergedLength: 9, difference: { index: 5, left: ' ', right: 'b' } }
-);
-assert.deepStrictEqual(
-    splitter.validateMergedSegments('alpha', ['alpha'], { includeTemplateInValidation: true, prefix: '第 {index}/{total} 段：' }),
-    { ok: false, sourceLength: 5, mergedLength: 13, difference: { index: 0, left: 'a', right: '第' } }
 );
 
 const source = 'Line one.\nLine two is longer.\n\nFinal paragraph.';
@@ -99,6 +83,9 @@ assert.deepStrictEqual(
     ['第三段', '第二段', '第一段']
 );
 assert.deepStrictEqual(splitter.getClipboardHistoryWriteOrder([]), []);
+assert.strictEqual(splitter.renderTemplate, undefined);
+assert.strictEqual(splitter.applySegmentTemplates, undefined);
+assert.strictEqual(splitter.getCopySegments, undefined);
 
 const page = fs.readFileSync(path.resolve(__dirname, '../text-splitter.html'), 'utf8');
 const nav = fs.readFileSync(path.resolve(__dirname, '../nav.js'), 'utf8');
@@ -112,9 +99,8 @@ assert.match(page, /<script src="nav\.js" defer><\/script>/);
 assert.match(page, /<script src="editor-lines\.js"><\/script>/);
 assert.match(page, /<script src="text-splitter\.js"><\/script>/);
 assert.match(page, /id="maxLength"[^>]*value="2950"/);
-assert.match(page, /id="splitMode"/);
-assert.match(page, /<option value="characters">字符长度<\/option>/);
-assert.match(page, /<option value="tokens">Token 估算<\/option>/);
+assert.doesNotMatch(page, /id="splitMode"/);
+assert.doesNotMatch(page, /splitMode/);
 assert.match(page, /id="inputText"/);
 assert.match(page, /id="inputLineNumbers"/);
 assert.match(page, /id="splitBtn"/);
@@ -145,23 +131,24 @@ assert.match(page, /async function copySegmentsToHistory\(\)/);
 assert.match(page, /TextSplitter\.getClipboardHistoryWriteOrder\(copySegments\)/);
 assert.match(page, /await delay\(600\)/);
 assert.match(page, /copyHistoryBtn\.addEventListener\('click', copySegmentsToHistory\)/);
-assert.match(page, /V1\.07/);
+assert.match(page, /<span>V1\.08<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.08<\/div>/);
 assert.match(page, /Token 估算拆分/);
 assert.match(page, /id="splitStrategy"/);
 assert.match(page, /<option value="lines">/);
 assert.match(page, /<option value="paragraphs">/);
 assert.match(page, /<option value="sentences">/);
 assert.match(page, /<option value="characters">/);
-assert.match(page, /id="prefixTemplate"/);
-assert.match(page, /id="suffixTemplate"/);
-assert.match(page, /id="includeTemplateInCopy"/);
-assert.match(page, /id="includeTemplateInValidation"/);
+assert.doesNotMatch(page, /id="prefixTemplate"/);
+assert.doesNotMatch(page, /id="suffixTemplate"/);
+assert.doesNotMatch(page, /id="includeTemplateInCopy"/);
+assert.doesNotMatch(page, /id="includeTemplateInValidation"/);
 assert.match(page, /id="mergeValidationStatus"/);
-assert.match(page, /TextSplitter\.applySegmentTemplates\(segments, getTemplateOptions\(\)\)/);
-assert.match(page, /TextSplitter\.getCopySegments\(currentSegments, getTemplateOptions\(\)\)/);
-assert.match(page, /TextSplitter\.validateMergedSegments\(inputText\.value, currentSegments, getTemplateOptions\(\)\)/);
-assert.match(page, /第 \{index\}\/\{total\} 段：/);
-assert.match(page, /TextSplitter\.splitTextByEstimatedTokensWithStrategy\(inputText\.value, limit, strategy\)/);
+assert.doesNotMatch(page, /TextSplitter\.applySegmentTemplates/);
+assert.doesNotMatch(page, /TextSplitter\.getCopySegments/);
+assert.doesNotMatch(page, /getTemplateOptions/);
+assert.doesNotMatch(page, /includeTemplateInCopy|includeTemplateInValidation/);
+assert.doesNotMatch(page, /TextSplitter\.splitTextByEstimatedTokensWithStrategy/);
 assert.match(page, /TextSplitter\.splitTextByStrategy\(inputText\.value, limit, strategy\)/);
 assert.match(page, /TextSplitter\.estimateTokens\(segment\)/);
 assert.match(page, /字符，约/);
