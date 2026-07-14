@@ -293,5 +293,47 @@
         return { formatted, ...summary };
     }
 
-    return { tokenizeNginx, analyzeNginx, formatNginx };
+    function buildNginxTree(input) {
+        const root = { type: 'root', children: [] };
+        const stack = [root];
+
+        String(input || '').split(/\r?\n/).forEach((rawLine, index) => {
+            const value = rawLine.trim();
+            if (!value) return;
+            const line = index + 1;
+
+            if (value === '}') {
+                if (stack.length > 1) {
+                    const block = stack.pop();
+                    block.closing = value;
+                    block.closingLine = line;
+                }
+                return;
+            }
+
+            if (/\{(?:\s*#.*)?$/.test(value)) {
+                const block = {
+                    type: 'block',
+                    opening: value,
+                    closing: '',
+                    line,
+                    closingLine: null,
+                    children: []
+                };
+                stack[stack.length - 1].children.push(block);
+                stack.push(block);
+                return;
+            }
+
+            stack[stack.length - 1].children.push({
+                type: value.startsWith('#') ? 'comment' : 'directive',
+                value,
+                line
+            });
+        });
+
+        return root;
+    }
+
+    return { tokenizeNginx, analyzeNginx, formatNginx, buildNginxTree };
 });

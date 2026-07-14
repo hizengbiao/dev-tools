@@ -95,19 +95,44 @@ assert.strictEqual(invalidFormat.formatted, '');
 assert.ok(invalidFormat.issues.length > 0);
 assert.strictEqual(formatter.formatNginx('# comment only').formatted, '# comment only');
 
+const tree = formatter.buildNginxTree(expected);
+assert.strictEqual(tree.children[0].type, 'block');
+assert.strictEqual(tree.children[0].opening, 'http {');
+assert.strictEqual(tree.children[0].line, 1);
+assert.strictEqual(tree.children[0].closingLine, 8);
+assert.strictEqual(tree.children[0].children[0].opening, 'server {');
+assert.strictEqual(tree.children[0].children[0].children[0].type, 'directive');
+assert.strictEqual(tree.children[0].children[0].children[0].value, 'listen 80;');
+assert.strictEqual(tree.children[0].children[0].children[1].children[0].line, 5);
+
+const commentTree = formatter.buildNginxTree('# comment\nevents {\n    worker_connections 1024;\n}');
+assert.strictEqual(commentTree.children[0].type, 'comment');
+assert.strictEqual(commentTree.children[1].type, 'block');
+
 const page = fs.readFileSync(path.join(root, 'nginx-formatter.html'), 'utf8');
 assert.match(page, /<title>Nginx 配置格式化工具<\/title>/);
 assert.match(page, /<script src="nav\.js" defer><\/script>/);
+assert.match(page, /<script src="changelog\.js"><\/script>/);
 assert.match(page, /<script src="clipboard-utils\.js"><\/script>/);
 assert.match(page, /<script src="editor-lines\.js"><\/script>/);
 assert.match(page, /<script src="nginx-formatter\.js"><\/script>/);
 [
-    'nginx-input', 'nginx-output', 'format-btn', 'copy-btn', 'clear-btn', 'sample-btn',
-    'source-tab', 'result-tab', 'status-message', 'issue-list', 'directive-count',
-    'block-count', 'comment-count', 'max-depth',
+    'nginx-input', 'nginx-output', 'nginx-tree-output', 'format-btn', 'edit-btn', 'copy-btn',
+    'expand-all-btn', 'collapse-all-btn', 'clear-btn', 'sample-btn', 'status-message', 'issue-list',
 ].forEach(id => assert.match(page, new RegExp(`id="${id}"`)));
+[
+    'source-tab', 'result-tab', 'directive-count', 'block-count', 'comment-count', 'max-depth',
+].forEach(id => assert.doesNotMatch(page, new RegExp(`id="${id}"`)));
 assert.match(page, /const NGINX_INDENT_SIZE = 4;/);
 assert.match(page, /NginxFormatter\.formatNginx/);
+assert.match(page, /NginxFormatter\.buildNginxTree/);
+assert.match(page, /function renderTree\(value\)/);
+assert.match(page, /function createTreeBlock\(node, depth\)/);
+assert.match(page, /function setAllBlocksCollapsed\(collapsed\)/);
+assert.match(page, /className = 'nginx-tree-line-number'/);
+assert.match(page, /--tree-depth/);
+assert.match(page, /<span>V1\.01<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>[\s\S]*?<div class="changelog-version">V1\.00<\/div>/);
 assert.match(page, /setOutput\(''\)/);
 assert.match(page, /result\.issues\.length/);
 assert.match(page, /EditorLines\.refreshLineNumbers/);
