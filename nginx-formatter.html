@@ -247,6 +247,50 @@
         .nginx-comment { color: #1a7f37; white-space: pre-wrap; overflow-wrap: anywhere; }
         .nginx-tree-ellipsis { display: none; margin-left: 5px; color: var(--muted-color); font-style: italic; }
 
+        .nginx-block-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-left: 10px;
+            font-family: Arial, "Microsoft YaHei", sans-serif;
+        }
+
+        .nginx-block-action {
+            padding: 3px 7px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: #24292f;
+            background: #fff;
+            font-size: 12px;
+            line-height: 1.4;
+            cursor: pointer;
+        }
+
+        .nginx-block-action:hover { border-color: var(--accent-color); color: var(--accent-color); }
+        .nginx-block-action.danger { color: var(--danger-color); }
+        .nginx-block-action.danger:hover { border-color: var(--danger-color); background: #fff5f5; }
+
+        .nginx-subtree-editor {
+            margin: 4px 0;
+            padding: 10px;
+            border: 1px solid var(--accent-color);
+            border-radius: 5px;
+            background: #f6f8fa;
+        }
+
+        .nginx-subtree-editor textarea {
+            width: 100%;
+            min-height: 160px;
+            padding: 10px;
+            resize: vertical;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: #fff;
+            font: 13px/1.6 "SFMono-Regular", Consolas, monospace;
+        }
+
+        .nginx-subtree-editor-actions { display: flex; gap: 8px; margin-top: 8px; }
+
         .nginx-tree-node.collapsed > .nginx-tree-children,
         .nginx-tree-node.collapsed > .nginx-tree-closing { display: none; }
         .nginx-tree-node.collapsed > .nginx-tree-row .nginx-tree-ellipsis { display: inline; }
@@ -300,7 +344,7 @@
             <button id="clear-btn" class="btn" type="button">清空</button>
             <button id="sample-btn" class="btn" type="button">加载示例</button>
             <span class="privacy-note">配置仅在当前浏览器中处理</span>
-            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.02</span><span>ℹ️</span></div>
+            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.03</span><span>ℹ️</span></div>
         </div>
 
         <div id="status-message" class="status-message" role="status" aria-live="polite">
@@ -338,6 +382,10 @@
             <div class="modal-body">
                 <div class="changelog-date">2026年7月14日</div>
                 <div class="changelog-entry">
+                    <div class="changelog-version">V1.03</div>
+                    <div>增加配置区块复制、折叠子树、编辑和删除功能，区块操作后自动同步格式化结果。</div>
+                </div>
+                <div class="changelog-entry">
                     <div class="changelog-version">V1.02</div>
                     <div>增加粘贴并格式化功能，并将“格式化并检查”按钮简化为“格式化”。</div>
                 </div>
@@ -364,6 +412,16 @@
         const status = document.getElementById('status-message');
         const statusText = document.getElementById('status-text');
         const issueList = document.getElementById('issue-list');
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast show${isError ? ' error' : ''}`;
+            clearTimeout(showToast.timer);
+            showToast.timer = setTimeout(() => {
+                toast.className = 'toast';
+            }, 1800);
+        }
 
         function bindLineNumbers(textarea, gutter) {
             EditorLines.refreshLineNumbers(textarea, gutter);
@@ -422,10 +480,111 @@
             return leaf;
         }
 
+        function applyTreeSource(nextSource) {
+            input.value = nextSource;
+            input.dispatchEvent(new Event('input'));
+            formatConfiguration();
+        }
+
+        function copyTreeBlock(node) {
+            ClipboardUtils.copyText(NginxFormatter.getNodeSource(output.value, node), {
+                toastId: 'toast',
+                emptyMessage: '当前区块没有可复制的内容',
+                successMessage: '区块内容已复制',
+            });
+        }
+
+        function editTreeBlock(node, wrapper) {
+            const currentSource = NginxFormatter.getNodeSource(output.value, node);
+            const editor = document.createElement('div');
+            editor.className = 'nginx-subtree-editor';
+            const textarea = document.createElement('textarea');
+            textarea.value = currentSource;
+            textarea.spellcheck = false;
+            textarea.setAttribute('aria-label', '编辑 Nginx 配置区块');
+            const actions = document.createElement('div');
+            actions.className = 'nginx-subtree-editor-actions';
+            const save = document.createElement('button');
+            save.type = 'button';
+            save.className = 'btn btn-primary';
+            save.textContent = '保存';
+            const cancel = document.createElement('button');
+            cancel.type = 'button';
+            cancel.className = 'btn';
+            cancel.textContent = '取消';
+            save.addEventListener('click', () => {
+                const candidate = NginxFormatter.replaceNodeSource(output.value, node, textarea.value);
+                const result = NginxFormatter.formatNginx(candidate, { indentSize: NGINX_INDENT_SIZE });
+                if (result.issues.length) {
+                    showToast('编辑后的区块存在结构错误', true);
+                    textarea.focus();
+                    return;
+                }
+                applyTreeSource(result.formatted);
+                showToast('区块已更新');
+            });
+            cancel.addEventListener('click', () => editor.replaceWith(wrapper));
+            actions.append(cancel, save);
+            editor.append(textarea, actions);
+            wrapper.replaceWith(editor);
+            textarea.focus({ preventScroll: true });
+        }
+
+        function deleteTreeBlock(node) {
+            applyTreeSource(NginxFormatter.removeNodeSource(output.value, node));
+            showToast('区块已删除');
+        }
+
+        function foldTreeSubtree(wrapper) {
+            const depthText = window.prompt('请输入折叠深度：1 表示折叠当前区块的直接子区块，2 表示从第二层子区块开始折叠。', '1');
+            if (depthText === null) return;
+            const depth = Number(depthText.trim());
+            if (!Number.isInteger(depth) || depth < 0) {
+                showToast('请输入大于等于 0 的整数', true);
+                return;
+            }
+            wrapper.querySelectorAll('.nginx-tree-node').forEach(block => {
+                const relativeDepth = Number(block.dataset.depth) - Number(wrapper.dataset.depth);
+                if (relativeDepth >= depth) {
+                    block.classList.add('collapsed');
+                    const toggle = block.querySelector(':scope > .nginx-tree-row > .nginx-tree-toggle');
+                    if (toggle) toggle.textContent = '+';
+                }
+            });
+            if (depth === 0) {
+                wrapper.classList.add('collapsed');
+                const toggle = wrapper.querySelector(':scope > .nginx-tree-row > .nginx-tree-toggle');
+                if (toggle) toggle.textContent = '+';
+            }
+        }
+
+        function createBlockActions(node, wrapper) {
+            const actions = document.createElement('span');
+            actions.className = 'nginx-block-actions';
+            [
+                ['复制区块', () => copyTreeBlock(node), false],
+                ['折叠子树', () => foldTreeSubtree(wrapper), false],
+                ['编辑区块', () => editTreeBlock(node, wrapper), false],
+                ['删除区块', () => deleteTreeBlock(node), true],
+            ].forEach(([label, handler, danger]) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = `nginx-block-action${danger ? ' danger' : ''}`;
+                button.textContent = label;
+                button.addEventListener('click', event => {
+                    event.stopPropagation();
+                    handler();
+                });
+                actions.appendChild(button);
+            });
+            return actions;
+        }
+
         function createTreeBlock(node, depth) {
             const wrapper = document.createElement('div');
             wrapper.className = 'nginx-tree-node';
             wrapper.style.setProperty('--tree-depth', String(depth));
+            wrapper.dataset.depth = String(depth);
 
             const row = document.createElement('div');
             row.className = 'nginx-tree-row';
@@ -445,6 +604,7 @@
             opening.className = 'nginx-block-header';
             opening.textContent = node.opening;
             row.appendChild(opening);
+            row.appendChild(createBlockActions(node, wrapper));
             const ellipsis = document.createElement('span');
             ellipsis.className = 'nginx-tree-ellipsis';
             ellipsis.textContent = `… ${node.children.length} 项`;

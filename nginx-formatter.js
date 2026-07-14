@@ -335,5 +335,37 @@
         return root;
     }
 
-    return { tokenizeNginx, analyzeNginx, formatNginx, buildNginxTree };
+    function getNodeSource(input, node) {
+        const lines = String(input || '').split(/\r?\n/);
+        const start = Math.max(0, Number(node && node.line) - 1);
+        const end = Math.max(start + 1, Number(node && (node.closingLine || node.line)));
+        return lines.slice(start, end).join('\n');
+    }
+
+    function replaceNodeSource(input, node, replacement) {
+        const lines = String(input || '').split(/\r?\n/);
+        const start = Math.max(0, Number(node && node.line) - 1);
+        const end = Math.max(start + 1, Number(node && (node.closingLine || node.line)));
+        const replacementLines = String(replacement || '').split(/\r?\n/);
+        lines.splice(start, end - start, ...replacementLines);
+        return lines.join('\n');
+    }
+
+    function removeNodeSource(input, node) {
+        const lines = String(input || '').split(/\r?\n/);
+        const start = Math.max(0, Number(node && node.line) - 1);
+        const end = Math.max(start + 1, Number(node && (node.closingLine || node.line)));
+        lines.splice(start, end - start);
+        return lines.join('\n');
+    }
+
+    return {
+        tokenizeNginx,
+        analyzeNginx,
+        formatNginx,
+        buildNginxTree,
+        getNodeSource,
+        replaceNodeSource,
+        removeNodeSource
+    };
 });
