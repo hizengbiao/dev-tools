@@ -9,6 +9,7 @@
         { name: '文本拆分', path: 'text-splitter.html', icon: '✂️' },
         { name: 'Cron 解析', path: 'cron-parser.html', icon: '🕒' },
         { name: 'HTML 格式化', path: 'html-formatter.html', icon: '🌐' },
+        { name: 'Nginx 格式化', path: 'nginx-formatter.html', icon: '⚙️' },
         { name: '时间戳转换', path: 'timestamp-converter.html', icon: '⏱️' },
         { name: 'URL 编解码', path: 'url-encoder.html', icon: '🔗' },
         { name: 'Base64', path: 'base64-encoder.html', icon: '🔐' },

@@ -32,6 +32,7 @@ const expectedLeadingPaths = [
     'text-splitter.html',
     'cron-parser.html',
     'html-formatter.html',
+    'nginx-formatter.html',
     'timestamp-converter.html',
 ];
 assert.deepStrictEqual(
@@ -105,6 +106,7 @@ assert.match(home, /function syncHomeToolIcons\(\)/);
 assert.match(home, /iconElement\.textContent = tool\.icon/);
 assert.strictEqual(toolByPath.get('text_escape_formatter_final.html').icon, '↔️');
 assert.strictEqual(toolByPath.get('sql-formatter.html').icon, '🧾');
+assert.strictEqual(toolByPath.get('nginx-formatter.html').icon, '⚙️');
 assert.notStrictEqual(
     toolByPath.get('text_escape_formatter_final.html').icon,
     toolByPath.get('sql-formatter.html').icon,
@@ -129,6 +131,7 @@ const expectedHomeLeadingPaths = [
     'text-splitter.html',
     'cron-parser.html',
     'html-formatter.html',
+    'nginx-formatter.html',
     'timestamp-converter.html',
 ];
 assert.match(home, /\.tools-grid\s*\{[^}]*grid-template-columns:\s*repeat\(5, minmax\(0, 1fr\)\)[^}]*max-width:\s*1500px/s);

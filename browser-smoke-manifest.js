@@ -90,6 +90,12 @@
             markers: ['html-input', 'format-btn'],
             selectors: ['#html-input', '#format-btn'],
         },
+        {
+            path: 'nginx-formatter.html',
+            title: 'Nginx 配置格式化工具',
+            markers: ['nginx-input', 'format-btn', 'issue-list'],
+            selectors: ['#nginx-input', '#format-btn'],
+        },
     ];
 
     return { BROWSER_SMOKE_PAGES };
