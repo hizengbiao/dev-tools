@@ -122,32 +122,11 @@
             min-height: 48px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-end;
             gap: 14px;
             padding: 0 12px;
             border-bottom: 1px solid var(--border-color);
             background: #f6f8fa;
-        }
-
-        .view-tabs { align-self: stretch; display: flex; align-items: flex-end; gap: 3px; }
-
-        .view-tab {
-            height: 40px;
-            padding: 0 17px;
-            border: 1px solid transparent;
-            border-bottom: 0;
-            border-radius: 6px 6px 0 0;
-            color: var(--muted-color);
-            background: transparent;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .view-tab.active {
-            margin-bottom: -1px;
-            border-color: var(--border-color);
-            color: var(--accent-color);
-            background: #fff;
         }
 
         .structure-summary { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
@@ -437,7 +416,7 @@
             <button class="btn tree-action" id="expand-all-btn" type="button" title="展开全部 HTML 层级">📖 展开</button>
             <button class="btn tree-action" id="collapse-all-btn" type="button" title="收起全部 HTML 层级">📕 收起</button>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新说明">
-                <span>V1.10</span><span>ℹ️</span>
+                <span>V1.11</span><span>ℹ️</span>
             </div>
         </div>
 
@@ -445,11 +424,6 @@
 
         <section class="editor-container">
             <div class="editor-header">
-                <div class="view-tabs" role="tablist" aria-label="HTML 编辑视图">
-                    <button class="view-tab active" id="source-tab" type="button" role="tab" aria-selected="true">源码编辑</button>
-                    <button class="view-tab" id="result-tab" type="button" role="tab" aria-selected="false">处理结果</button>
-                    <button class="view-tab" id="preview-tab" type="button" role="tab" aria-selected="false">页面预览</button>
-                </div>
                 <div class="structure-summary" aria-label="HTML 结构概览">
                     <span class="summary-item">元素<strong id="element-count">0</strong></span>
                     <span class="summary-item">最大层级<strong id="max-depth">0</strong></span>
@@ -489,6 +463,10 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date">2026年7月14日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.11</div>
+                    <div>移除重复的源码、结果和预览视图标签，统一通过顶部操作按钮切换；格式化成功后不再显示提示条。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.10</div>
                     <div>格式化后的 HTML 层级树增加左侧行号，展开、收起、编辑和删除区块后保持同步。</div>
@@ -546,9 +524,6 @@
         const sourceView = document.getElementById('source-view');
         const resultView = document.getElementById('result-view');
         const previewView = document.getElementById('preview-view');
-        const sourceTab = document.getElementById('source-tab');
-        const resultTab = document.getElementById('result-tab');
-        const previewTab = document.getElementById('preview-tab');
         const previewFrame = document.getElementById('html-preview');
         const previewEmpty = document.getElementById('preview-empty');
         const treeOutput = document.getElementById('html-tree-output');
@@ -606,12 +581,6 @@
             sourceView.classList.toggle('active', showSource);
             resultView.classList.toggle('active', showResult);
             previewView.classList.toggle('active', showPreview);
-            sourceTab.classList.toggle('active', showSource);
-            resultTab.classList.toggle('active', showResult);
-            previewTab.classList.toggle('active', showPreview);
-            sourceTab.setAttribute('aria-selected', String(showSource));
-            resultTab.setAttribute('aria-selected', String(showResult));
-            previewTab.setAttribute('aria-selected', String(showPreview));
             const showTreeActions = showResult && resultMode === 'tree' && Boolean(output.value);
             expandAllButton.classList.toggle('visible', showTreeActions);
             collapseAllButton.classList.toggle('visible', showTreeActions);
@@ -957,7 +926,7 @@
         function runFormat() {
             if (!requireInput()) return;
             setOutput(HtmlFormatter.formatHtml(input.value, { indentSize: HTML_INDENT_SIZE }), 'tree');
-            showStatus('HTML 已格式化。');
+            clearStatus();
         }
 
         function runCompress() {
@@ -997,9 +966,6 @@
         });
         input.addEventListener('scroll', () => EditorLines.syncLineNumberScroll(input, inputLines));
         output.addEventListener('scroll', () => EditorLines.syncLineNumberScroll(output, outputLines));
-        sourceTab.addEventListener('click', () => showView('source'));
-        resultTab.addEventListener('click', () => showView('result'));
-        previewTab.addEventListener('click', showPreview);
         document.getElementById('paste-format-btn').addEventListener('click', pasteAndFormat);
         document.getElementById('format-btn').addEventListener('click', runFormat);
         document.getElementById('preview-btn').addEventListener('click', showPreview);
