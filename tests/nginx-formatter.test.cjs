@@ -41,4 +41,58 @@ assert.strictEqual(formatter.analyzeNginx('{ listen 80; }').issues[0].code, 'mis
 assert.strictEqual(formatter.analyzeNginx(';').issues[0].code, 'empty-directive');
 assert.deepStrictEqual(formatter.analyzeNginx('# comment only').issues, []);
 
+const compact = 'http{server{listen 80;location /api {proxy_pass "http://upstream/#v1";}}}';
+const expected = [
+    'http {',
+    '    server {',
+    '        listen 80;',
+    '        location /api {',
+    '            proxy_pass "http://upstream/#v1";',
+    '        }',
+    '    }',
+    '}',
+].join('\n');
+assert.strictEqual(formatter.formatNginx(compact).formatted, expected);
+assert.strictEqual(formatter.formatNginx(expected).formatted, expected);
+
+const comments = [
+    '# global comment',
+    'events { # block comment',
+    'worker_connections 1024; # directive comment',
+    '# inside comment',
+    '}',
+].join('\n');
+assert.strictEqual(
+    formatter.formatNginx(comments).formatted,
+    [
+        '# global comment',
+        'events { # block comment',
+        '    worker_connections 1024; # directive comment',
+        '    # inside comment',
+        '}',
+    ].join('\n')
+);
+
+assert.strictEqual(
+    formatter.formatNginx('set $value foo\\ bar;').formatted,
+    'set $value foo\\ bar;'
+);
+
+const customIndent = formatter.formatNginx('server { listen 80; }', { indentSize: 2 });
+assert.strictEqual(customIndent.formatted, 'server {\n  listen 80;\n}');
+assert.deepStrictEqual(
+    {
+        directives: customIndent.directiveCount,
+        blocks: customIndent.blockCount,
+        comments: customIndent.commentCount,
+        depth: customIndent.maxDepth,
+    },
+    { directives: 1, blocks: 1, comments: 0, depth: 1 }
+);
+
+const invalidFormat = formatter.formatNginx('server { listen 80;');
+assert.strictEqual(invalidFormat.formatted, '');
+assert.ok(invalidFormat.issues.length > 0);
+assert.strictEqual(formatter.formatNginx('# comment only').formatted, '# comment only');
+
 console.log('nginx formatter validation passed');

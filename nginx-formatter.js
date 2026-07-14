@@ -192,5 +192,106 @@
         return { tokens, directiveCount, blockCount, commentCount, maxDepth, issues };
     }
 
-    return { tokenizeNginx, analyzeNginx };
+    function normalizeParts(parts) {
+        const values = [];
+        parts.forEach((token) => {
+            if (token.type === 'string') {
+                values.push(token.value);
+                return;
+            }
+            const value = token.value.trim();
+            if (value) values.push(value);
+        });
+        return values.join(' ');
+    }
+
+    function formatNginx(input, options) {
+        const indentSize = Number.isInteger(options?.indentSize) && options.indentSize > 0
+            ? options.indentSize
+            : 4;
+        const analysis = analyzeNginx(input);
+        const summary = {
+            directiveCount: analysis.directiveCount,
+            blockCount: analysis.blockCount,
+            commentCount: analysis.commentCount,
+            maxDepth: analysis.maxDepth,
+            issues: analysis.issues,
+        };
+
+        if (analysis.issues.length) {
+            return { formatted: '', ...summary };
+        }
+
+        const lines = [];
+        let depth = 0;
+        let pending = [];
+        let lastEmissionSourceLine = 0;
+
+        function emit(content, targetDepth, sourceLine) {
+            const clean = content.trimEnd();
+            if (!clean) return;
+            lines.push(`${' '.repeat(targetDepth * indentSize)}${clean}`);
+            lastEmissionSourceLine = sourceLine;
+        }
+
+        analysis.tokens.forEach((token) => {
+            if (token.type === 'newline') {
+                if (!pending.some(isContentToken) && !pending.some(item => item.type === 'comment')) {
+                    pending = [];
+                }
+                return;
+            }
+
+            if (token.type === 'comment') {
+                if (pending.some(isContentToken)) {
+                    pending.push(token);
+                    return;
+                }
+                pending = [];
+                if (lastEmissionSourceLine === token.line && lines.length) {
+                    lines[lines.length - 1] += ` ${token.value}`;
+                } else {
+                    emit(token.value, depth, token.line);
+                }
+                return;
+            }
+
+            if (token.type !== 'symbol') {
+                pending.push(token);
+                return;
+            }
+
+            const inlineComments = pending.filter(item => item.type === 'comment');
+            const content = normalizeParts(pending.filter(item => item.type !== 'comment'));
+            const commentSuffix = inlineComments.length
+                ? ` ${inlineComments.map(item => item.value).join(' ')}`
+                : '';
+
+            if (token.value === ';') {
+                emit(`${content};${commentSuffix}`, depth, token.line);
+                pending = [];
+                return;
+            }
+
+            if (token.value === '{') {
+                emit(`${content} {${commentSuffix}`, depth, token.line);
+                depth += 1;
+                pending = [];
+                return;
+            }
+
+            depth = Math.max(0, depth - 1);
+            emit('}', depth, token.line);
+            pending = [];
+        });
+
+        pending.filter(token => token.type === 'comment').forEach((token) => {
+            emit(token.value, depth, token.line);
+        });
+
+        const formatted = lines.map(line => line.trimEnd()).join('\n').trim();
+        return { formatted, ...summary };
+    }
+
+    return { tokenizeNginx, analyzeNginx, formatNginx };
 });
