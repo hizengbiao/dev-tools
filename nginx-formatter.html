@@ -291,7 +291,8 @@
 <body>
     <main class="page-shell">
         <div class="main-actions">
-            <button id="format-btn" class="btn btn-primary" type="button">格式化并检查</button>
+            <button id="paste-format-btn" class="btn" type="button">粘贴并格式化</button>
+            <button id="format-btn" class="btn btn-primary" type="button">格式化</button>
             <button id="edit-btn" class="btn" type="button">编辑源码</button>
             <button id="copy-btn" class="btn" type="button">复制结果</button>
             <button id="expand-all-btn" class="btn tree-action" type="button">展开全部</button>
@@ -299,7 +300,7 @@
             <button id="clear-btn" class="btn" type="button">清空</button>
             <button id="sample-btn" class="btn" type="button">加载示例</button>
             <span class="privacy-note">配置仅在当前浏览器中处理</span>
-            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.01</span><span>ℹ️</span></div>
+            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.02</span><span>ℹ️</span></div>
         </div>
 
         <div id="status-message" class="status-message" role="status" aria-live="polite">
@@ -336,6 +337,10 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date">2026年7月14日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.02</div>
+                    <div>增加粘贴并格式化功能，并将“格式化并检查”按钮简化为“格式化”。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.01</div>
                     <div>格式化结果升级为层级树视图，增加真实行号、深度背景、语法配色以及配置块展开和收起功能。</div>
@@ -483,14 +488,14 @@
             });
         }
 
-        document.getElementById('format-btn').addEventListener('click', () => {
+        function formatConfiguration() {
             if (!input.value.trim()) {
                 status.className = 'status-message visible error';
                 statusText.textContent = '请输入 Nginx 配置。';
                 setOutput('');
                 renderIssues([]);
                 showView('source');
-                return;
+                return false;
             }
 
             const result = NginxFormatter.formatNginx(input.value, { indentSize: NGINX_INDENT_SIZE });
@@ -501,14 +506,37 @@
                 statusText.textContent = `发现 ${result.issues.length} 个结构问题。`;
                 setOutput('');
                 showView('source');
-                return;
+                return false;
             }
 
             setOutput(result.formatted);
             status.className = 'status-message';
             statusText.textContent = '';
             showView('result');
-        });
+            return true;
+        }
+
+        async function pasteAndFormat() {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (!text) {
+                    status.className = 'status-message visible error';
+                    statusText.textContent = '剪贴板中没有可用的 Nginx 配置。';
+                    return;
+                }
+                input.value = text;
+                input.dispatchEvent(new Event('input'));
+                formatConfiguration();
+            } catch (error) {
+                status.className = 'status-message visible error';
+                statusText.textContent = '无法读取剪贴板，请手动粘贴后再格式化。';
+                showView('source');
+                input.focus();
+            }
+        }
+
+        document.getElementById('paste-format-btn').addEventListener('click', pasteAndFormat);
+        document.getElementById('format-btn').addEventListener('click', formatConfiguration);
 
         document.getElementById('edit-btn').addEventListener('click', () => {
             if (output.value) input.value = output.value;

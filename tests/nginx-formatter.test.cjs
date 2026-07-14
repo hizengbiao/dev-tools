@@ -117,7 +117,7 @@ assert.match(page, /<script src="clipboard-utils\.js"><\/script>/);
 assert.match(page, /<script src="editor-lines\.js"><\/script>/);
 assert.match(page, /<script src="nginx-formatter\.js"><\/script>/);
 [
-    'nginx-input', 'nginx-output', 'nginx-tree-output', 'format-btn', 'edit-btn', 'copy-btn',
+    'nginx-input', 'nginx-output', 'nginx-tree-output', 'paste-format-btn', 'format-btn', 'edit-btn', 'copy-btn',
     'expand-all-btn', 'collapse-all-btn', 'clear-btn', 'sample-btn', 'status-message', 'issue-list',
 ].forEach(id => assert.match(page, new RegExp(`id="${id}"`)));
 [
@@ -125,14 +125,17 @@ assert.match(page, /<script src="nginx-formatter\.js"><\/script>/);
 ].forEach(id => assert.doesNotMatch(page, new RegExp(`id="${id}"`)));
 assert.match(page, /const NGINX_INDENT_SIZE = 4;/);
 assert.match(page, /NginxFormatter\.formatNginx/);
+assert.match(page, /async function pasteAndFormat\(\)/);
+assert.match(page, /navigator\.clipboard\.readText\(\)/);
+assert.match(page, /<button id="format-btn"[^>]*>格式化<\/button>/);
 assert.match(page, /NginxFormatter\.buildNginxTree/);
 assert.match(page, /function renderTree\(value\)/);
 assert.match(page, /function createTreeBlock\(node, depth\)/);
 assert.match(page, /function setAllBlocksCollapsed\(collapsed\)/);
 assert.match(page, /className = 'nginx-tree-line-number'/);
 assert.match(page, /--tree-depth/);
-assert.match(page, /<span>V1\.01<\/span>/);
-assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>[\s\S]*?<div class="changelog-version">V1\.00<\/div>/);
+assert.match(page, /<span>V1\.02<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>[\s\S]*?<div class="changelog-version">V1\.00<\/div>/);
 assert.match(page, /setOutput\(''\)/);
 assert.match(page, /result\.issues\.length/);
 assert.match(page, /EditorLines\.refreshLineNumbers/);
