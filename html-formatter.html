@@ -198,6 +198,7 @@
 
         .html-tree {
             display: none;
+            position: relative;
             height: 100%;
             width: 100%;
             padding: 10px 10px 30px 50px;
@@ -230,6 +231,17 @@
         .tree-leaf {
             display: flex;
             align-items: center;
+            position: relative;
+        }
+
+        .tree-line-number {
+            position: absolute;
+            right: calc(100% + 8px + var(--tree-line-offset, 0px));
+            width: 34px;
+            color: #8c959f;
+            text-align: right;
+            font: 12px/1.6 "SFMono-Regular", Consolas, monospace;
+            user-select: none;
         }
 
         .tree-node-row { gap: 0; }
@@ -425,7 +437,7 @@
             <button class="btn tree-action" id="expand-all-btn" type="button" title="展开全部 HTML 层级">📖 展开</button>
             <button class="btn tree-action" id="collapse-all-btn" type="button" title="收起全部 HTML 层级">📕 收起</button>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新说明">
-                <span>V1.09</span><span>ℹ️</span>
+                <span>V1.10</span><span>ℹ️</span>
             </div>
         </div>
 
@@ -477,6 +489,10 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date">2026年7月14日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.10</div>
+                    <div>格式化后的 HTML 层级树增加左侧行号，展开、收起、编辑和删除区块后保持同步。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.09</div>
                     <div>格式化结果中的编辑和删除操作紧邻元素开始标签显示，减少视线移动距离。</div>
@@ -537,6 +553,7 @@
         const previewEmpty = document.getElementById('preview-empty');
         const treeOutput = document.getElementById('html-tree-output');
         const resultTextShell = document.getElementById('result-text-shell');
+        let treeLineNumber = 1;
         const expandAllButton = document.getElementById('expand-all-btn');
         const collapseAllButton = document.getElementById('collapse-all-btn');
         const statusMessage = document.getElementById('status-message');
@@ -629,9 +646,26 @@
             clearStatus();
         }
 
+        function createTreeLineNumber() {
+            const lineNumber = document.createElement('span');
+            lineNumber.className = 'tree-line-number';
+            lineNumber.textContent = String(treeLineNumber++);
+            return lineNumber;
+        }
+
+        function alignTreeLineNumbers() {
+            const treeRect = treeOutput.getBoundingClientRect();
+            const desiredRight = treeRect.left + 42;
+            treeOutput.querySelectorAll('.tree-line-number').forEach(lineNumber => {
+                const rowLeft = lineNumber.parentElement.getBoundingClientRect().left;
+                lineNumber.style.setProperty('--tree-line-offset', `${Math.max(0, rowLeft - desiredRight - 8)}px`);
+            });
+        }
+
         function createTreeLeaf(node, depth) {
             const leaf = document.createElement('div');
             leaf.className = 'tree-leaf';
+            leaf.appendChild(createTreeLineNumber());
             const content = document.createElement('span');
             content.className = node.type === 'comment' ? 'tree-comment'
                 : node.type === 'raw' ? 'tree-raw'
@@ -707,6 +741,7 @@
 
             const row = document.createElement('div');
             row.className = 'tree-node-row';
+            row.appendChild(createTreeLineNumber());
             if (node.children.length) {
                 wrapper.classList.add('has-children');
                 const toggle = document.createElement('button');
@@ -769,6 +804,7 @@
             if (node.closing) {
                 const closing = document.createElement('div');
                 closing.className = 'tree-closing';
+                closing.appendChild(createTreeLineNumber());
                 const code = document.createElement('code');
                 code.className = 'tree-tag';
                 code.textContent = node.closing;
@@ -780,7 +816,10 @@
 
         function renderTree(value) {
             const model = HtmlFormatter.buildHtmlTree(value);
+            treeLineNumber = 1;
             treeOutput.replaceChildren(...model.children.map((node, index) => createTreeElement(node, 0, [index])));
+            alignTreeLineNumbers();
+            requestAnimationFrame(alignTreeLineNumbers);
         }
 
         function setResultMode(mode) {

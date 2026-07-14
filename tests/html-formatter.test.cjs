@@ -124,6 +124,13 @@ assert.match(page, /querySelectorAll\('script, meta\[http-equiv="refresh" i\]'\)
 assert.match(page, /previewFrame\.srcdoc = content/);
 assert.doesNotMatch(page, /id="swap-btn"/);
 assert.match(page, /id="html-tree-output"/);
+assert.match(page, /className = 'tree-line-number'/);
+assert.match(page, /function createTreeLineNumber\(\)/);
+assert.match(page, /function alignTreeLineNumbers\(\)/);
+assert.match(page, /const desiredRight = treeRect\.left \+ 42;/);
+assert.match(page, /requestAnimationFrame\(alignTreeLineNumbers\)/);
+assert.match(page, /treeLineNumber = 1;/);
+assert.match(page, /\.tree-line-number\s*\{[^}]*position:\s*absolute;[^}]*text-align:\s*right;/s);
 assert.match(page, /id="expand-all-btn"/);
 assert.match(page, /id="collapse-all-btn"/);
 assert.match(page, /HtmlFormatter\.buildHtmlTree/);
@@ -145,8 +152,8 @@ assert.match(page, /\.tree-children\s*\{[^}]*padding:\s*2px 0 2px 10px;[^}]*marg
 assert.match(page, /\.html-tree\s*\{[^}]*font:\s*13px\/1\.6/s);
 assert.match(page, /textarea\s*\{[^}]*padding:\s*15px;[^}]*font:\s*13px\/1\.5/s);
 assert.doesNotMatch(page, /\.depth-1\s*\{/);
-assert.match(page, /<span>V1\.09<\/span>/);
-assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.09<\/div>[\s\S]*?<div class="changelog-version">V1\.08<\/div>[\s\S]*?<div class="changelog-version">V1\.07<\/div>[\s\S]*?<div class="changelog-version">V1\.06<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
+assert.match(page, /<span>V1\.10<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.10<\/div>[\s\S]*?<div class="changelog-version">V1\.09<\/div>[\s\S]*?<div class="changelog-version">V1\.08<\/div>[\s\S]*?<div class="changelog-version">V1\.07<\/div>[\s\S]*?<div class="changelog-version">V1\.06<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.00<\/div>/);
 
 const nav = fs.readFileSync(path.join(root, 'nav.js'), 'utf8');
