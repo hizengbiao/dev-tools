@@ -27,6 +27,11 @@ const cases = [
         expressions: ['0 */3 * * *', '0 0 */3 * * *', '0 0 0/3 * * ?', '0 0 0/3 * * ? *']
     },
     {
+        config: { type: 'hour-interval', interval: 3, hour: 0, minute: 18, second: 0 },
+        description: '每天从 00:18 开始，每隔 3 小时执行一次。',
+        expressions: ['18 */3 * * *', '0 18 */3 * * *', '0 18 0/3 * * ?', '0 18 0/3 * * ? *']
+    },
+    {
         config: { type: 'daily', hour: 9, minute: 30, second: 0 },
         description: '每天 09:30 执行。',
         expressions: ['30 9 * * *', '0 30 9 * * *', '0 30 9 * * ?', '0 30 9 * * ? *']

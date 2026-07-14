@@ -59,11 +59,20 @@
             expressions = [`${minute} * * * *`, `${second} ${minute} * * * *`, `${second} ${minute} * * * ?`, `${second} ${minute} * * * ? *`];
         } else if (type === 'hour-interval') {
             const interval = integer(source.interval, 1, 23, '小时间隔', 2);
-            minute = 0;
-            description = second
-                ? `每隔 ${interval} 小时，在整点后第 ${second} 秒执行一次。`
-                : `每隔 ${interval} 小时整点执行一次。`;
-            expressions = [`0 */${interval} * * *`, `${second} 0 */${interval} * * *`, `${second} 0 0/${interval} * * ?`, `${second} 0 0/${interval} * * ? *`];
+            const hasCustomStart = source.hour !== undefined || source.minute !== undefined;
+            const standardHourField = hour === 0 ? `*/${interval}` : `${hour}/${interval}`;
+            const quartzHourField = `${hour}/${interval}`;
+            description = hasCustomStart
+                ? `每天从 ${formatTime(hour, minute, second)} 开始，每隔 ${interval} 小时执行一次。`
+                : second
+                    ? `每隔 ${interval} 小时，在整点后第 ${second} 秒执行一次。`
+                    : `每隔 ${interval} 小时整点执行一次。`;
+            expressions = [
+                `${minute} ${standardHourField} * * *`,
+                `${second} ${minute} ${standardHourField} * * *`,
+                `${second} ${minute} ${quartzHourField} * * ?`,
+                `${second} ${minute} ${quartzHourField} * * ? *`
+            ];
         } else if (type === 'daily') {
             description = `每天 ${formatTime(hour, minute, second)} 执行。`;
             expressions = [`${minute} ${hour} * * *`, `${second} ${minute} ${hour} * * *`, `${second} ${minute} ${hour} * * ?`, `${second} ${minute} ${hour} * * ? *`];

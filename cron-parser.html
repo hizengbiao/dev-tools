@@ -496,7 +496,7 @@
         <div class="tool-title">
             <h1>Cron 表达式解析与生成工具</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.08</span>
+                <span>V1.09</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -574,7 +574,7 @@
                             <div class="generator-group-label">执行时间</div>
                             <div class="generator-time-grid">
                                 <div class="generator-field" id="hour-control">
-                                    <label for="schedule-hour">小时</label>
+                                    <label for="schedule-hour" id="schedule-hour-label">小时</label>
                                     <input id="schedule-hour" type="number" min="0" max="23" value="9">
                                 </div>
                                 <div class="generator-field" id="minute-control">
@@ -636,6 +636,10 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date">2026年7月14日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.09</div>
+                    <div>Cron 逆向生成的“每隔几小时”支持配置起始小时和执行分钟，可生成 0 18 0/3 * * ? 等表达式。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.08</div>
                     <div>优化带起始小时的间隔表达式说明，例如 0/3 会直观描述为从指定时间开始每隔 3 小时执行。</div>
@@ -735,8 +739,8 @@
         function updateGeneratorControls() {
             const type = scheduleType.value;
             const usesInterval = type === 'minute-interval' || type === 'hour-interval';
-            const usesHour = ['daily', 'weekly', 'monthly', 'yearly'].includes(type);
-            const usesMinute = type === 'hourly' || usesHour;
+            const usesHour = type === 'hour-interval' || ['daily', 'weekly', 'monthly', 'yearly'].includes(type);
+            const usesMinute = type === 'hourly' || type === 'hour-interval' || usesHour;
             const visibleTimeFields = 1 + Number(usesHour) + Number(usesMinute);
 
             setControlVisible('interval-control', usesInterval);
@@ -749,6 +753,7 @@
 
             document.querySelector('.generator-time-grid').style.gridTemplateColumns = `repeat(${visibleTimeFields}, minmax(0, 1fr))`;
             document.getElementById('interval-label').textContent = type === 'hour-interval' ? '小时间隔' : '分钟间隔';
+            document.getElementById('schedule-hour-label').textContent = type === 'hour-interval' ? '起始小时' : '小时';
             scheduleInterval.max = type === 'hour-interval' ? '23' : '59';
             if (Number(scheduleInterval.value) > Number(scheduleInterval.max)) scheduleInterval.value = scheduleInterval.max;
         }
