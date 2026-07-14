@@ -254,6 +254,16 @@
             return `每隔 ${hourInterval[1]} 小时，在第 ${minute} 分 ${second} 秒执行一次。`;
         }
 
+        const startedHourInterval = fields.hour.match(/^(\d+)\/(\d+)$/);
+        if (unrestrictedCalendar && startedHourInterval && isNumber(fields.minute) && isNumber(fields.second)) {
+            const startHour = Number(startedHourInterval[1]);
+            const interval = Number(startedHourInterval[2]);
+            const startTime = type === 'linux'
+                ? `${pad(startHour)}:${pad(fields.minute)}`
+                : `${pad(startHour)}:${pad(fields.minute)}${Number(fields.second) ? `:${pad(fields.second)}` : ''}`;
+            return `每天从 ${startTime} 开始，每隔 ${interval} 小时执行一次。`;
+        }
+
         if (fixedTime && fields.day === 'L' && isAny(fields.month) && isAny(fields.week) && isAny(fields.year)) {
             return `每月最后一天 ${timeText} 执行。`;
         }
