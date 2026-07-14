@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nginx 配置格式化工具</title>
+    <link rel="stylesheet" href="nav.css">
+    <script src="nav.js" defer></script>
+    <script src="clipboard-utils.js"></script>
+    <script src="editor-lines.js"></script>
+    <script src="nginx-formatter.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f6f8;
+            --panel-bg: #ffffff;
+            --border-color: #d0d7de;
+            --text-color: #24292f;
+            --muted-color: #57606a;
+            --accent-color: #0969da;
+            --danger-color: #cf222e;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 14px 18px 16px;
+            min-height: 100vh;
+            color: var(--text-color);
+            background: var(--bg-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        }
+
+        button, textarea { font: inherit; }
+
+        .page-shell {
+            width: 100%;
+            max-width: 1500px;
+            min-height: calc(100vh - 96px);
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: nowrap;
+            margin-bottom: 12px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .btn {
+            padding: 8px 12px;
+            border: 1px solid rgba(27, 31, 36, 0.15);
+            border-radius: 6px;
+            color: var(--text-color);
+            background: #fff;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn:hover { background: #f3f4f6; }
+        .btn-primary { border-color: var(--accent-color); color: #fff; background: var(--accent-color); }
+        .btn-primary:hover { background: #075fca; }
+
+        .privacy-note {
+            margin-left: auto;
+            color: var(--muted-color);
+            font-size: 12px;
+        }
+
+        .status-message {
+            display: none;
+            margin-bottom: 10px;
+            padding: 9px 12px;
+            border-radius: 6px;
+            color: #1a7f37;
+            background: #dafbe1;
+            font-size: 13px;
+        }
+
+        .status-message.visible { display: block; }
+        .status-message.error { color: var(--danger-color); background: #ffebe9; }
+
+        #issue-list {
+            margin: 7px 0 0;
+            padding-left: 22px;
+        }
+
+        #issue-list:empty { display: none; }
+
+        .editor-container {
+            flex: 1;
+            min-height: 540px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            border-radius: 7px;
+            background: var(--panel-bg);
+            box-shadow: 0 2px 8px rgba(27, 31, 36, 0.05);
+        }
+
+        .editor-header {
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 0 12px;
+            border-bottom: 1px solid var(--border-color);
+            background: #f6f8fa;
+        }
+
+        .view-tabs {
+            align-self: stretch;
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+        }
+
+        .view-tab {
+            height: 40px;
+            padding: 0 17px;
+            border: 1px solid transparent;
+            border-bottom: 0;
+            border-radius: 6px 6px 0 0;
+            color: var(--muted-color);
+            background: transparent;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .view-tab.active {
+            margin-bottom: -1px;
+            border-color: var(--border-color);
+            color: var(--accent-color);
+            background: #fff;
+        }
+
+        .structure-summary {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .summary-item {
+            color: var(--muted-color);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .summary-item strong {
+            margin-left: 4px;
+            color: var(--text-color);
+            font-size: 13px;
+        }
+
+        .editor-content {
+            flex: 1;
+            min-height: 0;
+            position: relative;
+        }
+
+        .view-panel {
+            position: absolute;
+            inset: 0;
+            display: none;
+            grid-template-columns: 52px minmax(0, 1fr);
+            overflow: hidden;
+        }
+
+        .view-panel.active { display: grid; }
+
+        .line-numbers {
+            padding: 15px 9px;
+            overflow: hidden;
+            border-right: 1px solid var(--border-color);
+            color: #8c959f;
+            background: #f6f8fa;
+            text-align: right;
+            white-space: pre;
+            font: 13px/1.5 "SFMono-Regular", Consolas, monospace;
+            user-select: none;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100%;
+            padding: 15px;
+            resize: none;
+            border: 0;
+            outline: 0;
+            color: var(--text-color);
+            background: transparent;
+            white-space: pre;
+            overflow: auto;
+            tab-size: 4;
+            font: 13px/1.5 "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        }
+
+        #nginx-output { background: #fbfcfd; }
+
+        .toast {
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            z-index: 1000;
+            padding: 10px 14px;
+            border-radius: 6px;
+            color: #fff;
+            background: #1f883d;
+            opacity: 0;
+            transform: translateY(8px);
+            pointer-events: none;
+            transition: 0.2s ease;
+        }
+
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.show.error { background: var(--danger-color); }
+
+        @media (max-width: 760px) {
+            body { padding: 10px; }
+            .privacy-note { display: none; }
+            .editor-header { align-items: flex-start; flex-direction: column; gap: 4px; padding-top: 7px; }
+            .structure-summary { padding-bottom: 8px; gap: 10px; }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="page-shell">
+        <div class="main-actions">
+            <button id="format-btn" class="btn btn-primary" type="button">格式化并检查</button>
+            <button id="copy-btn" class="btn" type="button">复制结果</button>
+            <button id="clear-btn" class="btn" type="button">清空</button>
+            <button id="sample-btn" class="btn" type="button">加载示例</button>
+            <span class="privacy-note">配置仅在当前浏览器中处理</span>
+        </div>
+
+        <div id="status-message" class="status-message" role="status" aria-live="polite">
+            <span id="status-text"></span>
+            <ul id="issue-list"></ul>
+        </div>
+
+        <section class="editor-container">
+            <header class="editor-header">
+                <div class="view-tabs">
+                    <button id="source-tab" class="view-tab active" type="button">原始配置</button>
+                    <button id="result-tab" class="view-tab" type="button">格式化结果</button>
+                </div>
+                <div class="structure-summary">
+                    <span class="summary-item">指令<strong id="directive-count">0</strong></span>
+                    <span class="summary-item">配置块<strong id="block-count">0</strong></span>
+                    <span class="summary-item">注释<strong id="comment-count">0</strong></span>
+                    <span class="summary-item">最大深度<strong id="max-depth">0</strong></span>
+                </div>
+            </header>
+
+            <div class="editor-content">
+                <div id="source-view" class="view-panel active">
+                    <div id="input-lines" class="line-numbers">1</div>
+                    <textarea id="nginx-input" spellcheck="false" aria-label="Nginx 原始配置" placeholder="在此粘贴 Nginx 配置..."></textarea>
+                </div>
+                <div id="result-view" class="view-panel">
+                    <div id="output-lines" class="line-numbers">1</div>
+                    <textarea id="nginx-output" readonly spellcheck="false" aria-label="格式化结果"></textarea>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <script>
+        const NGINX_INDENT_SIZE = 4;
+        const input = document.getElementById('nginx-input');
+        const output = document.getElementById('nginx-output');
+        const outputLines = document.getElementById('output-lines');
+        const status = document.getElementById('status-message');
+        const statusText = document.getElementById('status-text');
+        const issueList = document.getElementById('issue-list');
+
+        function bindLineNumbers(textarea, gutter) {
+            EditorLines.refreshLineNumbers(textarea, gutter);
+            textarea.addEventListener('input', () => EditorLines.refreshLineNumbers(textarea, gutter));
+            textarea.addEventListener('scroll', () => EditorLines.syncLineNumberScroll(textarea, gutter));
+        }
+
+        function setOutput(value) {
+            output.value = value;
+            EditorLines.refreshLineNumbers(output, outputLines);
+        }
+
+        function showView(name) {
+            const resultActive = name === 'result';
+            document.getElementById('source-view').classList.toggle('active', !resultActive);
+            document.getElementById('result-view').classList.toggle('active', resultActive);
+            document.getElementById('source-tab').classList.toggle('active', !resultActive);
+            document.getElementById('result-tab').classList.toggle('active', resultActive);
+        }
+
+        function renderSummary(result) {
+            document.getElementById('directive-count').textContent = result.directiveCount;
+            document.getElementById('block-count').textContent = result.blockCount;
+            document.getElementById('comment-count').textContent = result.commentCount;
+            document.getElementById('max-depth').textContent = result.maxDepth;
+        }
+
+        function renderIssues(issues) {
+            issueList.replaceChildren();
+            issues.forEach((issue) => {
+                const item = document.createElement('li');
+                item.textContent = `第 ${issue.line} 行，第 ${issue.column} 列：${issue.message}`;
+                issueList.appendChild(item);
+            });
+        }
+
+        function resetSummary() {
+            renderSummary({ directiveCount: 0, blockCount: 0, commentCount: 0, maxDepth: 0 });
+        }
+
+        document.getElementById('format-btn').addEventListener('click', () => {
+            if (!input.value.trim()) {
+                status.className = 'status-message visible error';
+                statusText.textContent = '请输入 Nginx 配置。';
+                setOutput('');
+                resetSummary();
+                renderIssues([]);
+                showView('source');
+                return;
+            }
+
+            const result = NginxFormatter.formatNginx(input.value, { indentSize: NGINX_INDENT_SIZE });
+            renderSummary(result);
+            renderIssues(result.issues);
+            status.className = `status-message visible${result.issues.length ? ' error' : ''}`;
+
+            if (result.issues.length) {
+                statusText.textContent = `发现 ${result.issues.length} 个结构问题。`;
+                setOutput('');
+                showView('source');
+                return;
+            }
+
+            setOutput(result.formatted);
+            statusText.textContent = '格式化和结构检查已完成。';
+            showView('result');
+        });
+
+        document.getElementById('source-tab').addEventListener('click', () => showView('source'));
+        document.getElementById('result-tab').addEventListener('click', () => showView('result'));
+
+        document.getElementById('copy-btn').addEventListener('click', () => {
+            ClipboardUtils.copyText(output.value, {
+                toastId: 'toast',
+                emptyMessage: '暂无可复制的格式化结果',
+                successMessage: '格式化结果已复制',
+            });
+        });
+
+        document.getElementById('clear-btn').addEventListener('click', () => {
+            input.value = '';
+            setOutput('');
+            status.className = 'status-message';
+            statusText.textContent = '';
+            resetSummary();
+            renderIssues([]);
+            showView('source');
+            input.dispatchEvent(new Event('input'));
+            input.focus();
+        });
+
+        document.getElementById('sample-btn').addEventListener('click', () => {
+            input.value = [
+                '# Web 服务示例',
+                'http {',
+                'server { # HTTPS 服务',
+                'listen 443 ssl;',
+                'server_name example.com;',
+                'location /api { proxy_pass http://backend; } # API 代理',
+                '}',
+                '}',
+            ].join('\n');
+            input.dispatchEvent(new Event('input'));
+            status.className = 'status-message';
+            showView('source');
+            input.focus();
+        });
+
+        bindLineNumbers(input, document.getElementById('input-lines'));
+        bindLineNumbers(output, outputLines);
+    </script>
+</body>
+
+</html>

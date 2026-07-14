@@ -95,4 +95,22 @@ assert.strictEqual(invalidFormat.formatted, '');
 assert.ok(invalidFormat.issues.length > 0);
 assert.strictEqual(formatter.formatNginx('# comment only').formatted, '# comment only');
 
+const page = fs.readFileSync(path.join(root, 'nginx-formatter.html'), 'utf8');
+assert.match(page, /<title>Nginx 配置格式化工具<\/title>/);
+assert.match(page, /<script src="nav\.js" defer><\/script>/);
+assert.match(page, /<script src="clipboard-utils\.js"><\/script>/);
+assert.match(page, /<script src="editor-lines\.js"><\/script>/);
+assert.match(page, /<script src="nginx-formatter\.js"><\/script>/);
+[
+    'nginx-input', 'nginx-output', 'format-btn', 'copy-btn', 'clear-btn', 'sample-btn',
+    'source-tab', 'result-tab', 'status-message', 'issue-list', 'directive-count',
+    'block-count', 'comment-count', 'max-depth',
+].forEach(id => assert.match(page, new RegExp(`id="${id}"`)));
+assert.match(page, /const NGINX_INDENT_SIZE = 4;/);
+assert.match(page, /NginxFormatter\.formatNginx/);
+assert.match(page, /setOutput\(''\)/);
+assert.match(page, /result\.issues\.length/);
+assert.match(page, /EditorLines\.refreshLineNumbers/);
+assert.match(page, /EditorLines\.syncLineNumberScroll/);
+
 console.log('nginx formatter validation passed');
