@@ -252,7 +252,18 @@
             align-items: center;
             gap: 4px;
             margin-left: 10px;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
             font-family: Arial, "Microsoft YaHei", sans-serif;
+            transition: opacity 0.15s ease, visibility 0.15s ease;
+        }
+
+        .nginx-tree-row:hover > .nginx-block-actions,
+        .nginx-tree-row:focus-within > .nginx-block-actions {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
         }
 
         .nginx-block-action {
@@ -344,7 +355,7 @@
             <button id="clear-btn" class="btn" type="button">清空</button>
             <button id="sample-btn" class="btn" type="button">加载示例</button>
             <span class="privacy-note">配置仅在当前浏览器中处理</span>
-            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.03</span><span>ℹ️</span></div>
+            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.04</span><span>ℹ️</span></div>
         </div>
 
         <div id="status-message" class="status-message" role="status" aria-live="polite">
@@ -381,6 +392,10 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date">2026年7月14日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.04</div>
+                    <div>区块操作按钮默认隐藏，仅在鼠标悬停到对应标题行或按钮获得键盘焦点时显示。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.03</div>
                     <div>增加配置区块复制、折叠子树、编辑和删除功能，区块操作后自动同步格式化结果。</div>
