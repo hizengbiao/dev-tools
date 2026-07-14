@@ -136,15 +136,15 @@ assert.match(page, /className = 'tree-edit-btn'/);
 assert.match(page, /className = 'tree-delete-btn'/);
 assert.match(page, /HtmlFormatter\.replaceHtmlBlock\(output\.value, path, replacement\)/);
 assert.match(page, /HtmlFormatter\.replaceHtmlBlock\(output\.value, path, ''\)/);
-assert.match(page, /window\.confirm\(`确定删除 <\$\{nodeName\}> 整个区块吗？该操作可撤销。`\)/);
+assert.doesNotMatch(page, /window\.confirm/);
 assert.match(page, /className = 'tag-highlight-overlay'/);
 assert.match(page, /\.html-tree-node:hover\s*\{/);
 assert.match(page, /\.tree-children\s*\{[^}]*padding:\s*2px 0 2px 10px;[^}]*margin-left:\s*2px;/s);
 assert.match(page, /\.html-tree\s*\{[^}]*font:\s*13px\/1\.6/s);
 assert.match(page, /textarea\s*\{[^}]*padding:\s*15px;[^}]*font:\s*13px\/1\.5/s);
 assert.doesNotMatch(page, /\.depth-1\s*\{/);
-assert.match(page, /<span>V1\.07<\/span>/);
-assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.07<\/div>[\s\S]*?<div class="changelog-version">V1\.06<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
+assert.match(page, /<span>V1\.08<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.08<\/div>[\s\S]*?<div class="changelog-version">V1\.07<\/div>[\s\S]*?<div class="changelog-version">V1\.06<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.00<\/div>/);
 
 const nav = fs.readFileSync(path.join(root, 'nav.js'), 'utf8');
