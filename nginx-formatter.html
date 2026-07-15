@@ -218,11 +218,9 @@
         .nginx-tree-closing { padding-left: 17px; }
 
         .nginx-tree-collapsed-closing {
-            position: relative;
             display: none;
             align-items: center;
-            min-height: 22px;
-            padding-left: 17px;
+            margin-left: 5px;
         }
 
         .nginx-tree-toggle,
@@ -315,7 +313,8 @@
 
         .nginx-tree-node.collapsed > .nginx-tree-children,
         .nginx-tree-node.collapsed > .nginx-tree-closing { display: none; }
-        .nginx-tree-node.collapsed > .nginx-tree-collapsed-closing { display: flex; }
+        .nginx-tree-node.collapsed > .nginx-tree-row > .nginx-tree-collapsed-closing { display: inline-flex; }
+        .nginx-tree-node.collapsed > .nginx-tree-row > .nginx-block-header .nginx-inline-comment { display: none; }
         .nginx-tree-node.collapsed > .nginx-tree-row .nginx-tree-ellipsis { display: inline; }
 
         .toast {
@@ -367,7 +366,7 @@
             <button id="clear-btn" class="btn" type="button" title="清空输入和结果">🧹 清空</button>
             <button id="sample-btn" class="btn" type="button" title="载入 Nginx 示例配置">🧪 加载示例</button>
             <span class="privacy-note">配置仅在当前浏览器中处理</span>
-            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.10</span><span>ℹ️</span></div>
+            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.11</span><span>ℹ️</span></div>
         </div>
 
         <div id="status-message" class="status-message" role="status" aria-live="polite">
@@ -404,6 +403,10 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date">2026年7月15日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.11</div>
+                    <div>配置区块收起后，将匹配的右花括号显示在左花括号所在标题行，并隐藏区块标签中的注释，便于直接确认折叠区块的边界。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.10</div>
                     <div>顶部操作按钮整体右移，与下方源码内容区域对齐；移动端保持紧凑布局。</div>
@@ -687,12 +690,11 @@
             if (node.closing) {
                 const collapsedClosing = document.createElement('div');
                 collapsedClosing.className = 'nginx-tree-collapsed-closing';
-                collapsedClosing.appendChild(createTreeLineNumber(node.closingLine));
                 const collapsedCode = document.createElement('code');
                 collapsedCode.className = 'nginx-block-closing';
                 collapsedCode.textContent = NginxFormatter.splitInlineComment(node.closing).content.trimEnd();
                 collapsedClosing.appendChild(collapsedCode);
-                wrapper.appendChild(collapsedClosing);
+                row.appendChild(collapsedClosing);
             }
 
             const children = document.createElement('div');
