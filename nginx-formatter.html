@@ -355,7 +355,7 @@
             <button id="clear-btn" class="btn" type="button">清空</button>
             <button id="sample-btn" class="btn" type="button">加载示例</button>
             <span class="privacy-note">配置仅在当前浏览器中处理</span>
-            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.04</span><span>ℹ️</span></div>
+            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.05</span><span>ℹ️</span></div>
         </div>
 
         <div id="status-message" class="status-message" role="status" aria-live="polite">
@@ -391,6 +391,11 @@
                 <button class="close-modal" type="button" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date">2026年7月15日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.05</div>
+                    <div>修复带行尾注释的区块结束标签识别错误，避免编辑区块时内容多出或缺失；编辑器默认从区块首行显示。</div>
+                </div>
                 <div class="changelog-date">2026年7月14日</div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.04</div>
@@ -542,6 +547,8 @@
             actions.append(cancel, save);
             editor.append(textarea, actions);
             wrapper.replaceWith(editor);
+            textarea.setSelectionRange(0, 0);
+            textarea.scrollTop = 0;
             textarea.focus({ preventScroll: true });
         }
 

@@ -302,7 +302,7 @@
             if (!value) return;
             const line = index + 1;
 
-            if (value === '}') {
+            if (/^}\s*(?:#.*)?$/.test(value)) {
                 if (stack.length > 1) {
                     const block = stack.pop();
                     block.closing = value;

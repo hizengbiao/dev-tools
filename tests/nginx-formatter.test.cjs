@@ -118,6 +118,26 @@ assert.strictEqual(
 );
 assert.strictEqual(formatter.removeNodeSource(editableConfig, editableBlock), 'http {\n}');
 
+const commentedClosingConfig = [
+    'http {',
+    '    server { # HTTPS 服务',
+    '        location /api {',
+    '            proxy_pass http://backend;',
+    '        } # API 代理',
+    '    }',
+    '}'
+].join('\n');
+const commentedClosingTree = formatter.buildNginxTree(commentedClosingConfig);
+const commentedServer = commentedClosingTree.children[0].children[0];
+const commentedLocation = commentedServer.children[0];
+assert.strictEqual(commentedLocation.closing, '} # API 代理');
+assert.strictEqual(commentedLocation.closingLine, 5);
+assert.strictEqual(commentedServer.closingLine, 6);
+assert.strictEqual(
+    formatter.getNodeSource(commentedClosingConfig, commentedLocation),
+    '        location /api {\n            proxy_pass http://backend;\n        } # API 代理'
+);
+
 const page = fs.readFileSync(path.join(root, 'nginx-formatter.html'), 'utf8');
 assert.match(page, /<title>Nginx 配置格式化工具<\/title>/);
 assert.match(page, /<script src="nav\.js" defer><\/script>/);
@@ -147,12 +167,14 @@ assert.match(page, /\.nginx-tree-row:hover\s*>\s*\.nginx-block-actions/);
 assert.match(page, /\.nginx-tree-row:focus-within\s*>\s*\.nginx-block-actions/);
 assert.match(page, /function editTreeBlock\(node, wrapper\)/);
 assert.match(page, /className = 'nginx-subtree-editor'/);
+assert.match(page, /textarea\.setSelectionRange\(0, 0\)/);
+assert.match(page, /textarea\.scrollTop = 0/);
 assert.match(page, /function deleteTreeBlock\(node\)/);
 assert.match(page, /function setAllBlocksCollapsed\(collapsed\)/);
 assert.match(page, /className = 'nginx-tree-line-number'/);
 assert.match(page, /--tree-depth/);
-assert.match(page, /<span>V1\.04<\/span>/);
-assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>[\s\S]*?<div class="changelog-version">V1\.00<\/div>/);
+assert.match(page, /<span>V1\.05<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月15日<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>[\s\S]*?<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>[\s\S]*?<div class="changelog-version">V1\.00<\/div>/);
 assert.match(page, /setOutput\(''\)/);
 assert.match(page, /result\.issues\.length/);
 assert.match(page, /EditorLines\.refreshLineNumbers/);
