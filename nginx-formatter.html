@@ -190,6 +190,7 @@
 
         .nginx-tree-node {
             margin: 3px 0;
+            margin-left: -6px;
             padding: 5px;
             border: 1px solid rgba(9, 105, 218, 0.14);
             border-radius: 4px;
@@ -212,8 +213,8 @@
             min-height: 22px;
         }
 
-        .nginx-tree-children { width: 100%; padding: 2px 0 2px 10px; margin-left: 2px; }
-        .nginx-tree-closing { padding-left: 16px; }
+        .nginx-tree-children { width: 100%; padding: 2px 0 2px 16px; }
+        .nginx-tree-closing { padding-left: 17px; }
 
         .nginx-tree-toggle,
         .nginx-tree-toggle-spacer {
@@ -355,7 +356,7 @@
             <button id="clear-btn" class="btn" type="button">清空</button>
             <button id="sample-btn" class="btn" type="button">加载示例</button>
             <span class="privacy-note">配置仅在当前浏览器中处理</span>
-            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.05</span><span>ℹ️</span></div>
+            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.06</span><span>ℹ️</span></div>
         </div>
 
         <div id="status-message" class="status-message" role="status" aria-live="polite">
@@ -392,6 +393,10 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date">2026年7月15日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.06</div>
+                    <div>统一配置树各类元素的缩进基准，普通指令、注释及区块标签按层级整齐对齐。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.05</div>
                     <div>修复带行尾注释的区块结束标签识别错误，避免编辑区块时内容多出或缺失；编辑器默认从区块首行显示。</div>
@@ -493,6 +498,9 @@
             const leaf = document.createElement('div');
             leaf.className = 'nginx-tree-leaf';
             leaf.appendChild(createTreeLineNumber(node.line));
+            const spacer = document.createElement('span');
+            spacer.className = 'nginx-tree-toggle-spacer';
+            leaf.appendChild(spacer);
             const content = document.createElement('code');
             content.className = node.type === 'comment' ? 'nginx-comment' : 'nginx-directive';
             content.textContent = node.value;
