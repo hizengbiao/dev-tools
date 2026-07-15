@@ -27,8 +27,8 @@ body {
 
 .nav-container {
     width: 100%;
-    max-width: 1380px;
-    padding: 0 20px;
+    max-width: none;
+    padding: 0 clamp(12px, 1.5vw, 28px);
     display: flex;
     align-items: center;
     justify-content: space-between;
