@@ -49,6 +49,7 @@
             align-items: center;
             gap: 8px;
             flex-wrap: nowrap;
+            padding-left: 52px;
             margin-bottom: 12px;
             overflow-x: auto;
             white-space: nowrap;
@@ -338,7 +339,7 @@
         @media (max-width: 760px) {
             body { padding: 10px; }
             .privacy-note { display: none; }
-            .main-actions { flex-wrap: wrap; white-space: normal; }
+            .main-actions { padding-left: 0; flex-wrap: wrap; white-space: normal; }
         }
 
         .modal-overlay { display: none; position: fixed; inset: 0; z-index: 2000; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.45); }
@@ -366,7 +367,7 @@
             <button id="clear-btn" class="btn" type="button" title="清空输入和结果">🧹 清空</button>
             <button id="sample-btn" class="btn" type="button" title="载入 Nginx 示例配置">🧪 加载示例</button>
             <span class="privacy-note">配置仅在当前浏览器中处理</span>
-            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.09</span><span>ℹ️</span></div>
+            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.10</span><span>ℹ️</span></div>
         </div>
 
         <div id="status-message" class="status-message" role="status" aria-live="polite">
@@ -403,6 +404,10 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date">2026年7月15日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.10</div>
+                    <div>顶部操作按钮整体右移，与下方源码内容区域对齐；移动端保持紧凑布局。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.09</div>
                     <div>配置区块收起后显示匹配的结束括号和对应行号，收起状态下不显示结束标签后的注释。</div>
