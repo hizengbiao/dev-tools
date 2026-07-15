@@ -37,7 +37,7 @@
 
         .page-shell {
             width: 100%;
-            max-width: 1500px;
+            max-width: 1800px;
             min-height: calc(100vh - 96px);
             margin: 0 auto;
             display: flex;
@@ -347,16 +347,16 @@
 <body>
     <main class="page-shell">
         <div class="main-actions">
-            <button id="paste-format-btn" class="btn" type="button">粘贴并格式化</button>
-            <button id="format-btn" class="btn btn-primary" type="button">格式化</button>
-            <button id="edit-btn" class="btn" type="button">编辑源码</button>
-            <button id="copy-btn" class="btn" type="button">复制结果</button>
-            <button id="expand-all-btn" class="btn tree-action" type="button">展开全部</button>
-            <button id="collapse-all-btn" class="btn tree-action" type="button">收起全部</button>
-            <button id="clear-btn" class="btn" type="button">清空</button>
-            <button id="sample-btn" class="btn" type="button">加载示例</button>
+            <button id="paste-format-btn" class="btn" type="button" title="从剪贴板粘贴并格式化">📋 粘贴并格式化</button>
+            <button id="format-btn" class="btn btn-primary" type="button" title="格式化 Nginx 配置">⚡ 格式化</button>
+            <button id="edit-btn" class="btn" type="button" title="编辑格式化后的源码">✏️ 编辑源码</button>
+            <button id="copy-btn" class="btn" type="button" title="复制格式化结果">📋 复制结果</button>
+            <button id="expand-all-btn" class="btn tree-action" type="button" title="展开全部配置区块">📖 展开全部</button>
+            <button id="collapse-all-btn" class="btn tree-action" type="button" title="收起全部配置区块">📕 收起全部</button>
+            <button id="clear-btn" class="btn" type="button" title="清空输入和结果">🧹 清空</button>
+            <button id="sample-btn" class="btn" type="button" title="载入 Nginx 示例配置">🧪 加载示例</button>
             <span class="privacy-note">配置仅在当前浏览器中处理</span>
-            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.06</span><span>ℹ️</span></div>
+            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.07</span><span>ℹ️</span></div>
         </div>
 
         <div id="status-message" class="status-message" role="status" aria-live="polite">
@@ -393,6 +393,10 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date">2026年7月15日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.07</div>
+                    <div>顶部操作按钮增加语义图标，并放宽源码及格式化结果区域，提升宽屏空间利用率。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.06</div>
                     <div>统一配置树各类元素的缩进基准，普通指令、注释及区块标签按层级整齐对齐。</div>
