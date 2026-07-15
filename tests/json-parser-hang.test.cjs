@@ -9,7 +9,8 @@ const script = [...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>
     .map((match) => match[1])
     .join('\n');
 
-assert.match(page, /<span>V1\.91<\/span>/);
+assert.match(page, /<span>V1\.92<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月15日<\/div>[\s\S]*?<div class="changelog-version">V1\.92<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.91<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月4日<\/div>[\s\S]*?<div class="changelog-version">V1\.90<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.90<\/div>/);

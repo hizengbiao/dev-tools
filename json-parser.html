@@ -773,6 +773,7 @@
         <button class="btn btn-default" onclick="fixJson()" title="修复非标准 JSON">🔧 修复</button>
         <button class="btn btn-default" onclick="handleJavaConvert()" title="JSON 与 Java 代码互转">☕ Json/Java 互转</button>
         <button class="btn btn-default" onclick="clearAll()" title="清空内容">🧹 清空</button>
+        <button class="btn btn-default" id="load-sample-btn" onclick="loadJsonSample()" title="加载 JSON 示例并自动格式化">🧪 加载示例</button>
         <div style="width: 15px;"></div>
         <button class="btn btn-default" onclick="undo()" title="撤销 (Ctrl+Z)">↩️ 撤销</button>
         <button class="btn btn-default" onclick="redo()" title="重做 (Ctrl+Y)">↪️ 重做</button>
@@ -787,7 +788,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V1.91</span>
+            <span>V1.92</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -820,6 +821,13 @@
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年7月15日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.92</div>
+                        <div class="changelog-desc">新增“加载示例”功能，载入包含嵌套对象、数组和 JSON 字符串字段的示例后自动格式化。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月13日</div>
                     <div class="changelog-entry">
@@ -1255,6 +1263,7 @@
         </div>
     </div>
 
+    <script src="sample-data.js"></script>
     <script src="changelog.js"></script>
     <script src="clipboard-utils.js"></script>
     <script src="json-repair-guards.js"></script>
@@ -1422,6 +1431,13 @@
                 showToast("读取剪贴板失败: " + err.message);
                 console.error(err);
             }
+        }
+
+        function loadJsonSample() {
+            inputArea.value = SampleData.getSample('json.nestedExample');
+            sourceDirty = false;
+            saveState();
+            handleFormat();
         }
 
         function handleMinify() {

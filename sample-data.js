@@ -24,6 +24,23 @@
             name: 'Quartz 每天中午',
             value: '0 0 12 * * ?',
         },
+        {
+            id: 'json.nestedExample',
+            group: 'json',
+            name: '嵌套 JSON 示例',
+            value: JSON.stringify({
+                service: {
+                    name: 'demo-service',
+                    enabled: true,
+                    ports: [8080, 8443],
+                },
+                instances: [
+                    { id: 'node-01', status: 'running' },
+                    { id: 'node-02', status: 'stopped' },
+                ],
+                metadataJson: '{"owner":"team-a","retry":3}',
+            }, null, 4),
+        },
     ];
 
     function getSample(id) {
