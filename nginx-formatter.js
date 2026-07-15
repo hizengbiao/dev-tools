@@ -103,6 +103,30 @@
         return tokens;
     }
 
+    function splitInlineComment(value) {
+        const source = String(value || '');
+        let quote = '';
+        for (let index = 0; index < source.length; index += 1) {
+            const char = source[index];
+            if (char === '\\') {
+                index += 1;
+                continue;
+            }
+            if (quote) {
+                if (char === quote) quote = '';
+                continue;
+            }
+            if (char === '"' || char === "'") {
+                quote = char;
+                continue;
+            }
+            if (char === '#') {
+                return { content: source.slice(0, index), comment: source.slice(index) };
+            }
+        }
+        return { content: source, comment: '' };
+    }
+
     function makeIssue(code, message, token) {
         return {
             code,
@@ -364,6 +388,7 @@
         analyzeNginx,
         formatNginx,
         buildNginxTree,
+        splitInlineComment,
         getNodeSource,
         replaceNodeSource,
         removeNodeSource

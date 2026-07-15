@@ -246,6 +246,7 @@
         .nginx-block-closing { color: #cf222e; font-weight: 600; white-space: pre-wrap; overflow-wrap: anywhere; }
         .nginx-directive { color: #0550ae; white-space: pre-wrap; overflow-wrap: anywhere; }
         .nginx-comment { color: #1a7f37; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .nginx-inline-comment { color: #1a7f37; font-weight: 400; }
         .nginx-tree-ellipsis { display: none; margin-left: 5px; color: var(--muted-color); font-style: italic; }
 
         .nginx-block-actions {
@@ -356,7 +357,7 @@
             <button id="clear-btn" class="btn" type="button" title="清空输入和结果">🧹 清空</button>
             <button id="sample-btn" class="btn" type="button" title="载入 Nginx 示例配置">🧪 加载示例</button>
             <span class="privacy-note">配置仅在当前浏览器中处理</span>
-            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.07</span><span>ℹ️</span></div>
+            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.08</span><span>ℹ️</span></div>
         </div>
 
         <div id="status-message" class="status-message" role="status" aria-live="polite">
@@ -393,6 +394,10 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date">2026年7月15日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.08</div>
+                    <div>统一独立注释和行尾注释的绿色显示，并避免将引号内的井号误识别为注释。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.07</div>
                     <div>顶部操作按钮增加语义图标，并放宽源码及格式化结果区域，提升宽屏空间利用率。</div>
@@ -489,6 +494,17 @@
             return lineNumber;
         }
 
+        function appendSyntaxText(element, value) {
+            const parts = NginxFormatter.splitInlineComment(value);
+            element.textContent = parts.content;
+            if (parts.comment) {
+                const comment = document.createElement('span');
+                comment.className = 'nginx-inline-comment';
+                comment.textContent = parts.comment;
+                element.appendChild(comment);
+            }
+        }
+
         function alignTreeLineNumbers() {
             const treeRect = treeOutput.getBoundingClientRect();
             const desiredRight = treeRect.left + 44;
@@ -507,7 +523,11 @@
             leaf.appendChild(spacer);
             const content = document.createElement('code');
             content.className = node.type === 'comment' ? 'nginx-comment' : 'nginx-directive';
-            content.textContent = node.value;
+            if (node.type === 'comment') {
+                content.textContent = node.value;
+            } else {
+                appendSyntaxText(content, node.value);
+            }
             leaf.appendChild(content);
             return leaf;
         }
@@ -636,7 +656,7 @@
             row.appendChild(toggle);
             const opening = document.createElement('code');
             opening.className = 'nginx-block-header';
-            opening.textContent = node.opening;
+            appendSyntaxText(opening, node.opening);
             row.appendChild(opening);
             row.appendChild(createBlockActions(node, wrapper));
             const ellipsis = document.createElement('span');
@@ -658,7 +678,7 @@
                 closing.appendChild(createTreeLineNumber(node.closingLine));
                 const code = document.createElement('code');
                 code.className = 'nginx-block-closing';
-                code.textContent = node.closing;
+                appendSyntaxText(code, node.closing);
                 closing.appendChild(code);
                 wrapper.appendChild(closing);
             }
