@@ -315,6 +315,7 @@
         .nginx-tree-node.collapsed > .nginx-tree-closing { display: none; }
         .nginx-tree-node.collapsed > .nginx-tree-row > .nginx-tree-collapsed-closing { display: inline-flex; }
         .nginx-tree-node.collapsed > .nginx-tree-row > .nginx-block-header .nginx-inline-comment { display: none; }
+        .nginx-tree-node.collapsed > .nginx-tree-row > .nginx-block-actions { order: 1; }
         .nginx-tree-node.collapsed > .nginx-tree-row .nginx-tree-ellipsis { display: inline; }
 
         .toast {
@@ -366,7 +367,7 @@
             <button id="clear-btn" class="btn" type="button" title="清空输入和结果">🧹 清空</button>
             <button id="sample-btn" class="btn" type="button" title="载入 Nginx 示例配置">🧪 加载示例</button>
             <span class="privacy-note">配置仅在当前浏览器中处理</span>
-            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.11</span><span>ℹ️</span></div>
+            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.12</span><span>ℹ️</span></div>
         </div>
 
         <div id="status-message" class="status-message" role="status" aria-live="polite">
@@ -403,6 +404,10 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date">2026年7月15日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.12</div>
+                    <div>折叠状态下将区块操作按钮显示在匹配右括号之后；点击“加载示例”后自动格式化并展示配置树。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.11</div>
                     <div>配置区块收起后，将匹配的右花括号显示在左花括号所在标题行，并隐藏区块标签中的注释，便于直接确认折叠区块的边界。</div>
@@ -825,9 +830,7 @@
                 '}',
             ].join('\n');
             input.dispatchEvent(new Event('input'));
-            status.className = 'status-message';
-            showView('source');
-            input.focus();
+            formatConfiguration();
         });
 
         bindLineNumbers(input, document.getElementById('input-lines'));
