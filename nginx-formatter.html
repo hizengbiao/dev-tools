@@ -216,6 +216,14 @@
         .nginx-tree-children { width: 100%; padding: 2px 0 2px 16px; }
         .nginx-tree-closing { padding-left: 17px; }
 
+        .nginx-tree-collapsed-closing {
+            position: relative;
+            display: none;
+            align-items: center;
+            min-height: 22px;
+            padding-left: 17px;
+        }
+
         .nginx-tree-toggle,
         .nginx-tree-toggle-spacer {
             flex: 0 0 14px;
@@ -306,6 +314,7 @@
 
         .nginx-tree-node.collapsed > .nginx-tree-children,
         .nginx-tree-node.collapsed > .nginx-tree-closing { display: none; }
+        .nginx-tree-node.collapsed > .nginx-tree-collapsed-closing { display: flex; }
         .nginx-tree-node.collapsed > .nginx-tree-row .nginx-tree-ellipsis { display: inline; }
 
         .toast {
@@ -357,7 +366,7 @@
             <button id="clear-btn" class="btn" type="button" title="清空输入和结果">🧹 清空</button>
             <button id="sample-btn" class="btn" type="button" title="载入 Nginx 示例配置">🧪 加载示例</button>
             <span class="privacy-note">配置仅在当前浏览器中处理</span>
-            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.08</span><span>ℹ️</span></div>
+            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.09</span><span>ℹ️</span></div>
         </div>
 
         <div id="status-message" class="status-message" role="status" aria-live="polite">
@@ -394,6 +403,10 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date">2026年7月15日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.09</div>
+                    <div>配置区块收起后显示匹配的结束括号和对应行号，收起状态下不显示结束标签后的注释。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.08</div>
                     <div>统一独立注释和行尾注释的绿色显示，并避免将引号内的井号误识别为注释。</div>
@@ -652,6 +665,7 @@
                 const collapsed = wrapper.classList.toggle('collapsed');
                 toggle.textContent = collapsed ? '+' : '−';
                 toggle.title = collapsed ? '展开配置块' : '收起配置块';
+                requestAnimationFrame(alignTreeLineNumbers);
             });
             row.appendChild(toggle);
             const opening = document.createElement('code');
@@ -664,6 +678,17 @@
             ellipsis.textContent = `… ${node.children.length} 项`;
             row.appendChild(ellipsis);
             wrapper.appendChild(row);
+
+            if (node.closing) {
+                const collapsedClosing = document.createElement('div');
+                collapsedClosing.className = 'nginx-tree-collapsed-closing';
+                collapsedClosing.appendChild(createTreeLineNumber(node.closingLine));
+                const collapsedCode = document.createElement('code');
+                collapsedCode.className = 'nginx-block-closing';
+                collapsedCode.textContent = NginxFormatter.splitInlineComment(node.closing).content.trimEnd();
+                collapsedClosing.appendChild(collapsedCode);
+                wrapper.appendChild(collapsedClosing);
+            }
 
             const children = document.createElement('div');
             children.className = 'nginx-tree-children';
@@ -700,6 +725,7 @@
                 const toggle = block.querySelector(':scope > .nginx-tree-row > .nginx-tree-toggle');
                 if (toggle) toggle.textContent = collapsed ? '+' : '−';
             });
+            requestAnimationFrame(alignTreeLineNumbers);
         }
 
         function formatConfiguration() {
