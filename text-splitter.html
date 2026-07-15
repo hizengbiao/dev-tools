@@ -11,6 +11,7 @@
     <script src="clipboard-utils.js"></script>
     <script src="editor-lines.js"></script>
     <script src="text-splitter.js"></script>
+    <script src="text-masker.js"></script>
     <style>
         :root {
             --bg-color: #f4f6f8;
@@ -112,6 +113,24 @@
             display: flex;
             align-items: center;
             gap: 8px;
+        }
+
+        .mask-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: #f6f8fa;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .mask-toggle input {
+            margin: 0;
         }
 
         .limit-control label {
@@ -434,6 +453,86 @@
             padding: 20px;
         }
 
+        .mask-config-content {
+            width: min(780px, calc(100vw - 40px));
+        }
+
+        .mask-config-note {
+            margin: 0 0 14px;
+            padding: 10px 12px;
+            border-left: 3px solid var(--accent-color);
+            background: #f6f8fa;
+            color: var(--muted-color);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .mask-mapping-head,
+        .mask-mapping-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 30px minmax(0, 1fr) 62px;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .mask-mapping-head {
+            margin-bottom: 6px;
+            color: var(--muted-color);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .mask-mapping-head span:nth-child(2) {
+            text-align: center;
+        }
+
+        .mask-mappings {
+            max-height: min(390px, 50vh);
+            overflow: auto;
+        }
+
+        .mask-mapping-row + .mask-mapping-row {
+            margin-top: 8px;
+        }
+
+        .mask-mapping-row input {
+            min-width: 0;
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            outline: none;
+        }
+
+        .mask-mapping-row input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
+        }
+
+        .mask-arrow {
+            color: var(--muted-color);
+            text-align: center;
+        }
+
+        .mask-config-actions,
+        .mask-config-footer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .mask-config-actions {
+            margin-top: 14px;
+        }
+
+        .mask-config-footer {
+            justify-content: flex-end;
+            margin-top: 18px;
+            padding-top: 14px;
+            border-top: 1px solid #eaeef2;
+        }
+
         .segment-preview-content {
             width: min(1200px, calc(100vw - 40px));
             height: min(820px, calc(100vh - 40px));
@@ -554,6 +653,27 @@
             .hint {
                 flex-basis: 100%;
             }
+
+            .mask-mapping-head {
+                display: none;
+            }
+
+            .mask-mapping-row {
+                grid-template-columns: 1fr 34px;
+            }
+
+            .mask-mapping-row .mask-arrow {
+                display: none;
+            }
+
+            .mask-mapping-row input {
+                grid-column: 1;
+            }
+
+            .mask-mapping-row .remove-mask-mapping-btn {
+                grid-column: 2;
+                grid-row: 1 / span 2;
+            }
         }
     </style>
 </head>
@@ -563,7 +683,7 @@
         <div class="tool-title">
             <h1>文本智能拆分</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.08</span>
+                <span>V1.09</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -584,6 +704,12 @@
                     <span class="hint" id="strategyHint">智能边界：优先在靠近上限的换行、标点或单词空格处拆分</span>
                 </div>
                 <div class="toolbar-actions">
+                    <label class="mask-toggle" title="开启后，开始拆分前会先按已保存映射替换敏感文本">
+                        <input id="maskingEnabled" type="checkbox" checked>
+                        启用脱敏
+                    </label>
+                    <button class="btn" id="maskConfigBtn" type="button">脱敏配置</button>
+                    <button class="btn" id="unmaskBtn" type="button" title="将输入文本中的脱敏文本恢复为映射中的原文，并显示在右侧">反脱敏</button>
                     <button class="btn btn-primary" id="splitBtn" type="button">开始拆分</button>
                     <button class="btn btn-danger" id="clearBtn" type="button">清空</button>
                 </div>
@@ -627,6 +753,11 @@
                 <button class="close-modal" type="button" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date">2026年7月15日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.09</div>
+                    <div>新增脱敏与反脱敏功能：支持配置双向文本映射、浏览器自动保存及 JSON 配置导入导出；开始拆分前可自动脱敏，反脱敏结果可在右侧直接查看和复制。</div>
+                </div>
                 <div class="changelog-date">2026年7月13日</div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.08</div>
@@ -670,6 +801,32 @@
         </div>
     </div>
 
+    <div id="mask-config-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="maskConfigTitle">
+        <div class="modal-content mask-config-content">
+            <div class="modal-header">
+                <h3 id="maskConfigTitle">脱敏映射配置</h3>
+                <button class="close-modal" type="button" id="closeMaskConfigBtn" aria-label="关闭">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="mask-config-note">配置仅以明文保存在当前浏览器中，本功能是本地文本替换，不是加密。开始拆分时执行“脱敏前 → 脱敏后”，反脱敏时执行相反替换。</p>
+                <div class="mask-mapping-head" aria-hidden="true">
+                    <span>脱敏前文本</span><span>替换为</span><span>脱敏后文本</span><span>操作</span>
+                </div>
+                <div class="mask-mappings" id="maskMappings"></div>
+                <div class="mask-config-actions">
+                    <button class="btn btn-small" id="addMaskMappingBtn" type="button">新增映射</button>
+                    <button class="btn btn-small" id="importMaskConfigBtn" type="button">导入配置</button>
+                    <button class="btn btn-small" id="exportMaskConfigBtn" type="button">导出配置</button>
+                    <input id="maskConfigFileInput" type="file" accept="application/json,.json" hidden>
+                </div>
+                <div class="mask-config-footer">
+                    <button class="btn" id="cancelMaskConfigBtn" type="button">取消</button>
+                    <button class="btn btn-primary" id="saveMaskConfigBtn" type="button">保存配置</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="segment-preview-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="segmentPreviewTitle">
         <div class="modal-content segment-preview-content">
             <div class="modal-header">
@@ -699,7 +856,13 @@
         const mergeValidationStatus = document.getElementById('mergeValidationStatus');
         const copyAllBtn = document.getElementById('copyAllBtn');
         const copyHistoryBtn = document.getElementById('copyHistoryBtn');
+        const maskingEnabled = document.getElementById('maskingEnabled');
+        const maskConfigModal = document.getElementById('mask-config-modal');
+        const maskMappings = document.getElementById('maskMappings');
         let currentSegments = [];
+        let currentResultSource = '';
+        let currentResultMode = 'split';
+        let maskConfig = { ...TextMasker.DEFAULT_CONFIG, mappings: [] };
         let toastTimer;
 
         function escapeHtml(value) {
@@ -759,7 +922,7 @@
                 return;
             }
 
-            const validation = TextSplitter.validateMergedSegments(inputText.value, currentSegments);
+            const validation = TextSplitter.validateMergedSegments(currentResultSource, currentSegments);
             if (validation.ok) {
                 mergeValidationStatus.textContent = `校验通过：合并后 ${validation.mergedLength} 字符`;
                 mergeValidationStatus.className = 'validation-status ok';
@@ -771,9 +934,11 @@
             mergeValidationStatus.className = 'validation-status error';
         }
 
-        function renderResults(segments) {
+        function renderResults(segments, options = {}) {
             currentSegments = segments;
-            resultStats.textContent = `${segments.length} 段`;
+            currentResultMode = options.mode ?? 'split';
+            currentResultSource = options.source ?? (currentResultMode === 'unmask' ? segments.join('') : inputText.value);
+            resultStats.textContent = currentResultMode === 'unmask' ? `${segments.length} 项` : `${segments.length} 段`;
             copyAllBtn.disabled = segments.length === 0;
             copyHistoryBtn.disabled = segments.length === 0;
             updateMergeValidation();
@@ -787,7 +952,7 @@
                 <article class="result-item">
                     <div class="result-header">
                         <div class="result-meta">
-                            <span class="segment-number">第 ${index + 1} 段</span>
+                            <span class="segment-number">${currentResultMode === 'unmask' ? '反脱敏结果' : `第 ${index + 1} 段`}</span>
                             <span class="segment-length">${TextSplitter.countCharacters(segment)} 个字符，约 ${TextSplitter.estimateTokens(segment)} tokens</span>
                         </div>
                         <div class="result-actions">
@@ -827,9 +992,125 @@
             }
 
             const strategy = splitStrategy.value;
-            const segments = TextSplitter.splitTextByStrategy(inputText.value, limit, strategy);
-            renderResults(segments);
-            showToast(`已拆分为 ${segments.length} 段`);
+            const source = maskingEnabled.checked
+                ? TextMasker.maskText(inputText.value, maskConfig.mappings)
+                : inputText.value;
+            const segments = TextSplitter.splitTextByStrategy(source, limit, strategy);
+            renderResults(segments, { source, mode: 'split' });
+            const maskMessage = maskingEnabled.checked && maskConfig.mappings.length ? '并完成脱敏' : '';
+            showToast(`已拆分为 ${segments.length} 段${maskMessage}`);
+        }
+
+        function createMaskMappingRow(mapping = { plain: '', masked: '' }) {
+            const row = document.createElement('div');
+            row.className = 'mask-mapping-row';
+            row.innerHTML = `
+                <input class="mask-plain-input" type="text" aria-label="脱敏前文本" placeholder="例如 prod-db.example.com">
+                <span class="mask-arrow" aria-hidden="true">→</span>
+                <input class="mask-masked-input" type="text" aria-label="脱敏后文本" placeholder="例如 DB_HOST">
+                <button class="btn btn-small btn-danger remove-mask-mapping-btn" type="button">删除</button>
+            `;
+            row.querySelector('.mask-plain-input').value = mapping.plain ?? '';
+            row.querySelector('.mask-masked-input').value = mapping.masked ?? '';
+            return row;
+        }
+
+        function renderMaskMappings(mappings) {
+            maskMappings.replaceChildren();
+            const rows = mappings.length ? mappings : [{ plain: '', masked: '' }];
+            rows.forEach((mapping) => maskMappings.appendChild(createMaskMappingRow(mapping)));
+        }
+
+        function readMaskMappings() {
+            return TextMasker.validateMappings(Array.from(maskMappings.querySelectorAll('.mask-mapping-row')).map((row) => ({
+                plain: row.querySelector('.mask-plain-input').value,
+                masked: row.querySelector('.mask-masked-input').value,
+            })));
+        }
+
+        function persistMaskConfig(config) {
+            maskConfig = TextMasker.normalizeConfig(config);
+            localStorage.setItem(TextMasker.STORAGE_KEY, TextMasker.stringifyConfig(maskConfig));
+            maskingEnabled.checked = maskConfig.enabled;
+        }
+
+        function loadMaskConfig() {
+            const saved = localStorage.getItem(TextMasker.STORAGE_KEY);
+            if (!saved) {
+                maskingEnabled.checked = true;
+                return;
+            }
+            try {
+                maskConfig = TextMasker.parseConfig(saved);
+                maskingEnabled.checked = maskConfig.enabled;
+            } catch (error) {
+                maskConfig = { ...TextMasker.DEFAULT_CONFIG, mappings: [] };
+                maskingEnabled.checked = true;
+                localStorage.removeItem(TextMasker.STORAGE_KEY);
+            }
+        }
+
+        function openMaskConfig() {
+            renderMaskMappings(maskConfig.mappings);
+            maskConfigModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            maskMappings.querySelector('input')?.focus();
+        }
+
+        function closeMaskConfig() {
+            maskConfigModal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        function saveMaskConfig() {
+            try {
+                persistMaskConfig({ enabled: maskingEnabled.checked, mappings: readMaskMappings() });
+                closeMaskConfig();
+                showToast(`已保存 ${maskConfig.mappings.length} 条脱敏映射`);
+            } catch (error) {
+                showToast(error.message.includes('both sides') ? '每条映射的两边都需要填写' : '映射内容不能重复，请检查配置');
+            }
+        }
+
+        function runUnmask() {
+            if (!inputText.value) {
+                renderResults([]);
+                showToast('请先输入需要反脱敏的文本');
+                inputText.focus();
+                return;
+            }
+            const unmaskedText = TextMasker.unmaskText(inputText.value, maskConfig.mappings);
+            renderResults([unmaskedText], { mode: 'unmask' });
+            showToast(maskConfig.mappings.length ? '反脱敏结果已显示' : '尚未配置映射，已显示原文');
+        }
+
+        async function importMaskConfig(file) {
+            try {
+                const imported = TextMasker.parseConfig(await file.text());
+                persistMaskConfig(imported);
+                renderMaskMappings(maskConfig.mappings);
+                showToast(`已导入并保存 ${maskConfig.mappings.length} 条映射`);
+            } catch (error) {
+                showToast('配置文件无效，请导入本工具导出的 JSON 文件');
+            }
+        }
+
+        function exportMaskConfig() {
+            try {
+                const content = TextMasker.stringifyConfig({
+                    enabled: maskingEnabled.checked,
+                    mappings: readMaskMappings(),
+                });
+                const url = URL.createObjectURL(new Blob([content], { type: 'application/json;charset=utf-8' }));
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'text-splitter-mask-config.json';
+                link.click();
+                URL.revokeObjectURL(url);
+                showToast('脱敏配置已导出');
+            } catch (error) {
+                showToast(error.message.includes('both sides') ? '请先补全映射内容' : '映射内容不能重复，请检查配置');
+            }
         }
 
         function clearAll() {
@@ -894,6 +1175,37 @@
 
         document.getElementById('splitBtn').addEventListener('click', runSplit);
         document.getElementById('clearBtn').addEventListener('click', clearAll);
+        document.getElementById('maskConfigBtn').addEventListener('click', openMaskConfig);
+        document.getElementById('unmaskBtn').addEventListener('click', runUnmask);
+        document.getElementById('closeMaskConfigBtn').addEventListener('click', closeMaskConfig);
+        document.getElementById('cancelMaskConfigBtn').addEventListener('click', closeMaskConfig);
+        document.getElementById('saveMaskConfigBtn').addEventListener('click', saveMaskConfig);
+        document.getElementById('addMaskMappingBtn').addEventListener('click', () => {
+            const row = createMaskMappingRow();
+            maskMappings.appendChild(row);
+            row.querySelector('input').focus();
+        });
+        document.getElementById('importMaskConfigBtn').addEventListener('click', () => {
+            document.getElementById('maskConfigFileInput').click();
+        });
+        document.getElementById('exportMaskConfigBtn').addEventListener('click', exportMaskConfig);
+        document.getElementById('maskConfigFileInput').addEventListener('change', (event) => {
+            const [file] = event.target.files;
+            if (file) importMaskConfig(file);
+            event.target.value = '';
+        });
+        maskMappings.addEventListener('click', (event) => {
+            const button = event.target.closest('.remove-mask-mapping-btn');
+            if (!button) return;
+            button.closest('.mask-mapping-row').remove();
+            if (!maskMappings.children.length) {
+                maskMappings.appendChild(createMaskMappingRow());
+            }
+        });
+        maskingEnabled.addEventListener('change', () => {
+            persistMaskConfig({ ...maskConfig, enabled: maskingEnabled.checked });
+            showToast(maskingEnabled.checked ? '拆分前自动脱敏已启用' : '拆分前自动脱敏已关闭');
+        });
         splitStrategy.addEventListener('change', updateStrategyHint);
         inputText.addEventListener('input', () => {
             updateInputStats();
@@ -939,6 +1251,9 @@
             if (event.target === previewModal) {
                 closeSegmentPreview();
             }
+            if (event.target === maskConfigModal) {
+                closeMaskConfig();
+            }
         });
         document.getElementById('segmentPreviewContent').addEventListener('scroll', (event) => {
             document.getElementById('segmentPreviewLineNumbers').scrollTop = event.currentTarget.scrollTop;
@@ -946,11 +1261,13 @@
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
                 closeSegmentPreview();
+                closeMaskConfig();
                 closeChangelog();
             }
         });
         window.showSegmentPreview = showSegmentPreview;
         window.closeSegmentPreview = closeSegmentPreview;
+        loadMaskConfig();
         updateInputStats();
         refreshInputLineNumbers();
         updateStrategyHint();
