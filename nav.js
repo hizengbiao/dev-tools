@@ -23,6 +23,27 @@
     window.DevToolsRegistry = Object.freeze(tools.map(tool => Object.freeze({ ...tool })));
     if (navScript?.dataset.registryOnly === 'true') return;
 
+    function preserveWindowScrollOnPaste(event) {
+        const target = event.target;
+        if (!(target instanceof Element) || !target.matches('textarea, [contenteditable="true"]')) {
+            return;
+        }
+
+        const scrollPosition = { x: window.scrollX, y: window.scrollY };
+        let remainingFrames = 12;
+        const restoreWindowScroll = () => {
+            window.scrollTo(scrollPosition.x, scrollPosition.y);
+            remainingFrames -= 1;
+            if (remainingFrames > 0) {
+                window.requestAnimationFrame(restoreWindowScroll);
+            }
+        };
+        window.requestAnimationFrame(restoreWindowScroll);
+        window.setTimeout(restoreWindowScroll, 180);
+    }
+
+    document.addEventListener('paste', preserveWindowScrollOnPaste, true);
+
     const NAV_CONFIG_STORAGE_KEY = 'dev-tools-nav-config-v1';
     const NAV_HTML_FORMATTER_MIGRATION_KEY = 'dev-tools-nav-html-formatter-default-v1';
     const NAV_PRIMARY_ORDER_MIGRATION_KEY = 'dev-tools-nav-primary-order-v1';
