@@ -6,7 +6,9 @@
 
 ## 新会话使用方式
 
-在新会话中直接发送：
+项目根目录已提供 `AGENTS.md`。新会话以 `D:\projects\vibe-coding\dev-tools` 为工作目录时，Codex 会自动读取该入口，并按要求继续读取本文件和 `docs\toolbox-todo.md`，通常不需要手动导入。
+
+如果新会话未以项目目录为工作目录，可直接发送：
 
 ```text
 请先读取并遵守 D:\projects\vibe-coding\dev-tools\SESSION_CONTEXT_EXPORT.md，
