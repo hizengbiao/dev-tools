@@ -128,18 +128,175 @@
         return sql.replace(new RegExp(`\\b${token}\\b`, 'g'), phrase);
     }
 
-    function formatSql(input) {
+    function isMyBatisSql(input) {
+        return /<(?:mapper|select|insert|update|delete|sql)\b[^>]*>/i.test(String(input || ''));
+    }
+
+    function normalizeXmlTag(tag) {
+        let result = '';
+        let quote = '';
+        let pendingSpace = false;
+        for (const char of String(tag || '').trim()) {
+            if (quote) {
+                result += char;
+                if (char === quote) quote = '';
+                continue;
+            }
+            if (char === '\'' || char === '"') {
+                if (pendingSpace && result && !result.endsWith('<') && !result.endsWith(' ')) result += ' ';
+                pendingSpace = false;
+                quote = char;
+                result += char;
+            } else if (/\s/.test(char)) {
+                pendingSpace = true;
+            } else {
+                if (pendingSpace && result && !result.endsWith('<') && !result.endsWith(' ')) result += ' ';
+                pendingSpace = false;
+                result += char;
+            }
+        }
+        return result;
+    }
+
+    function tokenizeMyBatisXml(input) {
+        const source = String(input || '');
+        const tokens = [];
+        let text = '';
+        let index = 0;
+
+        function pushText() {
+            if (text) tokens.push({ type: 'text', value: text });
+            text = '';
+        }
+
+        while (index < source.length) {
+            if (source.startsWith('<![CDATA[', index)) {
+                const end = source.indexOf(']]>', index + 9);
+                const closing = end < 0 ? source.length : end + 3;
+                text += source.slice(index, closing);
+                index = closing;
+                continue;
+            }
+            if (source.startsWith('<!--', index)) {
+                pushText();
+                const end = source.indexOf('-->', index + 4);
+                const closing = end < 0 ? source.length : end + 3;
+                tokens.push({ type: 'tag', value: source.slice(index, closing), comment: true });
+                index = closing;
+                continue;
+            }
+            if (source[index] !== '<' || !/[A-Za-z_!?/]/.test(source[index + 1] || '')) {
+                text += source[index];
+                index += 1;
+                continue;
+            }
+
+            let quote = '';
+            let end = index + 1;
+            for (; end < source.length; end += 1) {
+                const char = source[end];
+                if (quote) {
+                    if (char === quote) quote = '';
+                } else if (char === '\'' || char === '"') {
+                    quote = char;
+                } else if (char === '>') {
+                    break;
+                }
+            }
+            if (end >= source.length) {
+                text += source.slice(index);
+                break;
+            }
+            pushText();
+            tokens.push({ type: 'tag', value: source.slice(index, end + 1) });
+            index = end + 1;
+        }
+        pushText();
+        return tokens;
+    }
+
+    function parenthesisDelta(line) {
+        let delta = 0;
+        let quote = '';
+        for (let index = 0; index < line.length; index += 1) {
+            const char = line[index];
+            const previous = line[index - 1];
+            if (quote) {
+                if (char === quote && previous !== '\\') quote = '';
+            } else if (char === '\'' || char === '"' || char === '`') {
+                quote = char;
+            } else if (char === '(') {
+                delta += 1;
+            } else if (char === ')') {
+                delta -= 1;
+            }
+        }
+        return delta;
+    }
+
+    function appendFormattedSql(lines, sql, depth) {
+        const cdataBlocks = [];
+        const protectedSql = String(sql || '')
+            .replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, (block) => {
+                const token = `__MYBATIS_CDATA_${cdataBlocks.length}__`;
+                cdataBlocks.push(block);
+                return token;
+            })
+            .replace(/\s+/g, ' ')
+            .trim();
+        const formatted = formatPlainSql(protectedSql);
+        let sqlDepth = 0;
+        formatted.split('\n').forEach((rawLine) => {
+            const line = rawLine.trim().replace(/__MYBATIS_CDATA_(\d+)__/g, (_, index) => cdataBlocks[Number(index)]);
+            if (!line) return;
+            const leadingClosings = (line.match(/^\)+/) || [''])[0].length;
+            const lineDepth = Math.max(0, sqlDepth - leadingClosings);
+            lines.push(`${'  '.repeat(depth + lineDepth)}${line}`);
+            sqlDepth = Math.max(0, sqlDepth + parenthesisDelta(line));
+        });
+    }
+
+    function formatMyBatisSql(input) {
+        const lines = [];
+        let depth = 0;
+        tokenizeMyBatisXml(input).forEach((token) => {
+            if (token.type === 'text') {
+                const content = token.value.trim();
+                if (content) appendFormattedSql(lines, content, depth);
+                return;
+            }
+
+            const tag = token.comment ? token.value.trim() : normalizeXmlTag(token.value);
+            const closing = /^<\//.test(tag);
+            const selfClosing = /\/\s*>$/.test(tag) || /^<\?/.test(tag) || /^<!/.test(tag);
+            if (closing) depth = Math.max(0, depth - 1);
+            lines.push(`${'  '.repeat(depth)}${tag}`);
+            if (!closing && !selfClosing) depth += 1;
+        });
+        return lines.join('\n');
+    }
+
+    function formatPlainSql(input) {
         const raw = String(input || '').trim();
         if (!raw) return '';
 
         const leading = splitLeadingComments(raw);
-        let sql = stripSqlComments(leading.sql).replace(/\s+/g, ' ').trim();
+        const templateParameters = [];
+        let sql = stripSqlComments(leading.sql)
+            .replace(/(?:#|\$)\{[^{}]+\}/g, (value) => {
+                const token = `__MYBATIS_PARAMETER_${templateParameters.length}__`;
+                templateParameters.push(value);
+                return token;
+            })
+            .replace(/\s+/g, ' ')
+            .trim();
+        const restoreTemplateParameters = (value) => value.replace(/__MYBATIS_PARAMETER_(\d+)__/g, (_, index) => templateParameters[Number(index)]);
         sql = normalizeOperators(sql);
         sql = uppercaseKeywords(sql);
 
         const createTable = formatCreateTable(sql);
         if (createTable) {
-            return [...leading.comments, createTable].join('\n');
+            return restoreTemplateParameters([...leading.comments, createTable].join('\n'));
         }
 
         ['GROUP BY', 'ORDER BY', 'UNION ALL', 'INSERT INTO', 'DELETE FROM'].forEach((phrase) => {
@@ -165,7 +322,11 @@
             sql = restorePhrase(sql, phrase);
         });
 
-        return sql;
+        return restoreTemplateParameters(sql);
+    }
+
+    function formatSql(input) {
+        return isMyBatisSql(input) ? formatMyBatisSql(input) : formatPlainSql(input);
     }
 
     function compressSql(input) {
@@ -178,38 +339,36 @@
             .replace(/[;,)]$/, '');
     }
 
+    function sqlTextOnly(input) {
+        if (!isMyBatisSql(input)) return String(input || '');
+        return tokenizeMyBatisXml(input)
+            .filter((token) => token.type === 'text')
+            .map((token) => token.value.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1'))
+            .join(' ');
+    }
+
     function extractTableNames(input) {
-        const sql = stripSqlComments(input);
+        const sql = stripSqlComments(sqlTextOnly(input));
         const tables = [];
         const seen = new Set();
-        const patterns = [
-            /\bcreate\s+table(?:\s+if\s+not\s+exists)?\s+([`"\[]?[\w.$-]+[`"\]]?)/gi,
-            /\balter\s+table\s+([`"\[]?[\w.$-]+[`"\]]?)/gi,
-            /\bfrom\s+([`"\[]?[\w.$-]+[`"\]]?)/gi,
-            /\bjoin\s+([`"\[]?[\w.$-]+[`"\]]?)/gi,
-            /\bupdate\s+([`"\[]?[\w.$-]+[`"\]]?)/gi,
-            /\binsert\s+into\s+([`"\[]?[\w.$-]+[`"\]]?)/gi,
-        ];
-
-        patterns.forEach((pattern) => {
-            let match;
-            while ((match = pattern.exec(sql))) {
-                const name = cleanTableName(match[1]);
-                const key = name.toLowerCase();
-                if (name && !seen.has(key) && !/^select$/i.test(name)) {
-                    seen.add(key);
-                    tables.push(name);
-                }
+        const pattern = /\b(?:create\s+table(?:\s+if\s+not\s+exists)?|alter\s+table|from|join|update|insert\s+into)\s+(\$\{[^{}]+\}|[`"\[]?[\w.$-]+[`"\]]?)/gi;
+        let match;
+        while ((match = pattern.exec(sql))) {
+            const name = cleanTableName(match[1]);
+            const key = name.toLowerCase();
+            if (name && !seen.has(key) && !/^select$/i.test(name)) {
+                seen.add(key);
+                tables.push(name);
             }
-        });
+        }
         return tables;
     }
 
     function extractPlaceholders(input) {
-        const sql = stripSqlComments(input);
+        const sql = stripSqlComments(sqlTextOnly(input));
         const placeholders = [];
         const seen = new Set();
-        const pattern = /(\$\{[\w.]+\}|#\{[\w.]+\}|\$\d+|:[A-Za-z_][\w.]*|\?)/g;
+        const pattern = /(\$\{[^{}]+\}|#\{[^{}]+\}|\$\d+|:[A-Za-z_][\w.]*|\?)/g;
         let match;
         while ((match = pattern.exec(sql))) {
             const value = match[1];
@@ -227,6 +386,8 @@
 
     return {
         stripSqlComments,
+        isMyBatisSql,
+        formatMyBatisSql,
         formatSql,
         compressSql,
         extractTableNames,

@@ -679,6 +679,7 @@
   - 提取表名和占位符时不阻塞格式化主流程。
 - 完成记录：2026-07-11 已新增 SQL 格式化/压缩工具 `sql-formatter.html`，支持格式化、压缩、表名提取、占位符提取、复制结果和版本更新说明；已同步导航、首页、README、DEVELOPMENT，并新增 `tests/sql-formatter.test.cjs` 覆盖核心逻辑和工具入口。
 - 完成记录：2026-07-22 已修复 `CREATE TABLE` 格式化换行和联合索引参数误换行，保留开头 SQL 注释并支持提取 CREATE/ALTER 表名；输入与结果编辑器新增同步行号，复制结果按钮调整到结果区；SQL 工具版本更新至 V1.01，并补充对应回归测试。
+- 完成记录：2026-07-23 已增加 MyBatis SQL 自动识别与格式化，支持 mapper/select/insert/update/delete/sql 容器以及 if、foreach、choose、when、otherwise、where、set、trim 等动态标签的通用层级缩进，并继续提取标签内 SQL 的表名和占位符；SQL 工具版本更新至 V1.02。
 
 ## 新识别候选项
 

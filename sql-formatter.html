@@ -301,7 +301,7 @@
         <div class="tool-title">
             <h1>SQL 格式化/压缩工具</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新说明">
-                <span>V1.01</span>
+                <span>V1.02</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -320,7 +320,7 @@
                     <button class="btn btn-primary" id="format-btn">格式化</button>
                     <button class="btn" id="compress-btn">压缩单行</button>
                 </div>
-                <div class="hint">支持常见 SELECT / INSERT / UPDATE / DELETE / CREATE TABLE。表名和参数占位符会随输入自动提取，不影响格式化结果。</div>
+                <div class="hint">支持常见 SELECT / INSERT / UPDATE / DELETE / CREATE TABLE，以及包含 if、foreach 等动态标签的 MyBatis SQL。格式化模式会自动识别。</div>
             </div>
 
             <div class="panel">
@@ -379,6 +379,13 @@
                 <span class="close" onclick="hideChangelog()">&times;</span>
             </div>
             <div class="modal-body">
+                <div class="changelog-entry">
+                    <div class="changelog-date">2026年7月23日</div>
+                    <div class="changelog-item">
+                        <div class="changelog-version">V1.02</div>
+                        <div class="changelog-description">新增 MyBatis SQL 自动识别与格式化，支持 select、insert、update、delete 及 if、foreach 等动态标签的层级缩进。</div>
+                    </div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-date">2026年7月22日</div>
                     <div class="changelog-item">
