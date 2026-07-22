@@ -1134,7 +1134,7 @@
         <div class="tool-title">
             <h1>正则表达式测试</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.14</span>
+                <span>V1.15</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -1174,7 +1174,12 @@
                     </div>
 
                     <div class="field">
-                        <label for="patternInput">匹配规则</label>
+                        <div class="field-header">
+                            <label for="patternInput">匹配规则</label>
+                            <div class="actions">
+                                <button class="btn" type="button" data-clipboard-paste-target="patternInput">📋 粘贴</button>
+                            </div>
+                        </div>
                         <div class="pattern-row">
                             <input id="patternInput" type="text" value="^(1[3-9]\d{2})\d{3}(\d{4})$" spellcheck="false"
                                 placeholder="输入正则表达式，例如 ^(1[3-9]\d{2})\d{3}(\d{4})$">
@@ -1314,6 +1319,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月23日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.15</div>
+                        <div class="changelog-desc">匹配规则标题右侧新增粘贴按钮，可读取剪贴板内容并同步刷新规则提示、风险分析和可视化结果。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.14</div>
                         <div class="changelog-desc">测试内容输入区新增粘贴按钮，可读取剪贴板文本并立即刷新匹配结果。</div>

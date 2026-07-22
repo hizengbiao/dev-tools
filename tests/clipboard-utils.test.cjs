@@ -102,9 +102,10 @@ function loadClipboardUtils(overrides = {}) {
     });
 }
 
-const pasteTargets = new Map([
+const pasteTargets = [
     ['text-case-converter.html', 'input-text'],
     ['regex-tester.html', 'testText'],
+    ['regex-tester.html', 'patternInput'],
     ['text_escape_formatter_final.html', 'inputText'],
     ['text-splitter.html', 'inputText'],
     ['sql-formatter.html', 'sql-input'],
@@ -112,7 +113,7 @@ const pasteTargets = new Map([
     ['base64-encoder.html', 'input-text'],
     ['hash-generator.html', 'text-input'],
     ['jwt-decoder.html', 'jwt-input'],
-]);
+];
 
 for (const file of [
     'base64-encoder.html',
