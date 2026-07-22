@@ -254,6 +254,16 @@
         .nginx-directive { color: #0550ae; white-space: pre-wrap; overflow-wrap: anywhere; }
         .nginx-comment { color: #1a7f37; white-space: pre-wrap; overflow-wrap: anywhere; }
         .nginx-inline-comment { color: #1a7f37; font-weight: 400; }
+        .nginx-tree-server-name {
+            display: none;
+            max-width: min(42vw, 520px);
+            margin-left: 8px;
+            overflow: hidden;
+            color: #8250df;
+            font-weight: 600;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
         .nginx-tree-ellipsis { display: none; margin-left: 5px; color: var(--muted-color); font-style: italic; }
 
         .nginx-block-actions {
@@ -316,6 +326,7 @@
         .nginx-tree-node.collapsed > .nginx-tree-row > .nginx-tree-collapsed-closing { display: inline-flex; }
         .nginx-tree-node.collapsed > .nginx-tree-row > .nginx-block-header .nginx-inline-comment { display: none; }
         .nginx-tree-node.collapsed > .nginx-tree-row > .nginx-block-actions { order: 1; }
+        .nginx-tree-node.collapsed > .nginx-tree-row > .nginx-tree-server-name { display: inline-block; }
         .nginx-tree-node.collapsed > .nginx-tree-row .nginx-tree-ellipsis { display: inline; }
 
         .toast {
@@ -367,7 +378,7 @@
             <button id="clear-btn" class="btn" type="button" title="清空输入和结果">🧹 清空</button>
             <button id="sample-btn" class="btn" type="button" title="载入 Nginx 示例配置">🧪 加载示例</button>
             <span class="privacy-note">配置仅在当前浏览器中处理</span>
-            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.12</span><span>ℹ️</span></div>
+            <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.13</span><span>ℹ️</span></div>
         </div>
 
         <div id="status-message" class="status-message" role="status" aria-live="polite">
@@ -403,6 +414,11 @@
                 <button class="close-modal" type="button" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date">2026年7月23日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.13</div>
+                    <div>server 区块收起后，在区块标题和项目数量之间显示 server_name 的具体值，便于快速区分不同站点配置。</div>
+                </div>
                 <div class="changelog-date">2026年7月15日</div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.12</div>
@@ -686,6 +702,14 @@
             appendSyntaxText(opening, node.opening);
             row.appendChild(opening);
             row.appendChild(createBlockActions(node, wrapper));
+            const collapsedLabel = NginxFormatter.getCollapsedBlockLabel(node);
+            if (collapsedLabel) {
+                const serverName = document.createElement('span');
+                serverName.className = 'nginx-tree-server-name';
+                serverName.textContent = collapsedLabel;
+                serverName.title = `server_name ${collapsedLabel}`;
+                row.appendChild(serverName);
+            }
             const ellipsis = document.createElement('span');
             ellipsis.className = 'nginx-tree-ellipsis';
             ellipsis.textContent = `… ${node.children.length} 项`;

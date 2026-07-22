@@ -682,6 +682,16 @@
 - 完成记录：2026-07-23 已增加 MyBatis SQL 自动识别与格式化，支持 mapper/select/insert/update/delete/sql 容器以及 if、foreach、choose、when、otherwise、where、set、trim 等动态标签的通用层级缩进，并继续提取标签内 SQL 的表名和占位符；SQL 工具版本更新至 V1.02。
 - 完成记录：2026-07-23 已在 mapper 顶层 select/insert/update/delete/sql 语句之间增加空行；将格式化、压缩和清空按钮移至输入区顶部，固定编辑器高度并扩大桌面端内容宽度；修复版本更新弹窗样式和关闭按钮，SQL 工具版本更新至 V1.03。
 
+## Nginx 格式化
+
+### TODO-NGINX-001：server 折叠摘要显示站点名称
+
+- 状态：`[x]`
+- 优先级：`P1`
+- 类型：体验增强
+- 目标：server 区块收起后显示其直接子级 `server_name` 的具体值，便于快速区分多个站点配置。
+- 完成记录：2026-07-23 已在 server 折叠行的区块标题与项目数量之间显示 `server_name` 值；无 `server_name` 或非 server 区块保持原摘要，并补充核心提取逻辑和页面接入测试；Nginx 工具版本更新至 V1.13。
+
 ## 新识别候选项
 
 ### TODO-IDEA-001：本地配置统一导入导出

@@ -150,6 +150,28 @@ assert.strictEqual(
     '        location /api {\n            proxy_pass http://backend;\n        } # API 代理'
 );
 
+const serverSummaryTree = formatter.buildNginxTree([
+    'server {',
+    '    listen 80;',
+    '    server_name example.com www.example.com; # production domains',
+    '    location / {',
+    '        try_files $uri /index.html;',
+    '    }',
+    '}'
+].join('\n'));
+assert.strictEqual(
+    formatter.getCollapsedBlockLabel(serverSummaryTree.children[0]),
+    'example.com www.example.com'
+);
+assert.strictEqual(
+    formatter.getCollapsedBlockLabel(serverSummaryTree.children[0].children[2]),
+    ''
+);
+assert.strictEqual(
+    formatter.getCollapsedBlockLabel(formatter.buildNginxTree('server {\n    listen 80;\n}').children[0]),
+    ''
+);
+
 const page = fs.readFileSync(path.join(root, 'nginx-formatter.html'), 'utf8');
 assert.match(page, /<title>Nginx 配置格式化工具<\/title>/);
 assert.match(page, /<script src="nav\.js" defer><\/script>/);
@@ -197,6 +219,8 @@ assert.match(page, /function deleteTreeBlock\(node\)/);
 assert.match(page, /function setAllBlocksCollapsed\(collapsed\)/);
 assert.match(page, /className = 'nginx-tree-line-number'/);
 assert.match(page, /className = 'nginx-tree-collapsed-closing'/);
+assert.match(page, /NginxFormatter\.getCollapsedBlockLabel\(node\)/);
+assert.match(page, /className = 'nginx-tree-server-name'/);
 assert.match(page, /NginxFormatter\.splitInlineComment\(node\.closing\)\.content\.trimEnd\(\)/);
 assert.match(page, /row\.appendChild\(collapsedClosing\)/);
 assert.doesNotMatch(page, /collapsedClosing\.appendChild\(createTreeLineNumber/);
@@ -208,8 +232,8 @@ assert.match(page, /spacer\.className = 'nginx-tree-toggle-spacer'/);
 assert.match(page, /\.nginx-tree-children\s*\{[^}]*padding:\s*2px 0 2px 16px;/);
 assert.match(page, /\.nginx-tree-node\s*\{[\s\S]*?margin-left:\s*-6px;/);
 assert.match(page, /--tree-depth/);
-assert.match(page, /<span>V1\.12<\/span>/);
-assert.match(page, /<div class="changelog-date">2026年7月15日<\/div>[\s\S]*?<div class="changelog-version">V1\.12<\/div>[\s\S]*?<div class="changelog-version">V1\.11<\/div>[\s\S]*?<div class="changelog-version">V1\.10<\/div>[\s\S]*?<div class="changelog-version">V1\.09<\/div>[\s\S]*?<div class="changelog-version">V1\.08<\/div>[\s\S]*?<div class="changelog-version">V1\.07<\/div>[\s\S]*?<div class="changelog-version">V1\.06<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>[\s\S]*?<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>[\s\S]*?<div class="changelog-version">V1\.00<\/div>/);
+assert.match(page, /<span>V1\.13<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月23日<\/div>[\s\S]*?<div class="changelog-version">V1\.13<\/div>[\s\S]*?<div class="changelog-date">2026年7月15日<\/div>[\s\S]*?<div class="changelog-version">V1\.12<\/div>[\s\S]*?<div class="changelog-version">V1\.11<\/div>[\s\S]*?<div class="changelog-version">V1\.10<\/div>[\s\S]*?<div class="changelog-version">V1\.09<\/div>[\s\S]*?<div class="changelog-version">V1\.08<\/div>[\s\S]*?<div class="changelog-version">V1\.07<\/div>[\s\S]*?<div class="changelog-version">V1\.06<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>[\s\S]*?<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>[\s\S]*?<div class="changelog-version">V1\.00<\/div>/);
 assert.match(page, /setOutput\(''\)/);
 assert.match(page, /result\.issues\.length/);
 assert.match(page, /EditorLines\.refreshLineNumbers/);

@@ -359,6 +359,25 @@
         return root;
     }
 
+    function getCollapsedBlockLabel(node) {
+        if (!node || node.type !== 'block') return '';
+        const opening = splitInlineComment(node.opening).content.trim();
+        if (!/^server\s*\{$/i.test(opening)) return '';
+
+        const directive = (node.children || []).find(child => {
+            if (!child || child.type !== 'directive') return false;
+            const content = splitInlineComment(child.value).content.trim();
+            return /^server_name(?:\s|;)/i.test(content);
+        });
+        if (!directive) return '';
+
+        return splitInlineComment(directive.value).content
+            .trim()
+            .replace(/^server_name\s*/i, '')
+            .replace(/;\s*$/, '')
+            .trim();
+    }
+
     function getNodeSource(input, node) {
         const lines = String(input || '').split(/\r?\n/);
         const start = Math.max(0, Number(node && node.line) - 1);
@@ -388,6 +407,7 @@
         analyzeNginx,
         formatNginx,
         buildNginxTree,
+        getCollapsedBlockLabel,
         splitInlineComment,
         getNodeSource,
         replaceNodeSource,
