@@ -212,8 +212,9 @@ body.nav-expanded {
 }
 
 .nav-manager-item {
-    display: flex;
-    align-items: center;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
     justify-content: space-between;
     gap: 12px;
     padding: 10px 12px;
@@ -240,11 +241,33 @@ body.nav-expanded {
 
 .nav-manager-check {
     min-width: 0;
+    width: auto !important;
+    max-width: none !important;
+    flex: 1 1 auto;
     display: flex;
     align-items: center;
     gap: 8px;
     font-weight: 600;
+    white-space: nowrap;
     cursor: pointer;
+}
+
+.nav-manager-check > input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    flex: 0 0 16px;
+}
+
+.nav-manager-check > span {
+    display: block;
+    width: auto !important;
+    min-width: 0;
+    max-width: none !important;
+    white-space: nowrap;
+    word-break: keep-all;
+    overflow-wrap: normal;
+    writing-mode: horizontal-tb;
 }
 
 .nav-manager-drag,
@@ -315,10 +338,5 @@ body.nav-expanded {
 
     .nav-expand-toggle {
         margin-left: auto;
-    }
-
-    .nav-manager-item {
-        align-items: flex-start;
-        flex-direction: column;
     }
 }
