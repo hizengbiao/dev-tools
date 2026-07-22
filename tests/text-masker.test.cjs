@@ -94,7 +94,7 @@ assert.match(page, /localStorage\.setItem\(TextMasker\.STORAGE_KEY/);
 assert.match(page, /TextMasker\.maskText\(inputText\.value, maskConfig\.mappings\)/);
 assert.match(page, /TextMasker\.unmaskText\(inputText\.value, maskConfig\.mappings\)/);
 assert.match(page, /renderResults\(\[unmaskedText\], \{ mode: 'unmask' \}\)/);
-assert.match(page, /<span>V1\.09<\/span>/);
+assert.match(page, /<span>V1\.13<\/span>/);
 assert.match(page, /<div class="changelog-date">2026\u5e747\u670815\u65e5<\/div>[\s\S]*?<div class="changelog-version">V1\.09<\/div>/);
 
 console.log('text masker behavior and integration passed');

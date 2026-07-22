@@ -1,0 +1,123 @@
+#changelog-modal.changelog-overlay {
+    z-index: 2400;
+    box-sizing: border-box;
+    padding: 20px;
+    background: rgba(27, 31, 36, 0.45);
+}
+
+#changelog-modal .changelog-dialog {
+    width: min(640px, calc(100vw - 40px));
+    max-height: calc(100vh - 40px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: none;
+    transform: none;
+    opacity: 1;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 16px 40px rgba(27, 31, 36, 0.25);
+}
+
+#changelog-modal .changelog-header {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 20px;
+    border-bottom: 1px solid #eaeef2;
+}
+
+#changelog-modal .changelog-header h3 {
+    margin: 0;
+    color: #24292f;
+    font-size: 18px;
+    line-height: 1.4;
+}
+
+#changelog-modal .changelog-close {
+    flex: 0 0 auto;
+    border: 0;
+    padding: 2px 6px;
+    background: transparent;
+    color: #57606a;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+#changelog-modal .changelog-close:hover {
+    color: #0969da;
+}
+
+#changelog-modal .changelog-close:focus-visible {
+    outline: 2px solid #0969da;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+#changelog-modal .changelog-body {
+    min-height: 0;
+    padding: 20px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+
+#changelog-modal .changelog-date-group + .changelog-date-group,
+#changelog-modal .changelog-date:not(:first-child) {
+    margin-top: 18px;
+}
+
+#changelog-modal .changelog-date {
+    display: inline-block;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #0969da;
+    color: #24292f;
+    font-weight: 700;
+}
+
+#changelog-modal .changelog-entry {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 10px;
+    margin-top: 12px;
+    color: #57606a;
+    line-height: 1.6;
+}
+
+#changelog-modal .changelog-version {
+    align-self: start;
+    box-sizing: border-box;
+    min-width: 56px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #ddf4ff;
+    color: #0969da;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 20px;
+    text-align: center;
+}
+
+@media (max-width: 640px) {
+    #changelog-modal.changelog-overlay {
+        padding: 12px;
+    }
+
+    #changelog-modal .changelog-dialog {
+        width: calc(100vw - 24px);
+        max-height: calc(100vh - 24px);
+    }
+
+    #changelog-modal .changelog-header,
+    #changelog-modal .changelog-body {
+        padding: 14px;
+    }
+
+    #changelog-modal .changelog-entry {
+        grid-template-columns: 56px minmax(0, 1fr);
+        gap: 8px;
+    }
+}

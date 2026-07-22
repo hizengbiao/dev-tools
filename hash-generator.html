@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>哈希/摘要工具</title>
     <link rel="stylesheet" href="nav.css">
+    <link rel="stylesheet" href="changelog.css">
     <script src="nav.js" defer></script>
     <script src="changelog.js"></script>
     <script src="clipboard-utils.js"></script>
@@ -412,13 +413,13 @@
         </div>
     </main>
 
-    <div id="changelog-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
+    <div id="changelog-modal" class="modal-overlay changelog-overlay">
+        <div class="modal-content changelog-dialog">
+            <div class="modal-header changelog-header">
                 <h3>🚀 版本更新说明</h3>
-                <button class="close-modal" type="button" onclick="closeChangelog()">&times;</button>
+                <button class="close-modal changelog-close" type="button" onclick="closeChangelog()">&times;</button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body changelog-body">
                 <div class="changelog-date">2026年7月23日</div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.02</div>

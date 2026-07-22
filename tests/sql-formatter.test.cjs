@@ -156,7 +156,7 @@ assert.match(page, /<div class="changelog-date">2026年7月23日<\/div>[\s\S]*?<
 assert.match(page, /<div class="changelog-date">2026年7月23日<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月23日<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月23日<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>/);
-assert.match(page, /class="modal-overlay"/);
+assert.match(page, /class="modal-overlay changelog-overlay"/);
 assert.match(page, /onclick="closeChangelog\(\)"/);
 assert.doesNotMatch(page, /hideChangelog/);
 assert.match(page, /max-width:\s*1800px/);
