@@ -259,6 +259,8 @@
     function formatMyBatisSql(input) {
         const lines = [];
         let depth = 0;
+        const tagStack = [];
+        const mapperStatementTags = new Set(['select', 'insert', 'update', 'delete', 'sql']);
         tokenizeMyBatisXml(input).forEach((token) => {
             if (token.type === 'text') {
                 const content = token.value.trim();
@@ -269,9 +271,21 @@
             const tag = token.comment ? token.value.trim() : normalizeXmlTag(token.value);
             const closing = /^<\//.test(tag);
             const selfClosing = /\/\s*>$/.test(tag) || /^<\?/.test(tag) || /^<!/.test(tag);
-            if (closing) depth = Math.max(0, depth - 1);
+            const tagNameMatch = tag.match(/^<\/?\s*([A-Za-z_][\w:.-]*)/);
+            const tagName = tagNameMatch ? tagNameMatch[1].toLowerCase() : '';
+            if (closing) {
+                depth = Math.max(0, depth - 1);
+                tagStack.pop();
+            } else if (tagStack[tagStack.length - 1] === 'mapper' && mapperStatementTags.has(tagName)) {
+                if (lines.length && lines[lines.length - 1] !== '' && !/^\s*<mapper\b/i.test(lines[lines.length - 1])) {
+                    lines.push('');
+                }
+            }
             lines.push(`${'  '.repeat(depth)}${tag}`);
-            if (!closing && !selfClosing) depth += 1;
+            if (!closing && !selfClosing) {
+                depth += 1;
+                tagStack.push(tagName);
+            }
         });
         return lines.join('\n');
     }

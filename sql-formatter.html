@@ -45,7 +45,7 @@
 
         .container {
             width: 100%;
-            max-width: 1280px;
+            max-width: 1800px;
             margin: 0 auto;
         }
 
@@ -119,7 +119,8 @@
 
         .editor-shell {
             width: 100%;
-            min-height: 430px;
+            height: clamp(380px, 55vh, 600px);
+            min-height: 380px;
             display: grid;
             grid-template-columns: 48px minmax(0, 1fr);
             overflow: hidden;
@@ -134,7 +135,8 @@
         }
 
         .line-numbers {
-            min-height: 430px;
+            height: 100%;
+            min-height: 0;
             padding: 12px 8px;
             overflow: hidden;
             border-right: 1px solid var(--border-color);
@@ -148,12 +150,13 @@
 
         textarea {
             width: 100%;
-            min-height: 430px;
+            height: 100%;
+            min-height: 0;
             padding: 12px;
             border: 0;
             color: var(--text-color);
             background: transparent;
-            resize: vertical;
+            resize: none;
             line-height: 1.55;
             font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
             font-size: 13px;
@@ -179,6 +182,13 @@
         .panel-actions {
             justify-content: flex-end;
             margin: 0;
+        }
+
+        .input-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         .btn {
@@ -278,19 +288,108 @@
             line-height: 1.5;
         }
 
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.42);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            width: min(680px, 100%);
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 20px 45px rgba(27, 31, 36, 0.24);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 22px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--code-bg);
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .close-modal {
+            width: 32px;
+            height: 32px;
+            display: grid;
+            place-items: center;
+            padding: 0;
+            border: 0;
+            border-radius: 6px;
+            background: transparent;
+            color: var(--muted-color);
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        .close-modal:hover {
+            background: #eaeef2;
+            color: var(--danger-color);
+        }
+
+        .modal-body {
+            padding: 22px;
+            overflow-y: auto;
+        }
+
+        .changelog-date-group + .changelog-date-group {
+            margin-top: 22px;
+        }
+
+        .changelog-date {
+            display: inline-block;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid var(--accent-color);
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .changelog-entry {
+            display: grid;
+            grid-template-columns: 62px minmax(0, 1fr);
+            gap: 12px;
+            padding: 9px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .changelog-version {
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+
         @media (max-width: 960px) {
             .workspace,
             .details {
                 grid-template-columns: 1fr;
             }
 
-            textarea {
+            .editor-shell {
+                height: min(52vh, 420px);
                 min-height: 260px;
             }
 
-            .editor-shell,
-            .line-numbers {
-                min-height: 260px;
+            .panel-header {
+                align-items: flex-start;
+                flex-wrap: wrap;
             }
         }
     </style>
@@ -301,7 +400,7 @@
         <div class="tool-title">
             <h1>SQL 格式化/压缩工具</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新说明">
-                <span>V1.02</span>
+                <span>V1.03</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -310,15 +409,15 @@
             <div class="panel">
                 <div class="panel-header">
                     <h2>输入 SQL</h2>
-                    <button class="btn btn-danger" id="clear-btn">清空</button>
+                    <div class="input-actions">
+                        <button class="btn btn-primary" id="format-btn">格式化</button>
+                        <button class="btn" id="compress-btn">压缩单行</button>
+                        <button class="btn btn-danger" id="clear-btn">清空</button>
+                    </div>
                 </div>
                 <div class="editor-shell">
                     <div class="line-numbers" id="input-lines" aria-hidden="true">1</div>
                     <textarea id="sql-input" wrap="off" spellcheck="false"></textarea>
-                </div>
-                <div class="actions">
-                    <button class="btn btn-primary" id="format-btn">格式化</button>
-                    <button class="btn" id="compress-btn">压缩单行</button>
                 </div>
                 <div class="hint">支持常见 SELECT / INSERT / UPDATE / DELETE / CREATE TABLE，以及包含 if、foreach 等动态标签的 MyBatis SQL。格式化模式会自动识别。</div>
             </div>
@@ -372,30 +471,34 @@
         </section>
     </main>
 
-    <div id="changelog-modal" class="modal" style="display: none;">
+    <div id="changelog-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>🚀 版本更新说明</h3>
-                <span class="close" onclick="hideChangelog()">&times;</span>
+                <button class="close-modal" type="button" onclick="closeChangelog()" aria-label="关闭版本更新说明">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="changelog-entry">
+                <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月23日</div>
-                    <div class="changelog-item">
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.03</div>
+                        <div class="changelog-description">优化 MyBatis mapper 格式与页面布局：顶层 SQL 语句间增加空行，操作按钮移至输入区顶部，编辑器固定高度并扩大页面可用宽度；修复版本弹窗显示和关闭。</div>
+                    </div>
+                    <div class="changelog-entry">
                         <div class="changelog-version">V1.02</div>
                         <div class="changelog-description">新增 MyBatis SQL 自动识别与格式化，支持 select、insert、update、delete 及 if、foreach 等动态标签的层级缩进。</div>
                     </div>
                 </div>
-                <div class="changelog-entry">
+                <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月22日</div>
-                    <div class="changelog-item">
+                    <div class="changelog-entry">
                         <div class="changelog-version">V1.01</div>
                         <div class="changelog-description">规范 CREATE TABLE 字段与表选项换行，保留开头注释并识别建表表名；输入和结果区新增行号，复制结果按钮移至结果区。</div>
                     </div>
                 </div>
-                <div class="changelog-entry">
+                <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月11日</div>
-                    <div class="changelog-item">
+                    <div class="changelog-entry">
                         <div class="changelog-version">V1.00</div>
                         <div class="changelog-description">版本初始化：新增 SQL 格式化、压缩、表名提取和占位符提取能力。</div>
                     </div>
