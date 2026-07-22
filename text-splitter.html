@@ -683,7 +683,7 @@
         <div class="tool-title">
             <h1>文本智能拆分</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.09</span>
+                <span>V1.10</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -700,7 +700,7 @@
                         <option value="characters">硬字符</option>
                     </select>
                     <label for="maxLength">每段最大长度</label>
-                    <input id="maxLength" type="number" min="1" step="1" value="2950">
+                    <input id="maxLength" type="number" min="1" step="1" value="2900">
                     <span class="hint" id="strategyHint">智能边界：优先在靠近上限的换行、标点或单词空格处拆分</span>
                 </div>
                 <div class="toolbar-actions">
@@ -753,6 +753,11 @@
                 <button class="close-modal" type="button" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date">2026年7月22日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.10</div>
+                    <div>将每段最大长度的默认值由 2950 调整为 2900。</div>
+                </div>
                 <div class="changelog-date">2026年7月15日</div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.09</div>
