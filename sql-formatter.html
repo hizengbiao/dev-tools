@@ -9,6 +9,7 @@
     <script src="nav.js" defer></script>
     <script src="changelog.js"></script>
     <script src="clipboard-utils.js"></script>
+    <script src="editor-lines.js"></script>
     <script src="sample-data.js"></script>
     <script src="sql-formatter.js"></script>
     <style>
@@ -116,21 +117,52 @@
             font-size: 16px;
         }
 
+        .editor-shell {
+            width: 100%;
+            min-height: 430px;
+            display: grid;
+            grid-template-columns: 48px minmax(0, 1fr);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: #fff;
+        }
+
+        .editor-shell:focus-within {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
+        }
+
+        .line-numbers {
+            min-height: 430px;
+            padding: 12px 8px;
+            overflow: hidden;
+            border-right: 1px solid var(--border-color);
+            color: #8c959f;
+            background: var(--code-bg);
+            text-align: right;
+            white-space: pre;
+            font: 13px/1.55 "SFMono-Regular", Consolas, monospace;
+            user-select: none;
+        }
+
         textarea {
             width: 100%;
             min-height: 430px;
             padding: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
+            border: 0;
             color: var(--text-color);
-            background: #fff;
+            background: transparent;
             resize: vertical;
             line-height: 1.55;
             font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
             font-size: 13px;
         }
 
-        textarea:focus,
+        textarea:focus {
+            outline: none;
+        }
+
         input:focus {
             outline: none;
             border-color: var(--accent-color);
@@ -142,6 +174,11 @@
             gap: 10px;
             margin: 14px 0;
             flex-wrap: wrap;
+        }
+
+        .panel-actions {
+            justify-content: flex-end;
+            margin: 0;
         }
 
         .btn {
@@ -250,6 +287,11 @@
             textarea {
                 min-height: 260px;
             }
+
+            .editor-shell,
+            .line-numbers {
+                min-height: 260px;
+            }
         }
     </style>
 </head>
@@ -259,7 +301,7 @@
         <div class="tool-title">
             <h1>SQL 格式化/压缩工具</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新说明">
-                <span>V1.00</span>
+                <span>V1.01</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -270,21 +312,29 @@
                     <h2>输入 SQL</h2>
                     <button class="btn btn-danger" id="clear-btn">清空</button>
                 </div>
-                <textarea id="sql-input" spellcheck="false"></textarea>
+                <div class="editor-shell">
+                    <div class="line-numbers" id="input-lines" aria-hidden="true">1</div>
+                    <textarea id="sql-input" wrap="off" spellcheck="false"></textarea>
+                </div>
                 <div class="actions">
                     <button class="btn btn-primary" id="format-btn">格式化</button>
                     <button class="btn" id="compress-btn">压缩单行</button>
-                    <button class="btn" id="copy-output-btn">复制结果</button>
                 </div>
-                <div class="hint">支持常见 SELECT / INSERT / UPDATE / DELETE。表名和参数占位符会随输入自动提取，不影响格式化结果。</div>
+                <div class="hint">支持常见 SELECT / INSERT / UPDATE / DELETE / CREATE TABLE。表名和参数占位符会随输入自动提取，不影响格式化结果。</div>
             </div>
 
             <div class="panel">
                 <div class="panel-header">
                     <h2>处理结果</h2>
-                    <button class="btn" id="swap-btn">结果回填输入</button>
+                    <div class="actions panel-actions">
+                        <button class="btn" id="copy-output-btn">复制结果</button>
+                        <button class="btn" id="swap-btn">结果回填输入</button>
+                    </div>
                 </div>
-                <textarea id="sql-output" spellcheck="false" readonly></textarea>
+                <div class="editor-shell">
+                    <div class="line-numbers" id="output-lines" aria-hidden="true">1</div>
+                    <textarea id="sql-output" wrap="off" spellcheck="false" readonly></textarea>
+                </div>
                 <div class="summary-grid">
                     <div class="metric">
                         <div class="metric-label">表名数量</div>
@@ -309,7 +359,7 @@
                     <button class="btn" id="copy-tables-btn">复制表名</button>
                 </div>
                 <div class="list-output" id="table-output"></div>
-                <div class="hint">从 FROM、JOIN、UPDATE、INSERT INTO 中提取，重复表名会自动去重。</div>
+                <div class="hint">从 CREATE TABLE、ALTER TABLE、FROM、JOIN、UPDATE、INSERT INTO 中提取，重复表名会自动去重。</div>
             </div>
             <div class="list-panel">
                 <div class="list-actions">
@@ -330,6 +380,13 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-entry">
+                    <div class="changelog-date">2026年7月22日</div>
+                    <div class="changelog-item">
+                        <div class="changelog-version">V1.01</div>
+                        <div class="changelog-description">规范 CREATE TABLE 字段与表选项换行，保留开头注释并识别建表表名；输入和结果区新增行号，复制结果按钮移至结果区。</div>
+                    </div>
+                </div>
+                <div class="changelog-entry">
                     <div class="changelog-date">2026年7月11日</div>
                     <div class="changelog-item">
                         <div class="changelog-version">V1.00</div>
@@ -343,6 +400,8 @@
     <script>
         const inputEl = document.getElementById('sql-input');
         const outputEl = document.getElementById('sql-output');
+        const inputLines = document.getElementById('input-lines');
+        const outputLines = document.getElementById('output-lines');
         const tableOutput = document.getElementById('table-output');
         const placeholderOutput = document.getElementById('placeholder-output');
         const tableCount = document.getElementById('table-count');
@@ -366,6 +425,8 @@
             tableCount.textContent = String(tables.length);
             placeholderCount.textContent = String(placeholders.length);
             charCount.textContent = String(outputEl.value.length);
+            EditorLines.refreshLineNumbers(inputEl, inputLines);
+            EditorLines.refreshLineNumbers(outputEl, outputLines);
         }
 
         function runFormat() {
@@ -393,6 +454,8 @@
         document.getElementById('copy-tables-btn').addEventListener('click', () => copyText(tableOutput.textContent));
         document.getElementById('copy-placeholders-btn').addEventListener('click', () => copyText(placeholderOutput.textContent));
         inputEl.addEventListener('input', refreshMeta);
+        inputEl.addEventListener('scroll', () => EditorLines.syncLineNumberScroll(inputEl, inputLines));
+        outputEl.addEventListener('scroll', () => EditorLines.syncLineNumberScroll(outputEl, outputLines));
 
         inputEl.value = SampleData.getSample('sql.basicSelect');
         runFormat();

@@ -31,6 +31,86 @@
             .replace(/\s+\)/g, ')');
     }
 
+    function splitLeadingComments(sql) {
+        const comments = [];
+        let rest = String(sql || '').trim();
+        let match;
+        while ((match = rest.match(/^(--[^\r\n]*(?:\r?\n|$)|\/\*[\s\S]*?\*\/)\s*/))) {
+            comments.push(match[1].trim());
+            rest = rest.slice(match[0].length);
+        }
+        return { comments, sql: rest };
+    }
+
+    function transformTopLevelCommas(sql, replacement) {
+        let result = '';
+        let depth = 0;
+        let quote = '';
+        for (let index = 0; index < sql.length; index += 1) {
+            const char = sql[index];
+            const previous = sql[index - 1];
+            if (quote) {
+                result += char;
+                if (char === quote && previous !== '\\') quote = '';
+                continue;
+            }
+            if (char === '\'' || char === '"' || char === '`') {
+                quote = char;
+                result += char;
+                continue;
+            }
+            if (char === '(') depth += 1;
+            if (char === ')') depth = Math.max(0, depth - 1);
+            if (char === ',' && depth === 0) {
+                result += replacement;
+                while (/\s/.test(sql[index + 1] || '')) index += 1;
+            } else {
+                result += char;
+            }
+        }
+        return result;
+    }
+
+    function findClosingParenthesis(sql, openingIndex) {
+        let depth = 0;
+        let quote = '';
+        for (let index = openingIndex; index < sql.length; index += 1) {
+            const char = sql[index];
+            const previous = sql[index - 1];
+            if (quote) {
+                if (char === quote && previous !== '\\') quote = '';
+                continue;
+            }
+            if (char === '\'' || char === '"' || char === '`') {
+                quote = char;
+            } else if (char === '(') {
+                depth += 1;
+            } else if (char === ')' && --depth === 0) {
+                return index;
+            }
+        }
+        return -1;
+    }
+
+    function formatCreateTable(sql) {
+        const header = sql.match(/^CREATE\s+TABLE(?:\s+IF\s+NOT\s+EXISTS)?\s+[^\s(]+\s*\(/i);
+        if (!header) return null;
+        const openingIndex = header[0].lastIndexOf('(');
+        const closingIndex = findClosingParenthesis(sql, openingIndex);
+        if (closingIndex < 0) return null;
+
+        const heading = sql.slice(0, openingIndex).trim();
+        const body = sql.slice(openingIndex + 1, closingIndex).trim();
+        const columns = transformTopLevelCommas(body, '\n')
+            .split('\n')
+            .map((part) => normalizeOperators(part.replace(/\s+/g, ' ').trim()))
+            .filter(Boolean);
+        const formattedBody = columns.map((part, index) => `  ${part}${index < columns.length - 1 ? ',' : ''}`).join('\n');
+        let suffix = normalizeOperators(sql.slice(closingIndex + 1).replace(/\s+/g, ' ').trim());
+        suffix = suffix.replace(/\s+(?=(?:AUTO_INCREMENT|DEFAULT\s+CHARSET|COLLATE|ROW_FORMAT|COMMENT)\s*=)/gi, '\n  ');
+        return `${heading} (\n${formattedBody}\n)${suffix ? ` ${suffix}` : ''}`;
+    }
+
     function uppercaseKeywords(sql) {
         return sql.replace(/\b[a-z_]+\b/gi, (word) => {
             const lower = word.toLowerCase();
@@ -52,9 +132,15 @@
         const raw = String(input || '').trim();
         if (!raw) return '';
 
-        let sql = stripSqlComments(raw).replace(/\s+/g, ' ').trim();
+        const leading = splitLeadingComments(raw);
+        let sql = stripSqlComments(leading.sql).replace(/\s+/g, ' ').trim();
         sql = normalizeOperators(sql);
         sql = uppercaseKeywords(sql);
+
+        const createTable = formatCreateTable(sql);
+        if (createTable) {
+            return [...leading.comments, createTable].join('\n');
+        }
 
         ['GROUP BY', 'ORDER BY', 'UNION ALL', 'INSERT INTO', 'DELETE FROM'].forEach((phrase) => {
             sql = protectPhrase(sql, phrase);
@@ -70,9 +156,10 @@
             .replace(/\s+\bON\b\s+/g, '\n  ON ')
             .replace(/\s+\bAND\b\s+/g, '\n  AND ')
             .replace(/\s+\bOR\b\s+/g, '\n  OR ')
-            .replace(/,\s*/g, ',\n  ')
             .replace(/\n\s*\n+/g, '\n')
             .trim();
+
+        sql = transformTopLevelCommas(sql, ',\n  ');
 
         ['GROUP BY', 'ORDER BY', 'UNION ALL', 'INSERT INTO', 'DELETE FROM'].forEach((phrase) => {
             sql = restorePhrase(sql, phrase);
@@ -96,6 +183,8 @@
         const tables = [];
         const seen = new Set();
         const patterns = [
+            /\bcreate\s+table(?:\s+if\s+not\s+exists)?\s+([`"\[]?[\w.$-]+[`"\]]?)/gi,
+            /\balter\s+table\s+([`"\[]?[\w.$-]+[`"\]]?)/gi,
             /\bfrom\s+([`"\[]?[\w.$-]+[`"\]]?)/gi,
             /\bjoin\s+([`"\[]?[\w.$-]+[`"\]]?)/gi,
             /\bupdate\s+([`"\[]?[\w.$-]+[`"\]]?)/gi,
