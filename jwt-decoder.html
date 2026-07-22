@@ -311,7 +311,7 @@
         <div class="tool-title">
             <h1>JWT 解析工具</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.00</span>
+                <span>V1.01</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -324,7 +324,10 @@
             <section class="panel">
                 <div class="panel-header">
                     <h2>JWT 输入</h2>
-                    <button class="btn" id="copy-token-btn" type="button">复制原文</button>
+                    <div>
+                        <button class="btn" type="button" data-clipboard-paste-target="jwt-input">📋 粘贴</button>
+                        <button class="btn" id="copy-token-btn" type="button">复制原文</button>
+                    </div>
                 </div>
                 <textarea id="jwt-input" placeholder="粘贴形如 header.payload.signature 的 JWT"></textarea>
                 <div class="actions">
@@ -374,6 +377,11 @@
                 <button class="close-modal" type="button" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date">2026年7月23日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.01</div>
+                    <div>JWT 输入区新增粘贴按钮，可读取剪贴板文本并立即刷新解析结果。</div>
+                </div>
                 <div class="changelog-date">2026年7月11日</div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.00</div>

@@ -1134,7 +1134,7 @@
         <div class="tool-title">
             <h1>正则表达式测试</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.13</span>
+                <span>V1.14</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -1146,6 +1146,7 @@
                         <div class="field-header">
                             <label for="testText">测试内容</label>
                             <div class="actions">
+                                <button class="btn" type="button" data-clipboard-paste-target="testText">📋 粘贴</button>
                                 <button class="btn btn-danger" id="clearBtn" type="button">清空</button>
                             </div>
                         </div>
@@ -1311,6 +1312,13 @@
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年7月23日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.14</div>
+                        <div class="changelog-desc">测试内容输入区新增粘贴按钮，可读取剪贴板文本并立即刷新匹配结果。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月17日</div>
                     <div class="changelog-entry">

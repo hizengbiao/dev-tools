@@ -75,7 +75,7 @@
 - `nav.js` / `nav.css`：共享顶部导航、展开全部、自定义导航、滚轮横向滚动等。
 - `changelog.js`：统一版本更新说明弹窗行为，标题统一带火箭图标。
 - `editor-lines.js`：输入输出框行号和滚动同步。
-- `clipboard-utils.js`：复制、降级复制和 Toast。
+- `clipboard-utils.js`：复制、降级复制、读取剪贴板、通过 `data-clipboard-paste-target` 向指定输入框粘贴文本，以及 Toast。
 - `diff-viewer.js`：输入输出差异计算与渲染；删除内容不用删除线，只使用背景标记。
 - `sample-data.js`：部分工具的公共示例数据。
 - `browser-smoke-manifest.js`：重点工具浏览器冒烟清单。

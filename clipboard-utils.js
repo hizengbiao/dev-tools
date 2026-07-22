@@ -97,13 +97,92 @@
         return ok;
     }
 
+    async function readClipboardText(options = {}) {
+        const navigatorRef = options.navigatorRef
+            || root.navigator
+            || (typeof globalThis !== 'undefined' ? globalThis.navigator : null);
+        if (!navigatorRef || !navigatorRef.clipboard || !navigatorRef.clipboard.readText) {
+            return { ok: false, text: '', error: new Error('Clipboard read is not supported') };
+        }
+
+        try {
+            const text = await navigatorRef.clipboard.readText();
+            return { ok: true, text: String(text ?? '') };
+        } catch (error) {
+            return { ok: false, text: '', error };
+        }
+    }
+
+    async function pasteText(targetOrId, options = {}) {
+        const documentRef = getDocument(options);
+        const target = typeof targetOrId === 'string'
+            ? documentRef && documentRef.getElementById && documentRef.getElementById(targetOrId)
+            : targetOrId;
+        if (!target || !('value' in target)) {
+            showToast(options.targetErrorMessage || '未找到可粘贴的输入框', { ...options, isError: true });
+            return false;
+        }
+
+        const result = await readClipboardText(options);
+        if (!result.ok) {
+            showToast(options.errorMessage || '无法读取剪贴板，请允许剪贴板权限后重试', {
+                ...options,
+                isError: true
+            });
+            return false;
+        }
+        if (!result.text && options.allowEmpty !== true) {
+            showToast(options.emptyMessage || '剪贴板中没有文本内容', { ...options, isError: true });
+            return false;
+        }
+
+        target.value = result.text;
+        const EventCtor = options.EventCtor
+            || root.Event
+            || (typeof globalThis !== 'undefined' ? globalThis.Event : null);
+        if (target.dispatchEvent && EventCtor) {
+            target.dispatchEvent(new EventCtor('input', { bubbles: true }));
+        }
+        if (target.focus) target.focus();
+        if (target.setSelectionRange) {
+            target.setSelectionRange(result.text.length, result.text.length);
+        }
+        showToast(options.successMessage || '已粘贴剪贴板内容', options);
+        return true;
+    }
+
+    function installPasteButtonHandler(options = {}) {
+        const documentRef = getDocument(options);
+        if (!documentRef || !documentRef.addEventListener || documentRef.__clipboardPasteHandlerInstalled) return;
+        documentRef.__clipboardPasteHandlerInstalled = true;
+        documentRef.addEventListener('click', async event => {
+            const button = event.target && event.target.closest
+                ? event.target.closest('[data-clipboard-paste-target]')
+                : null;
+            if (!button || !button.dataset || !button.dataset.clipboardPasteTarget) return;
+
+            button.disabled = true;
+            try {
+                await pasteText(button.dataset.clipboardPasteTarget, {
+                    successMessage: button.dataset.clipboardPasteSuccess || '已粘贴剪贴板内容'
+                });
+            } finally {
+                button.disabled = false;
+            }
+        });
+    }
+
     const api = {
         showToast,
         writeClipboardText,
-        copyText
+        copyText,
+        readClipboardText,
+        pasteText,
+        installPasteButtonHandler
     };
 
     root.ClipboardUtils = api;
+    installPasteButtonHandler();
 
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = api;

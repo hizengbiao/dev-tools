@@ -341,7 +341,7 @@
         <div class="tool-title">
             <h1>哈希/摘要工具</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.00</span>
+                <span>V1.01</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -351,7 +351,10 @@
                 <div class="panel">
                     <div class="panel-header">
                         <h2>文本摘要</h2>
-                        <button class="btn btn-danger" id="clear-text-btn" type="button">清空</button>
+                        <div>
+                            <button class="btn" type="button" data-clipboard-paste-target="text-input">📋 粘贴</button>
+                            <button class="btn btn-danger" id="clear-text-btn" type="button">清空</button>
+                        </div>
                     </div>
                     <textarea id="text-input" placeholder="输入需要计算摘要的文本，支持中文、换行和任意 UTF-8 字符。"></textarea>
                     <div class="actions">
@@ -405,6 +408,11 @@
                 <button class="close-modal" type="button" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date">2026年7月23日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.01</div>
+                    <div>文本摘要输入区新增粘贴按钮，可读取剪贴板文本并直接填入输入框。</div>
+                </div>
                 <div class="changelog-date">2026年7月11日</div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.00</div>

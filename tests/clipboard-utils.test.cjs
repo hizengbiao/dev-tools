@@ -102,6 +102,18 @@ function loadClipboardUtils(overrides = {}) {
     });
 }
 
+const pasteTargets = new Map([
+    ['text-case-converter.html', 'input-text'],
+    ['regex-tester.html', 'testText'],
+    ['text_escape_formatter_final.html', 'inputText'],
+    ['text-splitter.html', 'inputText'],
+    ['sql-formatter.html', 'sql-input'],
+    ['url-encoder.html', 'input-text'],
+    ['base64-encoder.html', 'input-text'],
+    ['hash-generator.html', 'text-input'],
+    ['jwt-decoder.html', 'jwt-input'],
+]);
+
 for (const file of [
     'base64-encoder.html',
     'html-formatter.html',
@@ -117,4 +129,64 @@ for (const file of [
     assert.match(html, /<script src="clipboard-utils\.js"><\/script>/, `${file} should include clipboard-utils.js`);
 }
 
-console.log('clipboard utilities passed');
+for (const [file, targetId] of pasteTargets) {
+    const html = fs.readFileSync(path.join(rootDir, file), 'utf8');
+    assert.match(
+        html,
+        new RegExp(`data-clipboard-paste-target="${targetId}"`),
+        `${file} should provide a clipboard paste button for ${targetId}`
+    );
+}
+
+async function testPasteText() {
+    let inputEventCount = 0;
+    let focused = false;
+    let selection = [];
+    const target = {
+        value: '',
+        dispatchEvent(event) {
+            assert.equal(event.type, 'input');
+            inputEventCount += 1;
+        },
+        focus() { focused = true; },
+        setSelectionRange(start, end) { selection = [start, end]; },
+    };
+    function FakeEvent(type) { this.type = type; }
+    const { ClipboardUtils } = loadClipboardUtils({
+        navigator: { clipboard: { readText: async () => 'clipboard value' } },
+        document: {
+            getElementById(id) { return id === 'target-input' ? target : null; },
+        },
+        Event: FakeEvent,
+    });
+
+    const ok = await ClipboardUtils.pasteText('target-input');
+    assert.equal(ok, true);
+    assert.equal(target.value, 'clipboard value');
+    assert.equal(inputEventCount, 1);
+    assert.equal(focused, true);
+    assert.deepEqual(selection, [15, 15]);
+
+    const unsupported = await ClipboardUtils.readClipboardText({ navigatorRef: {} });
+    assert.equal(unsupported.ok, false);
+
+    const previousValue = target.value;
+    const emptyOk = await ClipboardUtils.pasteText(target, {
+        navigatorRef: { clipboard: { readText: async () => '' } },
+    });
+    assert.equal(emptyOk, false);
+    assert.equal(target.value, previousValue);
+
+    const deniedOk = await ClipboardUtils.pasteText(target, {
+        navigatorRef: { clipboard: { readText: async () => { throw new Error('denied'); } } },
+    });
+    assert.equal(deniedOk, false);
+    assert.equal(target.value, previousValue);
+}
+
+testPasteText()
+    .then(() => console.log('clipboard utilities passed'))
+    .catch(error => {
+        console.error(error);
+        process.exitCode = 1;
+    });

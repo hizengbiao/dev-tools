@@ -467,7 +467,7 @@
         <div class="tool-title">
             <h1>文本命名转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.08</span>
+                <span>V1.09</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -477,7 +477,10 @@
                 <div class="panel">
                     <div class="panel-header">
                         <h3>输入区</h3>
-                        <button class="icon-btn" onclick="copyInput()">📋 复制</button>
+                        <div>
+                            <button class="icon-btn" type="button" data-clipboard-paste-target="input-text">📋 粘贴</button>
+                            <button class="icon-btn" onclick="copyInput()">📋 复制</button>
+                        </div>
                     </div>
                     <textarea id="input-text" placeholder="输入需要转换的文本、变量名或短语">Character set incompatible</textarea>
                 </div>
@@ -545,6 +548,13 @@
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年7月23日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.09</div>
+                        <div class="changelog-desc">输入区新增粘贴按钮，可读取剪贴板文本并直接填入输入框。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月13日</div>
                     <div class="changelog-entry">

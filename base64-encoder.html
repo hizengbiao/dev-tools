@@ -443,7 +443,7 @@
         <div class="tool-title">
             <h1>Base64 编解码</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.04</span>
+                <span>V1.05</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -457,7 +457,10 @@
         <div id="mode-text" class="panel">
             <div class="panel-header">
                 <h3>输入文本</h3>
-                <button class="icon-btn" onclick="clearText()">🗑️ 清空</button>
+                <div>
+                    <button class="icon-btn" type="button" data-clipboard-paste-target="input-text">📋 粘贴</button>
+                    <button class="icon-btn" onclick="clearText()">🗑️ 清空</button>
+                </div>
             </div>
             <textarea id="input-text" placeholder="在此输入需要处理的文本..."></textarea>
             <div id="base64-recommendation" class="recommendation">等待输入：输入内容后会自动判断更适合编码还是解码</div>
@@ -505,6 +508,13 @@
                 <button class="close-modal" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年7月23日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.05</div>
+                        <div class="changelog-desc">文本输入区新增粘贴按钮，可读取剪贴板文本并同步刷新编码/解码推荐与内容识别。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月10日</div>
                     <div class="changelog-entry">
