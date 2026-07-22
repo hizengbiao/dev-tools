@@ -117,6 +117,17 @@
             color: #57606a;
         }
 
+        .panel-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: nowrap;
+        }
+
+        .panel-header-actions .icon-btn {
+            white-space: nowrap;
+        }
+
         textarea {
             width: 100%;
             height: 150px;
@@ -443,7 +454,7 @@
         <div class="tool-title">
             <h1>Base64 编解码</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.05</span>
+                <span>V1.06</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -457,8 +468,8 @@
         <div id="mode-text" class="panel">
             <div class="panel-header">
                 <h3>输入文本</h3>
-                <div>
-                    <button class="icon-btn" type="button" data-clipboard-paste-target="input-text">📋 粘贴</button>
+                <div class="panel-header-actions">
+                    <button class="icon-btn" type="button" data-clipboard-paste-target="input-text" data-clipboard-paste-action="textEncodeBtn">📋 粘贴并编码</button>
                     <button class="icon-btn" onclick="clearText()">🗑️ 清空</button>
                 </div>
             </div>
@@ -467,7 +478,7 @@
             <div id="decoded-content-analysis" class="content-analysis">解码内容识别：输入 Base64 后会提示 JSON、图片或二进制类型</div>
 
             <div class="actions">
-                <button class="btn btn-primary" onclick="doTextEncode()">编码 (Encode)</button>
+                <button class="btn btn-primary" id="textEncodeBtn" onclick="doTextEncode()">编码 (Encode)</button>
                 <button class="btn btn-primary" onclick="doTextDecode()">解码 (Decode)</button>
                 <button class="btn" onclick="doBase64UrlEncode()">转 Base64URL</button>
                 <button class="btn" onclick="doBase64UrlDecode()">Base64URL 解码</button>
@@ -510,6 +521,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月23日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.06</div>
+                        <div class="changelog-desc">文本输入区粘贴按钮调整为与清空按钮水平排列，并改为“粘贴并编码”，粘贴成功后自动执行 Base64 编码。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.05</div>
                         <div class="changelog-desc">文本输入区新增粘贴按钮，可读取剪贴板文本并同步刷新编码/解码推荐与内容识别。</div>

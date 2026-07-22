@@ -1134,7 +1134,7 @@
         <div class="tool-title">
             <h1>正则表达式测试</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.15</span>
+                <span>V1.16</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -1146,7 +1146,7 @@
                         <div class="field-header">
                             <label for="testText">测试内容</label>
                             <div class="actions">
-                                <button class="btn" type="button" data-clipboard-paste-target="testText">📋 粘贴</button>
+                                <button class="btn" type="button" data-clipboard-paste-target="testText" data-clipboard-paste-action="testBtn">📋 粘贴并测试</button>
                                 <button class="btn btn-danger" id="clearBtn" type="button">清空</button>
                             </div>
                         </div>
@@ -1177,7 +1177,7 @@
                         <div class="field-header">
                             <label for="patternInput">匹配规则</label>
                             <div class="actions">
-                                <button class="btn" type="button" data-clipboard-paste-target="patternInput">📋 粘贴</button>
+                                <button class="btn" type="button" data-clipboard-paste-target="patternInput" data-clipboard-paste-action="testBtn">📋 粘贴并测试</button>
                             </div>
                         </div>
                         <div class="pattern-row">
@@ -1319,6 +1319,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月23日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.16</div>
+                        <div class="changelog-desc">测试内容和匹配规则的粘贴按钮改为“粘贴并测试”，粘贴成功后自动执行匹配测试。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.15</div>
                         <div class="changelog-desc">匹配规则标题右侧新增粘贴按钮，可读取剪贴板内容并同步刷新规则提示、风险分析和可视化结果。</div>

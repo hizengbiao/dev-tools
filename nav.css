@@ -326,6 +326,10 @@ body.nav-expanded {
     filter: brightness(1.04);
 }
 
+[data-clipboard-paste-target] {
+    white-space: nowrap;
+}
+
 @media (max-width: 720px) {
     .nav-container {
         flex-wrap: wrap;

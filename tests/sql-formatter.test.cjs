@@ -144,7 +144,7 @@ assert.deepStrictEqual(sql.extractTableNames('<select id="dynamic">select * from
 const page = fs.readFileSync(path.join(root, 'sql-formatter.html'), 'utf8');
 assert.match(page, /<title>SQL 格式化\/压缩工具<\/title>/);
 assert.match(page, /<script src="sql-formatter\.js"><\/script>/);
-assert.match(page, /<span>V1\.04<\/span>/);
+assert.match(page, /<span>V1\.05<\/span>/);
 assert.match(page, /<script src="editor-lines\.js"><\/script>/);
 assert.match(page, /id="input-lines"/);
 assert.match(page, /id="output-lines"/);
@@ -155,6 +155,7 @@ assert.match(page, /<div class="changelog-date">2026年7月22日<\/div>[\s\S]*?<
 assert.match(page, /<div class="changelog-date">2026年7月23日<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月23日<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月23日<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>/);
+assert.match(page, /<div class="changelog-date">2026年7月23日<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>/);
 assert.match(page, /class="modal-overlay"/);
 assert.match(page, /onclick="closeChangelog\(\)"/);
 assert.doesNotMatch(page, /hideChangelog/);

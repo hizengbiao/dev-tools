@@ -6,7 +6,8 @@ const vm = require('vm');
 const rootDir = path.resolve(__dirname, '..');
 const page = fs.readFileSync(path.join(rootDir, 'base64-encoder.html'), 'utf8');
 
-assert.match(page, /<span>V1\.05<\/span>/);
+assert.match(page, /<span>V1\.06<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年7月23日<\/div>[\s\S]*?<div class="changelog-version">V1\.06<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月23日<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月10日<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
 assert.match(page, /id="base64-recommendation"/);

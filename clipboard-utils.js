@@ -151,6 +151,23 @@
         return true;
     }
 
+    async function pasteFromButton(button, options = {}) {
+        if (!button || !button.dataset || !button.dataset.clipboardPasteTarget) return false;
+        const ok = await pasteText(button.dataset.clipboardPasteTarget, {
+            ...options,
+            successMessage: button.dataset.clipboardPasteSuccess || options.successMessage || '已粘贴剪贴板内容'
+        });
+        if (!ok) return false;
+
+        const actionId = button.dataset.clipboardPasteAction;
+        const documentRef = getDocument(options);
+        const action = actionId && documentRef && documentRef.getElementById
+            ? documentRef.getElementById(actionId)
+            : null;
+        if (action && action !== button && action.click) action.click();
+        return true;
+    }
+
     function installPasteButtonHandler(options = {}) {
         const documentRef = getDocument(options);
         if (!documentRef || !documentRef.addEventListener || documentRef.__clipboardPasteHandlerInstalled) return;
@@ -163,9 +180,7 @@
 
             button.disabled = true;
             try {
-                await pasteText(button.dataset.clipboardPasteTarget, {
-                    successMessage: button.dataset.clipboardPasteSuccess || '已粘贴剪贴板内容'
-                });
+                await pasteFromButton(button);
             } finally {
                 button.disabled = false;
             }
@@ -178,6 +193,7 @@
         copyText,
         readClipboardText,
         pasteText,
+        pasteFromButton,
         installPasteButtonHandler
     };
 

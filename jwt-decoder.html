@@ -127,6 +127,17 @@
             font-size: 16px;
         }
 
+        .panel-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: nowrap;
+        }
+
+        .panel-header-actions .btn {
+            white-space: nowrap;
+        }
+
         textarea {
             width: 100%;
             min-height: 310px;
@@ -311,7 +322,7 @@
         <div class="tool-title">
             <h1>JWT 解析工具</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.01</span>
+                <span>V1.02</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -324,8 +335,8 @@
             <section class="panel">
                 <div class="panel-header">
                     <h2>JWT 输入</h2>
-                    <div>
-                        <button class="btn" type="button" data-clipboard-paste-target="jwt-input">📋 粘贴</button>
+                    <div class="panel-header-actions">
+                        <button class="btn" type="button" data-clipboard-paste-target="jwt-input" data-clipboard-paste-action="decode-btn">📋 粘贴并解析</button>
                         <button class="btn" id="copy-token-btn" type="button">复制原文</button>
                     </div>
                 </div>
@@ -378,6 +389,10 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date">2026年7月23日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.02</div>
+                    <div>JWT 输入区粘贴按钮调整为与复制原文按钮水平排列，并改为“粘贴并解析”，粘贴成功后自动解析 JWT。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.01</div>
                     <div>JWT 输入区新增粘贴按钮，可读取剪贴板文本并立即刷新解析结果。</div>

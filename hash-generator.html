@@ -122,6 +122,17 @@
             font-size: 16px;
         }
 
+        .panel-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: nowrap;
+        }
+
+        .panel-header-actions .btn {
+            white-space: nowrap;
+        }
+
         textarea {
             width: 100%;
             min-height: 260px;
@@ -341,7 +352,7 @@
         <div class="tool-title">
             <h1>哈希/摘要工具</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.01</span>
+                <span>V1.02</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -351,8 +362,8 @@
                 <div class="panel">
                     <div class="panel-header">
                         <h2>文本摘要</h2>
-                        <div>
-                            <button class="btn" type="button" data-clipboard-paste-target="text-input">📋 粘贴</button>
+                        <div class="panel-header-actions">
+                            <button class="btn" type="button" data-clipboard-paste-target="text-input" data-clipboard-paste-action="hash-text-btn">📋 粘贴并计算</button>
                             <button class="btn btn-danger" id="clear-text-btn" type="button">清空</button>
                         </div>
                     </div>
@@ -409,6 +420,10 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date">2026年7月23日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.02</div>
+                    <div>文本摘要区粘贴按钮调整为与清空按钮水平排列，并改为“粘贴并计算”，粘贴成功后自动计算文本摘要。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.01</div>
                     <div>文本摘要输入区新增粘贴按钮，可读取剪贴板文本并直接填入输入框。</div>

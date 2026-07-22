@@ -89,6 +89,17 @@
             color: #24292f;
         }
 
+        .panel-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: nowrap;
+        }
+
+        .panel-header-actions .icon-btn {
+            white-space: nowrap;
+        }
+
         textarea {
             width: 100%;
             flex: 1;
@@ -467,7 +478,7 @@
         <div class="tool-title">
             <h1>文本命名转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.09</span>
+                <span>V1.10</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -477,8 +488,8 @@
                 <div class="panel">
                     <div class="panel-header">
                         <h3>输入区</h3>
-                        <div>
-                            <button class="icon-btn" type="button" data-clipboard-paste-target="input-text">📋 粘贴</button>
+                        <div class="panel-header-actions">
+                            <button class="icon-btn" type="button" data-clipboard-paste-target="input-text" data-clipboard-paste-action="constantFormatBtn">📋 粘贴并转换</button>
                             <button class="icon-btn" onclick="copyInput()">📋 复制</button>
                         </div>
                     </div>
@@ -521,7 +532,7 @@
                     </label>
                 </div>
                 <div class="quick-actions format-actions">
-                    <button class="btn format-btn" onclick="convertText('constant')">大写下划线命名</button>
+                    <button class="btn format-btn" id="constantFormatBtn" onclick="convertText('constant')">大写下划线命名</button>
                     <button class="btn format-btn" onclick="convertText('snake')">小写下划线命名</button>
                     <button class="btn format-btn" onclick="convertText('camel')">小驼峰命名</button>
                     <button class="btn format-btn" onclick="convertText('pascal')">大驼峰命名</button>
@@ -550,6 +561,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月23日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.10</div>
+                        <div class="changelog-desc">输入区粘贴按钮调整为与复制按钮水平排列，并改为“粘贴并转换”，粘贴后自动执行大写下划线命名转换。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.09</div>
                         <div class="changelog-desc">输入区新增粘贴按钮，可读取剪贴板文本并直接填入输入框。</div>

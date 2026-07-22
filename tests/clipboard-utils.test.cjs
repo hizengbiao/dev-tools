@@ -5,6 +5,7 @@ const vm = require('node:vm');
 
 const rootDir = path.resolve(__dirname, '..');
 const source = fs.readFileSync(path.join(rootDir, 'clipboard-utils.js'), 'utf8');
+const navCss = fs.readFileSync(path.join(rootDir, 'nav.css'), 'utf8');
 
 function loadClipboardUtils(overrides = {}) {
     const context = {
@@ -103,16 +104,16 @@ function loadClipboardUtils(overrides = {}) {
 }
 
 const pasteTargets = [
-    ['text-case-converter.html', 'input-text'],
-    ['regex-tester.html', 'testText'],
-    ['regex-tester.html', 'patternInput'],
-    ['text_escape_formatter_final.html', 'inputText'],
-    ['text-splitter.html', 'inputText'],
-    ['sql-formatter.html', 'sql-input'],
-    ['url-encoder.html', 'input-text'],
-    ['base64-encoder.html', 'input-text'],
-    ['hash-generator.html', 'text-input'],
-    ['jwt-decoder.html', 'jwt-input'],
+    ['text-case-converter.html', 'input-text', 'constantFormatBtn', '粘贴并转换'],
+    ['regex-tester.html', 'testText', 'testBtn', '粘贴并测试'],
+    ['regex-tester.html', 'patternInput', 'testBtn', '粘贴并测试'],
+    ['text_escape_formatter_final.html', 'inputText', 'encodeBtn', '粘贴并转换'],
+    ['text-splitter.html', 'inputText', 'splitBtn', '粘贴并拆分'],
+    ['sql-formatter.html', 'sql-input', 'format-btn', '粘贴并格式化'],
+    ['url-encoder.html', 'input-text', 'encodeBtn', '粘贴并编码'],
+    ['base64-encoder.html', 'input-text', 'textEncodeBtn', '粘贴并编码'],
+    ['hash-generator.html', 'text-input', 'hash-text-btn', '粘贴并计算'],
+    ['jwt-decoder.html', 'jwt-input', 'decode-btn', '粘贴并解析'],
 ];
 
 for (const file of [
@@ -130,14 +131,21 @@ for (const file of [
     assert.match(html, /<script src="clipboard-utils\.js"><\/script>/, `${file} should include clipboard-utils.js`);
 }
 
-for (const [file, targetId] of pasteTargets) {
+for (const [file, targetId, actionId, label] of pasteTargets) {
     const html = fs.readFileSync(path.join(rootDir, file), 'utf8');
     assert.match(
         html,
         new RegExp(`data-clipboard-paste-target="${targetId}"`),
         `${file} should provide a clipboard paste button for ${targetId}`
     );
+    assert.match(
+        html,
+        new RegExp(`data-clipboard-paste-target="${targetId}"[^>]*data-clipboard-paste-action="${actionId}"`),
+        `${file} should trigger ${actionId} after pasting into ${targetId}`
+    );
+    assert.match(html, new RegExp(`>[^<]*${label}<\/button>`), `${file} should label the paste action as ${label}`);
 }
+assert.match(navCss, /\[data-clipboard-paste-target\]\s*\{[^}]*white-space:\s*nowrap;/s);
 
 async function testPasteText() {
     let inputEventCount = 0;
@@ -183,6 +191,28 @@ async function testPasteText() {
     });
     assert.equal(deniedOk, false);
     assert.equal(target.value, previousValue);
+
+    let actionClickCount = 0;
+    const action = { click() { actionClickCount += 1; } };
+    const actionButton = {
+        dataset: {
+            clipboardPasteTarget: 'target-input',
+            clipboardPasteAction: 'primary-action',
+        },
+    };
+    const actionOk = await ClipboardUtils.pasteFromButton(actionButton, {
+        navigatorRef: { clipboard: { readText: async () => 'run action' } },
+        documentRef: {
+            getElementById(id) {
+                if (id === 'target-input') return target;
+                if (id === 'primary-action') return action;
+                return null;
+            },
+        },
+    });
+    assert.equal(actionOk, true);
+    assert.equal(target.value, 'run action');
+    assert.equal(actionClickCount, 1);
 }
 
 testPasteText()

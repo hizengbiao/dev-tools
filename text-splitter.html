@@ -689,7 +689,7 @@
         <div class="tool-title">
             <h1>文本智能拆分</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.11</span>
+                <span>V1.12</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -727,7 +727,7 @@
                         <h2>输入文本</h2>
                         <div class="panel-header-actions">
                             <span class="stats" id="inputStats">0 个字符</span>
-                            <button class="btn btn-small" type="button" data-clipboard-paste-target="inputText">📋 粘贴</button>
+                            <button class="btn btn-small" type="button" data-clipboard-paste-target="inputText" data-clipboard-paste-action="splitBtn">📋 粘贴并拆分</button>
                         </div>
                     </div>
                     <div class="editor-shell">
@@ -763,6 +763,10 @@
             </div>
             <div class="modal-body">
                 <div class="changelog-date">2026年7月23日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.12</div>
+                    <div>输入区按钮改为“粘贴并拆分”，粘贴成功后自动执行开始拆分。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.11</div>
                     <div>输入文本区新增粘贴按钮，可读取剪贴板文本并同步刷新字符统计与行号。</div>

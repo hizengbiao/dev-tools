@@ -716,7 +716,7 @@
         <div class="tool-title">
             <h1>文本转义转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.16</span>
+                <span>V1.17</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -729,7 +729,7 @@
                         <div class="panel-header-right">
                             <div class="stats" id="inputStats">0 行 / 0 字符</div>
                             <div class="panel-copy-actions" aria-label="输入区复制操作">
-                                <button class="btn btn-small" type="button" data-clipboard-paste-target="inputText">粘贴</button>
+                                <button class="btn btn-small" type="button" data-clipboard-paste-target="inputText" data-clipboard-paste-action="encodeBtn">粘贴并转换</button>
                                 <button class="btn btn-small" id="copyInputTextBtn" type="button">复制</button>
                                 <button class="btn btn-small" id="copyInputQuotedBtn" type="button">加引号复制</button>
                             </div>
@@ -825,6 +825,10 @@ java.lang.RuntimeException: test
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月23日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.17</div>
+                        <div class="changelog-desc">输入区按钮改为“粘贴并转换”，粘贴成功后自动执行“转为转义字符串”。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.16</div>
                         <div class="changelog-desc">输入区新增粘贴按钮，可读取剪贴板文本并同步刷新行号、统计和差异预览。</div>

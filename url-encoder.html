@@ -118,6 +118,17 @@
             color: #57606a;
         }
 
+        .panel-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: nowrap;
+        }
+
+        .panel-header-actions .icon-btn {
+            white-space: nowrap;
+        }
+
         textarea {
             width: 100%;
             padding: 12px;
@@ -614,7 +625,7 @@
         <div class="tool-title">
             <h1>URL 编解码</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.07</span>
+                <span>V1.08</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -624,8 +635,8 @@
                 <section class="editor-column input-column">
                     <div class="panel-header">
                         <h3>输入文本</h3>
-                        <div>
-                            <button class="icon-btn" type="button" data-clipboard-paste-target="input-text">📋 粘贴</button>
+                        <div class="panel-header-actions">
+                            <button class="icon-btn" type="button" data-clipboard-paste-target="input-text" data-clipboard-paste-action="encodeBtn">📋 粘贴并编码</button>
                             <button class="icon-btn" onclick="clearAll()">🗑️ 清空</button>
                         </div>
                     </div>
@@ -640,7 +651,7 @@
 
                 <div class="workspace-actions">
                     <div class="actions">
-                        <button class="btn btn-primary" onclick="doEncode()">编码 (Encode)</button>
+                        <button class="btn btn-primary" id="encodeBtn" onclick="doEncode()">编码 (Encode)</button>
                         <button class="btn btn-primary" onclick="doDecode()">解码 (Decode)</button>
                         <button id="swapBtn" class="btn btn-secondary" onclick="swapInputOutput()">⇄ 交换输入输出</button>
                     </div>
@@ -728,6 +739,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月23日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.08</div>
+                        <div class="changelog-desc">输入区粘贴按钮调整为与清空按钮水平排列，并改为“粘贴并编码”，粘贴成功后自动执行 URL 编码。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.07</div>
                         <div class="changelog-desc">输入区新增粘贴按钮，可读取剪贴板文本并同步刷新行号、差异预览和 URL 参数分析。</div>
