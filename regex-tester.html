@@ -202,12 +202,14 @@
             align-items: end;
         }
 
-        .pattern-paste-actions {
+        .pattern-paste-header {
             display: flex;
+            align-items: center;
             justify-content: flex-start;
+            gap: 8px;
         }
 
-        .pattern-paste-actions .btn {
+        .pattern-paste-header .btn {
             padding: 5px 9px;
             font-size: 12px;
             line-height: 1.2;
@@ -1145,7 +1147,7 @@
         <div class="tool-title">
             <h1>正则表达式测试</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.17</span>
+                <span>V1.18</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -1185,8 +1187,8 @@
                     </div>
 
                     <div class="field">
-                        <label for="patternInput">匹配规则</label>
-                        <div class="pattern-paste-actions">
+                        <div class="pattern-paste-header">
+                            <label for="patternInput">匹配规则</label>
                             <button class="btn" type="button" data-clipboard-paste-target="patternInput" data-clipboard-paste-action="testBtn">📋 粘贴并测试</button>
                         </div>
                         <div class="pattern-row">
@@ -1328,6 +1330,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月23日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.18</div>
+                        <div class="changelog-desc">“匹配规则”标题与紧凑的“粘贴并测试”按钮调整为同一行左对齐显示。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.17</div>
                         <div class="changelog-desc">匹配规则的“粘贴并测试”按钮移动到输入框正上方并左对齐，同时缩小按钮和文字尺寸。</div>
