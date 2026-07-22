@@ -122,7 +122,7 @@
             gap: 12px;
         }
 
-        label {
+        .form-grid label {
             display: grid;
             gap: 5px;
             color: var(--muted-color);
@@ -130,8 +130,8 @@
             font-weight: 600;
         }
 
-        input,
-        select {
+        .form-grid input,
+        .form-grid select {
             width: 100%;
             padding: 9px 10px;
             border: 1px solid var(--border-color);
@@ -140,8 +140,8 @@
             background: #fff;
         }
 
-        input:focus,
-        select:focus {
+        .form-grid input:focus,
+        .form-grid select:focus {
             outline: none;
             border-color: var(--accent-color);
             box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
@@ -314,7 +314,7 @@
         <div class="tool-title">
             <h1>UUID / 随机值生成器</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.01</span>
+                <span>V1.02</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -385,6 +385,11 @@
                 <button class="close-modal" type="button" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="changelog-date">2026年7月23日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.02</div>
+                    <div>将标签、输入框和下拉框样式限定在生成配置表单内，避免影响自定义顶部导航弹窗的工具名称与控件样式。</div>
+                </div>
                 <div class="changelog-date">2026年7月14日</div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.01</div>
