@@ -202,6 +202,17 @@
             align-items: end;
         }
 
+        .pattern-paste-actions {
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .pattern-paste-actions .btn {
+            padding: 5px 9px;
+            font-size: 12px;
+            line-height: 1.2;
+        }
+
         .flag-group {
             display: flex;
             flex-wrap: wrap;
@@ -1134,7 +1145,7 @@
         <div class="tool-title">
             <h1>正则表达式测试</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.16</span>
+                <span>V1.17</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -1174,11 +1185,9 @@
                     </div>
 
                     <div class="field">
-                        <div class="field-header">
-                            <label for="patternInput">匹配规则</label>
-                            <div class="actions">
-                                <button class="btn" type="button" data-clipboard-paste-target="patternInput" data-clipboard-paste-action="testBtn">📋 粘贴并测试</button>
-                            </div>
+                        <label for="patternInput">匹配规则</label>
+                        <div class="pattern-paste-actions">
+                            <button class="btn" type="button" data-clipboard-paste-target="patternInput" data-clipboard-paste-action="testBtn">📋 粘贴并测试</button>
                         </div>
                         <div class="pattern-row">
                             <input id="patternInput" type="text" value="^(1[3-9]\d{2})\d{3}(\d{4})$" spellcheck="false"
@@ -1319,6 +1328,10 @@
             <div class="modal-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月23日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.17</div>
+                        <div class="changelog-desc">匹配规则的“粘贴并测试”按钮移动到输入框正上方并左对齐，同时缩小按钮和文字尺寸。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.16</div>
                         <div class="changelog-desc">测试内容和匹配规则的粘贴按钮改为“粘贴并测试”，粘贴成功后自动执行匹配测试。</div>
