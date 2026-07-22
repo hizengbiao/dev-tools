@@ -146,6 +146,14 @@
   - 2026-07-04 已将 `json-parser.html` 中 Java toString / Map 风格对象规范化逻辑抽取到 `json-java-style-normalizer.js`，新增 `tests/json-java-style-normalizer.test.cjs` 覆盖类名前缀、裸字符串值、嵌套 Map、字符串内等号和页面接入。
   - 2026-07-05 已将 `json-parser.html` 中去注释、中文冒号修复、缺逗号补齐、未加引号 key/value 补齐逻辑抽取到 `json-repair-normalizer.js`，新增 `tests/json-repair-normalizer.test.cjs` 覆盖宽松 JSON 修复链路和页面接入。
 
+### TODO-CORE-008：调整 SQL 工具默认顺序
+
+- 状态：`[x]`
+- 优先级：`P1`
+- 类型：体验增强
+- 目标：将 SQL 格式化移动到 Nginx 格式化之后，并保持首页与顶部导航的默认顺序一致。
+- 完成记录：2026-07-23 已同步调整首页卡片和顶部导航默认顺序；为仍使用旧默认顺序的本地配置增加兼容迁移，保留用户手动调整过的导航顺序，并补充工具注册表顺序测试。
+
 ## JSON 格式化工具
 
 ### TODO-JSON-001：JSON Path 查询

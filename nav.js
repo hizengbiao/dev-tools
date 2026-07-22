@@ -10,13 +10,13 @@
         { name: 'Cron 解析', path: 'cron-parser.html', icon: '🕒' },
         { name: 'HTML 格式化', path: 'html-formatter.html', icon: '🌐' },
         { name: 'Nginx 格式化', path: 'nginx-formatter.html', icon: '⚙️' },
+        { name: 'SQL 格式化', path: 'sql-formatter.html', icon: '🧾' },
         { name: '时间戳转换', path: 'timestamp-converter.html', icon: '⏱️' },
         { name: 'URL 编解码', path: 'url-encoder.html', icon: '🔗' },
         { name: 'Base64', path: 'base64-encoder.html', icon: '🔐' },
         { name: '哈希摘要', path: 'hash-generator.html', icon: '#️⃣' },
         { name: 'JWT 解析', path: 'jwt-decoder.html', icon: '🎫' },
         { name: '随机生成', path: 'random-generator.html', icon: '🎲' },
-        { name: 'SQL 格式化', path: 'sql-formatter.html', icon: '🧾' },
         { name: 'Neon Timer', path: 'neon-timer/dist/index.html', icon: '⏲️' }
     ];
     const navScript = document.currentScript || document.querySelector('script[src$="nav.js"]');
@@ -47,6 +47,7 @@
     const NAV_CONFIG_STORAGE_KEY = 'dev-tools-nav-config-v1';
     const NAV_HTML_FORMATTER_MIGRATION_KEY = 'dev-tools-nav-html-formatter-default-v1';
     const NAV_PRIMARY_ORDER_MIGRATION_KEY = 'dev-tools-nav-primary-order-v1';
+    const NAV_SQL_AFTER_NGINX_MIGRATION_KEY = 'dev-tools-nav-sql-after-nginx-v1';
     const configurableTools = tools.filter(tool => tool.path !== 'index.html');
     const toolByPath = new Map(configurableTools.map(tool => [tool.path, tool]));
 
@@ -136,6 +137,41 @@
         return migrated;
     }
 
+    function migrateSqlAfterNginxDefault(config) {
+        const normalized = normalizeNavConfig(config);
+        if (window.localStorage.getItem(NAV_SQL_AFTER_NGINX_MIGRATION_KEY) === '1') {
+            return normalized;
+        }
+
+        const previousDefaultPaths = [
+            'json-parser.html',
+            'text-case-converter.html',
+            'regex-tester.html',
+            'text_escape_formatter_final.html',
+            'text-splitter.html',
+            'cron-parser.html',
+            'html-formatter.html',
+            'nginx-formatter.html',
+            'timestamp-converter.html',
+            'url-encoder.html',
+            'base64-encoder.html',
+            'hash-generator.html',
+            'jwt-decoder.html',
+            'random-generator.html',
+            'sql-formatter.html',
+            'neon-timer/dist/index.html'
+        ];
+        const isPreviousDefault = previousDefaultPaths.length === normalized.orderedPaths.length
+            && previousDefaultPaths.every((path, index) => normalized.orderedPaths[index] === path);
+        const migrated = isPreviousDefault ? getDefaultNavConfig() : normalized;
+
+        if (isPreviousDefault) {
+            window.localStorage.setItem(NAV_CONFIG_STORAGE_KEY, JSON.stringify(migrated));
+        }
+        window.localStorage.setItem(NAV_SQL_AFTER_NGINX_MIGRATION_KEY, '1');
+        return migrated;
+    }
+
     function migrateNewTools(config, initializeOnly = false) {
         const normalized = normalizeNavConfig(config);
         const currentPaths = configurableTools.map(tool => tool.path);
@@ -166,7 +202,9 @@
             const rawConfig = window.localStorage.getItem(NAV_CONFIG_STORAGE_KEY);
             const config = rawConfig ? JSON.parse(rawConfig) : getDefaultNavConfig();
             const isLegacyConfig = Boolean(rawConfig) && !Array.isArray(config.knownPaths);
-            const migrated = migratePrimaryDefaultOrder(migrateHtmlFormatterDefault(config));
+            const migrated = migrateSqlAfterNginxDefault(
+                migratePrimaryDefaultOrder(migrateHtmlFormatterDefault(config))
+            );
             return migrateNewTools(migrated, isLegacyConfig);
         } catch (error) {
             console.warn('Failed to load navigation config.', error);

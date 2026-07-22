@@ -33,6 +33,7 @@ const expectedLeadingPaths = [
     'cron-parser.html',
     'html-formatter.html',
     'nginx-formatter.html',
+    'sql-formatter.html',
     'timestamp-converter.html',
 ];
 assert.deepStrictEqual(
@@ -56,11 +57,15 @@ assert.match(nav, /document\.body\.classList\.toggle\('nav-expanded'/);
 assert.match(nav, /NAV_CONFIG_STORAGE_KEY = 'dev-tools-nav-config-v1'/);
 assert.match(nav, /NAV_HTML_FORMATTER_MIGRATION_KEY = 'dev-tools-nav-html-formatter-default-v1'/);
 assert.match(nav, /NAV_PRIMARY_ORDER_MIGRATION_KEY = 'dev-tools-nav-primary-order-v1'/);
+assert.match(nav, /NAV_SQL_AFTER_NGINX_MIGRATION_KEY = 'dev-tools-nav-sql-after-nginx-v1'/);
 assert.match(nav, /function migrateHtmlFormatterDefault/);
 assert.match(nav, /orderedPaths\.splice\(insertIndex, 0, 'html-formatter\.html'\)/);
 assert.match(nav, /window\.localStorage\.setItem\(NAV_HTML_FORMATTER_MIGRATION_KEY, '1'\)/);
 assert.match(nav, /function migratePrimaryDefaultOrder/);
 assert.match(nav, /const isLegacyDefault = legacyDefaultPaths\.length === normalized\.orderedPaths\.length/);
+assert.match(nav, /function migrateSqlAfterNginxDefault/);
+assert.match(nav, /const isPreviousDefault = previousDefaultPaths\.length === normalized\.orderedPaths\.length/);
+assert.match(nav, /window\.localStorage\.setItem\(NAV_SQL_AFTER_NGINX_MIGRATION_KEY, '1'\)/);
 assert.match(nav, /function migrateNewTools\(config, initializeOnly = false\)/);
 assert.match(nav, /const newPaths = currentPaths\.filter\(path => !knownPathSet\.has\(path\)\)/);
 assert.match(nav, /orderedPaths: \[\.\.\.normalized\.orderedPaths, \.\.\.newPaths\]/);
@@ -134,6 +139,7 @@ const expectedHomeLeadingPaths = [
     'cron-parser.html',
     'html-formatter.html',
     'nginx-formatter.html',
+    'sql-formatter.html',
     'timestamp-converter.html',
 ];
 assert.match(home, /\.tools-grid\s*\{[^}]*grid-template-columns:\s*repeat\(5, minmax\(0, 1fr\)\)[^}]*max-width:\s*1500px/s);
