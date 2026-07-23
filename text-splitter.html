@@ -690,7 +690,7 @@
         <div class="tool-title">
             <h1>文本智能拆分</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.13</span>
+                <span>V1.14</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -764,6 +764,10 @@
             </div>
             <div class="modal-body changelog-body">
                 <div class="changelog-date">2026年7月23日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.14</div>
+                    <div>脱敏配置弹窗不再因点击弹窗外部或按 Esc 键关闭，仅保存、取消和关闭按钮可关闭，避免未保存配置意外丢失。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.13</div>
                     <div>接入公共版本更新弹窗样式，限制弹窗最大高度并支持内容区滚动，避免长更新记录超出视口。</div>
@@ -1279,9 +1283,6 @@
             if (event.target === previewModal) {
                 closeSegmentPreview();
             }
-            if (event.target === maskConfigModal) {
-                closeMaskConfig();
-            }
         });
         document.getElementById('segmentPreviewContent').addEventListener('scroll', (event) => {
             document.getElementById('segmentPreviewLineNumbers').scrollTop = event.currentTarget.scrollTop;
@@ -1289,7 +1290,6 @@
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
                 closeSegmentPreview();
-                closeMaskConfig();
                 closeChangelog();
             }
         });

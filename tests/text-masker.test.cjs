@@ -94,7 +94,15 @@ assert.match(page, /localStorage\.setItem\(TextMasker\.STORAGE_KEY/);
 assert.match(page, /TextMasker\.maskText\(inputText\.value, maskConfig\.mappings\)/);
 assert.match(page, /TextMasker\.unmaskText\(inputText\.value, maskConfig\.mappings\)/);
 assert.match(page, /renderResults\(\[unmaskedText\], \{ mode: 'unmask' \}\)/);
-assert.match(page, /<span>V1\.13<\/span>/);
+assert.match(page, /getElementById\('closeMaskConfigBtn'\)\.addEventListener\('click', closeMaskConfig\)/);
+assert.match(page, /getElementById\('cancelMaskConfigBtn'\)\.addEventListener\('click', closeMaskConfig\)/);
+assert.match(page, /getElementById\('saveMaskConfigBtn'\)\.addEventListener\('click', saveMaskConfig\)/);
+assert.doesNotMatch(page, /event\.target === maskConfigModal/);
+const escapeHandler = page.match(/document\.addEventListener\('keydown',[\s\S]*?\n        \}\);/);
+assert.ok(escapeHandler, 'Escape key handler should exist');
+assert.doesNotMatch(escapeHandler[0], /closeMaskConfig\(\)/);
+assert.match(page, /<span>V1\.14<\/span>/);
+assert.match(page, /<div class="changelog-date">2026\u5e747\u670823\u65e5<\/div>[\s\S]*?<div class="changelog-version">V1\.14<\/div>/);
 assert.match(page, /<div class="changelog-date">2026\u5e747\u670815\u65e5<\/div>[\s\S]*?<div class="changelog-version">V1\.09<\/div>/);
 
 console.log('text masker behavior and integration passed');
