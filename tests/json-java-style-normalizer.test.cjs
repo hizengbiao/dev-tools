@@ -33,5 +33,19 @@ assert.strictEqual(
 assert.strictEqual(normalizer.hasUnquotedEquals('"a=b"'), false);
 assert.strictEqual(normalizer.hasUnquotedEquals('a=b'), true);
 assert.strictEqual(normalizer.replaceEqualsOutsideStrings('"a=b"=c'), '"a=b":c');
+assert.strictEqual(normalizer.looksLikeJavaStyleObject('callback({"value":1})'), false);
+
+const strategyDto = 'StrategyDTO(type=null, firMip=12.255.85.31, deviceVersion=null, region=sz, businessName=办公二区, ruleId=48, status=enable, action=permit, srcSecurityZone=Intranet, srcIpv4Address=19.0.0.0/8,51.0.0.0/8, dstSecurityZone=ZH02, dstDomain=null, dstAddrName=19.0.47.16/32, dstAddrIp=19.0.27.166/32, dstDnatIpAddress=null, dstNatName=null, dstNatIp=null, serviceName=null, protocol=ICMP,tcp, tcpPort=443,80, lineIndex=null)';
+const normalizedStrategyDto = normalizer.normalizeJavaStyleObject(strategyDto);
+assert.match(normalizedStrategyDto, /^\{type:null, firMip:'12\.255\.85\.31'/);
+assert.match(normalizedStrategyDto, /srcIpv4Address:'19\.0\.0\.0\/8,51\.0\.0\.0\/8'/);
+assert.match(normalizedStrategyDto, /protocol:'ICMP,tcp'/);
+assert.match(normalizedStrategyDto, /tcpPort:'443,80'/);
+assert.match(normalizedStrategyDto, /lineIndex:null\}$/);
+
+assert.strictEqual(
+    normalizer.normalizeJavaStyleObject('WrapperDTO(name=test, child=ChildDTO(id=1, tags=a,b))'),
+    "{name:'test', child:{id:1, tags:'a,b'}}"
+);
 
 console.log('json java style normalizer passed');

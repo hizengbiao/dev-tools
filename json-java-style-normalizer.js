@@ -7,7 +7,8 @@
             return raw;
         }
 
-        let result = stripJavaClassPrefixes(trimmed);
+        let result = normalizeJavaObjectParentheses(trimmed);
+        result = stripJavaClassPrefixes(result);
         result = removeDanglingSingleQuotesOutsideStrings(result);
         result = quoteJavaMapValuesOutsideStrings(result);
         result = replaceEqualsOutsideStrings(result);
@@ -46,6 +47,124 @@
             }
 
             if (char === '=') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function normalizeJavaObjectParentheses(raw) {
+        let result = '';
+        let i = 0;
+
+        while (i < raw.length) {
+            const char = raw[i];
+            if (char === '"' || char === "'") {
+                const stringEnd = findStringEnd(raw, i, char);
+                result += raw.slice(i, stringEnd);
+                i = stringEnd;
+                continue;
+            }
+
+            const classMatch = raw.slice(i).match(/^([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/);
+            const previousIndex = findPreviousNonWhitespace(raw, i - 1);
+            const allowedStart = previousIndex === -1 || /[=:\[,{(]/.test(raw[previousIndex]);
+
+            if (classMatch && allowedStart) {
+                const openIndex = i + classMatch[0].lastIndexOf('(');
+                const closeIndex = findMatchingParenthesis(raw, openIndex);
+                if (closeIndex !== -1) {
+                    const inner = raw.slice(openIndex + 1, closeIndex);
+                    if (hasTopLevelEquals(inner)) {
+                        result += '{' + normalizeJavaObjectParentheses(inner) + '}';
+                        i = closeIndex + 1;
+                        continue;
+                    }
+                }
+            }
+
+            result += char;
+            i++;
+        }
+
+        return result;
+    }
+
+    function findStringEnd(raw, start, quote) {
+        let escaped = false;
+        for (let i = start + 1; i < raw.length; i++) {
+            const char = raw[i];
+            if (escaped) {
+                escaped = false;
+            } else if (char === '\\') {
+                escaped = true;
+            } else if (char === quote) {
+                return i + 1;
+            }
+        }
+        return raw.length;
+    }
+
+    function findMatchingParenthesis(raw, openIndex) {
+        let depth = 0;
+        let inString = false;
+        let stringChar = '';
+        let escaped = false;
+
+        for (let i = openIndex; i < raw.length; i++) {
+            const char = raw[i];
+            if (inString) {
+                if (escaped) {
+                    escaped = false;
+                } else if (char === '\\') {
+                    escaped = true;
+                } else if (char === stringChar) {
+                    inString = false;
+                }
+                continue;
+            }
+
+            if (char === '"' || char === "'") {
+                inString = true;
+                stringChar = char;
+            } else if (char === '(') {
+                depth++;
+            } else if (char === ')' && --depth === 0) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    function hasTopLevelEquals(raw) {
+        let depth = 0;
+        let inString = false;
+        let stringChar = '';
+        let escaped = false;
+
+        for (let i = 0; i < raw.length; i++) {
+            const char = raw[i];
+            if (inString) {
+                if (escaped) {
+                    escaped = false;
+                } else if (char === '\\') {
+                    escaped = true;
+                } else if (char === stringChar) {
+                    inString = false;
+                }
+                continue;
+            }
+
+            if (char === '"' || char === "'") {
+                inString = true;
+                stringChar = char;
+            } else if (char === '{' || char === '[' || char === '(') {
+                depth++;
+            } else if (char === '}' || char === ']' || char === ')') {
+                depth = Math.max(0, depth - 1);
+            } else if (char === '=' && depth === 0) {
                 return true;
             }
         }
@@ -133,23 +252,27 @@
                 continue;
             }
 
-            if (char === '{' || char === '[') {
+            if (char === '{' || char === '[' || char === '(') {
                 depth++;
                 continue;
             }
 
-            if (char === '}' || char === ']') {
+            if (char === '}' || char === ']' || char === ')') {
                 if (depth === 0) return i;
                 depth--;
                 continue;
             }
 
-            if (char === ',' && depth === 0) {
+            if (char === ',' && depth === 0 && looksLikeNextJavaField(raw, i + 1)) {
                 return i;
             }
         }
 
         return raw.length;
+    }
+
+    function looksLikeNextJavaField(raw, start) {
+        return /^\s*[A-Za-z_$][A-Za-z0-9_$]*\s*=/.test(raw.slice(start));
     }
 
     function shouldQuoteJavaMapValue(valueText) {
@@ -284,6 +407,7 @@
 
     const api = {
         normalizeJavaStyleObject,
+        normalizeJavaObjectParentheses,
         looksLikeJavaStyleObject,
         hasUnquotedEquals,
         quoteJavaMapValuesOutsideStrings,
