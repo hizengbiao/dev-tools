@@ -101,8 +101,25 @@ assert.deepStrictEqual(
         [5, '星期', 'MON-FRI']
     ]
 );
-assert.strictEqual(linuxVisualization.fields[0].meaning, '在分钟范围内每隔 15 分钟');
+assert.strictEqual(linuxVisualization.fields[0].meaning, '每小时的第 0、15、30、45 分钟（每隔 15 分钟）');
+assert.strictEqual(linuxVisualization.fields[1].meaning, '小时范围：9 至 18');
+assert.strictEqual(linuxVisualization.fields[2].meaning, '每个月的每一天都生效');
+assert.strictEqual(linuxVisualization.fields[3].meaning, '一年中的每个月都生效');
 assert.strictEqual(linuxVisualization.fields[4].meaning, '星期范围：周一至周五');
+const wildcardVisualization = cron.visualizeCron('* * * * *');
+assert.strictEqual(wildcardVisualization.fields[0].meaning, '每小时的每一分钟都生效');
+assert.strictEqual(wildcardVisualization.fields[1].meaning, '每天的每个小时都生效');
+assert.strictEqual(wildcardVisualization.fields[2].meaning, '每个月的每一天都生效');
+assert.strictEqual(wildcardVisualization.fields[3].meaning, '一年中的每个月都生效');
+assert.strictEqual(wildcardVisualization.fields[4].meaning, '一周中的每一天都生效，不限制星期');
+assert.strictEqual(
+    cron.visualizeCron('*/30 * * * *').fields[0].meaning,
+    '每小时的第 0、30 分钟（每隔 30 分钟）'
+);
+assert.strictEqual(
+    cron.visualizeCron('0 18 0/3 * * ?').fields[2].meaning,
+    '每天的 0、3、6、9、12、15、18、21 点（从 0 开始每隔 3 小时）'
+);
 
 const quartzVisualization = cron.visualizeCron('0 30 9 ? JAN MON#2 2027');
 assert.strictEqual(quartzVisualization.typeLabel, 'Quartz 7 段');
@@ -110,7 +127,7 @@ assert.deepStrictEqual(
     quartzVisualization.fields.map(field => field.label),
     ['秒', '分钟', '小时', '日期', '月份', '星期', '年份']
 );
-assert.strictEqual(quartzVisualization.fields[3].meaning, '不指定日期，由日期和星期中的另一项决定');
+assert.strictEqual(quartzVisualization.fields[3].meaning, '这一位不限制日期，由日期和星期中的另一项决定');
 assert.strictEqual(quartzVisualization.fields[5].meaning, '当月第二个周一');
 assert.strictEqual(quartzVisualization.fields[6].range, '1970-2099');
 const springVisualization = cron.visualizeCron('0 */5 * * * ?');
@@ -198,7 +215,7 @@ const page = fs.readFileSync(path.join(root, 'cron-parser.html'), 'utf8');
 assert.match(page, /<title>Cron 表达式解析与生成工具<\/title>/);
 assert.match(page, /<script src="cron-parser\.js"><\/script>/);
 assert.match(page, /<script src="cron-generator\.js"><\/script>/);
-assert.match(page, /<span>V1\.11<\/span>/);
+assert.match(page, /<span>V1\.12<\/span>/);
 assert.match(page, /id="cron-explanation"/);
 assert.match(page, /CronParser\.explainCron/);
 assert.match(page, /id="visualize-btn"/);
@@ -219,7 +236,7 @@ assert.match(page, /class="cron-source-token"[^>]*data-cron-position/);
 assert.match(page, /第 \$\{field\.position\} 位/);
 assert.match(page, /可用范围：\$\{escapeHtml\(field\.range\)\}/);
 assert.match(page, /\.modal-content\.cron-visualizer-dialog\s*\{[\s\S]*?width:\s*min\(1280px,\s*calc\(100vw - 48px\)\)[\s\S]*?max-height:\s*calc\(100vh - 48px\)/);
-assert.match(page, /<div class="changelog-date">2026年7月24日<\/div>[\s\S]*?<div class="changelog-version">V1\.11<\/div>/);
+assert.match(page, /<div class="changelog-date">2026年7月24日<\/div>[\s\S]*?<div class="changelog-version">V1\.12<\/div>[\s\S]*?<div class="changelog-version">V1\.11<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月23日<\/div>[\s\S]*?<div class="changelog-version">V1\.10<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.09<\/div>[\s\S]*?<div class="changelog-version">V1\.08<\/div>[\s\S]*?<div class="changelog-version">V1\.07<\/div>[\s\S]*?<div class="changelog-version">V1\.06<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
 assert.match(page, /支持月份和星期英文缩写，以及 Quartz 的 \?、L、W、LW、# 语法/);

@@ -8,13 +8,13 @@
     const MONTH_ALIASES = { JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6, JUL: 7, AUG: 8, SEP: 9, OCT: 10, NOV: 11, DEC: 12 };
     const WEEK_ALIASES = { SUN: 0, MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6 };
     const FIELD_DEFINITIONS = {
-        second: { label: '秒', range: '0-59', role: '一分钟内的第几秒', unit: '秒' },
-        minute: { label: '分钟', range: '0-59', role: '一小时内的第几分钟', unit: '分钟' },
-        hour: { label: '小时', range: '0-23', role: '一天内的第几小时', unit: '小时' },
-        day: { label: '日期', range: '1-31', role: '一个月中的第几天', unit: '日' },
-        month: { label: '月份', range: '1-12 或 JAN-DEC', role: '一年中的月份', unit: '个月' },
-        week: { label: '星期', range: '0-7 或 SUN-SAT', role: '一周中的星期几，0 和 7 都表示周日', unit: '天' },
-        year: { label: '年份', range: '1970-2099', role: '限定执行年份', unit: '年' }
+        second: { label: '秒', range: '0-59', role: '一分钟内的第几秒', unit: '秒', min: 0, max: 59, occurrencePrefix: '每分钟的第', occurrenceSuffix: '秒', anyMeaning: '每分钟的每一秒都生效' },
+        minute: { label: '分钟', range: '0-59', role: '一小时内的第几分钟', unit: '分钟', min: 0, max: 59, occurrencePrefix: '每小时的第', occurrenceSuffix: '分钟', anyMeaning: '每小时的每一分钟都生效' },
+        hour: { label: '小时', range: '0-23', role: '一天内的第几小时', unit: '小时', min: 0, max: 23, occurrencePrefix: '每天的', occurrenceSuffix: '点', anyMeaning: '每天的每个小时都生效' },
+        day: { label: '日期', range: '1-31', role: '一个月中的第几天', unit: '日', min: 1, max: 31, occurrencePrefix: '每月的', occurrenceSuffix: '日', anyMeaning: '每个月的每一天都生效' },
+        month: { label: '月份', range: '1-12 或 JAN-DEC', role: '一年中的月份', unit: '个月', min: 1, max: 12, occurrencePrefix: '每年的', occurrenceSuffix: '月', anyMeaning: '一年中的每个月都生效' },
+        week: { label: '星期', range: '0-7 或 SUN-SAT', role: '一周中的星期几，0 和 7 都表示周日', unit: '天', min: 0, max: 7, anyMeaning: '一周中的每一天都生效，不限制星期' },
+        year: { label: '年份', range: '1970-2099', role: '限定执行年份', unit: '年', min: 1970, max: 2099, anyMeaning: '每一年都生效' }
     };
 
     function detectCronType(expression) {
@@ -409,11 +409,27 @@
         return formatField(source);
     }
 
+    function describeStepOccurrences(startText, intervalText, definition) {
+        const start = startText === '*' ? definition.min : Number(startText);
+        const interval = Number(intervalText);
+        const values = [];
+        for (let value = start; value <= definition.max; value += interval) values.push(value);
+        const intervalDescription = startText === '*'
+            ? `每隔 ${interval} ${definition.unit}`
+            : `从 ${start} 开始每隔 ${interval} ${definition.unit}`;
+        if (!definition.occurrencePrefix || values.length > 12) {
+            return startText === '*'
+                ? `在${definition.label}范围内${intervalDescription}`
+                : intervalDescription;
+        }
+        return `${definition.occurrencePrefix} ${values.join('、')} ${definition.occurrenceSuffix}（${intervalDescription}）`;
+    }
+
     function describeVisualizationValue(source, key) {
         const value = String(source).toUpperCase();
         const definition = FIELD_DEFINITIONS[key];
-        if (value === '*') return `任意${definition.label}`;
-        if (value === '?') return `不指定${definition.label}，由日期和星期中的另一项决定`;
+        if (value === '*') return definition.anyMeaning;
+        if (value === '?') return `这一位不限制${definition.label}，由日期和星期中的另一项决定`;
         if (key === 'day' && value === 'L') return '当月最后一天';
         if (key === 'day' && value === 'LW') return '当月最后一个工作日';
 
@@ -430,9 +446,7 @@
 
         const step = value.match(/^(\*|\d+)\/(\d+)$/);
         if (step) {
-            return step[1] === '*'
-                ? `在${definition.label}范围内每隔 ${step[2]} ${definition.unit}`
-                : `从 ${step[1]} 开始每隔 ${step[2]} ${definition.unit}`;
+            return describeStepOccurrences(step[1], step[2], definition);
         }
 
         const rangeWithStep = value.match(/^(\d+)-(\d+)\/(\d+)$/);
