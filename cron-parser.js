@@ -207,6 +207,17 @@
             return `每隔 ${secondInterval[1]} 秒执行一次。`;
         }
 
+        const startedSecondInterval = fields.second.match(/^(\d+)\/(\d+)$/);
+        if (type === 'quartz'
+            && startedSecondInterval
+            && isAny(fields.minute)
+            && isAny(fields.hour)
+            && unrestrictedCalendar) {
+            const seconds = parseField(fields.second, 0, 59, 'second');
+            if (seconds.length <= 12) return `每分钟在第 ${seconds.join('、')} 秒执行。`;
+            return `每分钟从第 ${Number(startedSecondInterval[1])} 秒开始，每隔 ${Number(startedSecondInterval[2])} 秒执行一次。`;
+        }
+
         const explicitSecondList = /^\d+(?:,\d+)+$/.test(fields.second);
         if (type === 'quartz'
             && explicitSecondList
@@ -235,6 +246,16 @@
             && isAny(fields.week)
             && isAny(fields.year)) {
             return `每隔 ${minuteInterval[1]} 分钟执行一次。`;
+        }
+
+        const startedMinuteInterval = fields.minute.match(/^(\d+)\/(\d+)$/);
+        if (startedMinuteInterval
+            && fields.second === '0'
+            && isAny(fields.hour)
+            && unrestrictedCalendar) {
+            const minutes = parseField(fields.minute, 0, 59, 'minute');
+            if (minutes.length <= 12) return `每小时在第 ${minutes.join('、')} 分钟执行。`;
+            return `每小时从第 ${Number(startedMinuteInterval[1])} 分钟开始，每隔 ${Number(startedMinuteInterval[2])} 分钟执行一次。`;
         }
 
         const explicitMinuteList = /^\d+(?:,\d+)+$/.test(fields.minute);

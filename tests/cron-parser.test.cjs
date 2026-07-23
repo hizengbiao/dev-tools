@@ -12,6 +12,8 @@ assert.deepStrictEqual(cron.parseField('1,3-5', 0, 10, 'minute'), [1, 3, 4, 5]);
 assert.throws(() => cron.parseField('90', 0, 59, 'minute'), /minute out of range/);
 
 assert.strictEqual(cron.explainCron('*/30 * * * *'), '每隔 30 分钟执行一次。');
+assert.strictEqual(cron.explainCron('6/30 * * * *'), '每小时在第 6、36 分钟执行。');
+assert.strictEqual(cron.explainCron('6/2 * * * *'), '每小时从第 6 分钟开始，每隔 2 分钟执行一次。');
 assert.strictEqual(cron.explainCron('0 * * * *'), '每小时整点执行。');
 assert.strictEqual(cron.explainCron('30 * * * *'), '每小时第 30 分钟执行。');
 assert.strictEqual(cron.explainCron('0 */2 * * *'), '每隔 2 小时整点执行一次。');
@@ -82,6 +84,7 @@ assert.strictEqual(cron.explainCron('0 0 1,10,20 * *'), '每月 1、10、20 日 
 assert.strictEqual(cron.explainCron('0 0 */3 * *'), '每隔 3 天在 00:00 执行一次。');
 assert.strictEqual(cron.explainCron('0 0 1 */2 *'), '每隔 2 个月的 1 日 00:00 执行一次。');
 assert.strictEqual(cron.explainCron('*/5 * * * * *'), '每隔 5 秒执行一次。');
+assert.strictEqual(cron.explainCron('6/30 * * * * *'), '每分钟在第 6、36 秒执行。');
 assert.strictEqual(cron.explainCron('0 * * * * *'), '每分钟整点执行。');
 assert.strictEqual(cron.explainCron('0,20,40 * * * * *'), '每分钟第 0、20、40 秒执行。');
 assert.strictEqual(cron.explainCron('0 0 9 * * MON-FRI'), '每周一至周五 09:00:00 执行。');
@@ -240,7 +243,7 @@ const page = fs.readFileSync(path.join(root, 'cron-parser.html'), 'utf8');
 assert.match(page, /<title>Cron 表达式解析与生成工具<\/title>/);
 assert.match(page, /<script src="cron-parser\.js"><\/script>/);
 assert.match(page, /<script src="cron-generator\.js"><\/script>/);
-assert.match(page, /<span>V1\.14<\/span>/);
+assert.match(page, /<span>V1\.15<\/span>/);
 assert.match(page, /id="cron-explanation"/);
 assert.match(page, /CronParser\.explainCron/);
 assert.match(page, /id="visualize-btn"/);
@@ -267,7 +270,7 @@ assert.match(page, /\.cron-visualizer-view\s*\{[\s\S]*?overflow-x:\s*hidden[\s\S
 assert.match(page, /\.cron-flow-canvas\s*\{[\s\S]*?width:\s*100%[\s\S]*?min-width:\s*0/);
 assert.match(page, /\.cron-flow-node\s*\{[\s\S]*?flex:\s*0 1 124px[\s\S]*?min-width:\s*96px/);
 assert.match(page, /@media \(max-width:\s*640px\)[\s\S]*?\.cron-flow-sequence\s*\{[\s\S]*?grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
-assert.match(page, /<div class="changelog-date">2026年7月24日<\/div>[\s\S]*?<div class="changelog-version">V1\.14<\/div>[\s\S]*?<div class="changelog-version">V1\.13<\/div>[\s\S]*?<div class="changelog-version">V1\.12<\/div>[\s\S]*?<div class="changelog-version">V1\.11<\/div>/);
+assert.match(page, /<div class="changelog-date">2026年7月24日<\/div>[\s\S]*?<div class="changelog-version">V1\.15<\/div>[\s\S]*?<div class="changelog-version">V1\.14<\/div>[\s\S]*?<div class="changelog-version">V1\.13<\/div>[\s\S]*?<div class="changelog-version">V1\.12<\/div>[\s\S]*?<div class="changelog-version">V1\.11<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月23日<\/div>[\s\S]*?<div class="changelog-version">V1\.10<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.09<\/div>[\s\S]*?<div class="changelog-version">V1\.08<\/div>[\s\S]*?<div class="changelog-version">V1\.07<\/div>[\s\S]*?<div class="changelog-version">V1\.06<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
 assert.match(page, /支持月份和星期英文缩写，以及 Quartz 的 \?、L、W、LW、# 语法/);

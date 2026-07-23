@@ -964,7 +964,7 @@
         <div class="tool-title">
             <h1>Cron 表达式解析与生成工具</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.14</span>
+                <span>V1.15</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -1138,6 +1138,10 @@
             </div>
             <div class="modal-body changelog-body">
                 <div class="changelog-date">2026年7月24日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.15</div>
+                    <div>优化带起点的分钟和秒步进表达式执行说明：例如 <code>6/30 * * * *</code> 直接说明为“每小时在第 6、36 分钟执行”，避免生硬的字段拼接语句。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.14</div>
                     <div>优化 Cron 字段流程图的响应式布局：桌面端自动压缩节点和连接线，6/7 段表达式可在弹窗内完整显示，不再出现横向滚动条；窄屏下改为三列自适应排列。</div>
