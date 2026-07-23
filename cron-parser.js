@@ -425,6 +425,29 @@
         return `${definition.occurrencePrefix} ${values.join('、')} ${definition.occurrenceSuffix}（${intervalDescription}）`;
     }
 
+    function describeStepSyntaxParts(source, key) {
+        const value = String(source).toUpperCase();
+        const definition = FIELD_DEFINITIONS[key];
+        const step = value.match(/^(\*|\d+|\d+-\d+)\/(\d+)$/);
+        if (!step) return [];
+
+        const left = step[1];
+        let leftDescription;
+        if (left === '*') {
+            leftDescription = `表示使用${definition.label}的完整范围（${definition.range}），起点为 ${definition.min}`;
+        } else if (left.includes('-')) {
+            leftDescription = `表示只在 ${formatVisualizationValue(left, key)} 这个${definition.label}范围内取值`;
+        } else {
+            leftDescription = `表示从 ${formatVisualizationValue(left, key)} 这个${definition.label}位置开始`;
+        }
+
+        return [
+            { token: left, role: '斜杠左侧', description: leftDescription },
+            { token: '/', role: '步进运算符', description: '表示从左侧起点或范围内，按固定间隔依次取值' },
+            { token: step[2], role: '斜杠右侧', description: `表示每次前进 ${Number(step[2])} ${definition.unit}` }
+        ];
+    }
+
     function describeVisualizationValue(source, key) {
         const value = String(source).toUpperCase();
         const definition = FIELD_DEFINITIONS[key];
@@ -486,7 +509,8 @@
                     value: parts[index],
                     range: definition.range,
                     role: definition.role,
-                    meaning: describeVisualizationValue(parts[index], key)
+                    meaning: describeVisualizationValue(parts[index], key),
+                    syntaxParts: describeStepSyntaxParts(parts[index], key)
                 };
             })
         };

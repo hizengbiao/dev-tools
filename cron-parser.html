@@ -721,6 +721,46 @@
             font-weight: 600;
         }
 
+        .cron-step-explanation {
+            grid-column: 1 / -1;
+            margin-top: 2px;
+            padding: 12px;
+            border-radius: 8px;
+            background: color-mix(in srgb, var(--field-color, #0969da) 6%, #ffffff);
+        }
+
+        .cron-step-title {
+            margin-bottom: 9px;
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .cron-step-part {
+            display: grid;
+            grid-template-columns: minmax(40px, auto) minmax(76px, auto) 1fr;
+            gap: 8px;
+            align-items: baseline;
+            padding: 6px 0;
+            border-top: 1px dashed color-mix(in srgb, var(--field-color, #0969da) 22%, #d0d7de);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .cron-step-part:first-of-type {
+            border-top: 0;
+        }
+
+        .cron-step-token {
+            color: var(--field-color, #0969da);
+            font-size: 15px;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        .cron-step-role {
+            font-weight: 700;
+        }
+
         .cron-field-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -885,7 +925,7 @@
         <div class="tool-title">
             <h1>Cron 表达式解析与生成工具</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.12</span>
+                <span>V1.13</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -1059,6 +1099,10 @@
             </div>
             <div class="modal-body changelog-body">
                 <div class="changelog-date">2026年7月24日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.13</div>
+                    <div>增强 Cron 步进表达式说明：针对 <code>*/30</code>、<code>0/3</code> 等写法，分别解释斜杠左侧、斜杠本身和右侧数值的含义，并结合当前字段说明最终触发时间。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.12</div>
                     <div>统一 Cron 整体说明与字段说明的表达方式；步进字段同时展示实际触发位置和执行间隔，通配字段按每天、每月、每年等时间语境通俗说明。</div>
@@ -1251,11 +1295,26 @@
             const detail = document.getElementById('cronFieldDetail');
             if (!detail) return;
             detail.style.setProperty('--field-color', getCronFieldColor(field.position));
+            const syntaxExplanation = field.syntaxParts.length
+                ? `
+                    <div class="cron-step-explanation">
+                        <div class="cron-step-title">${escapeHtml(field.value)} 写法拆解</div>
+                        ${field.syntaxParts.map(part => `
+                            <div class="cron-step-part">
+                                <code class="cron-step-token">${escapeHtml(part.token)}</code>
+                                <span class="cron-step-role">${escapeHtml(part.role)}</span>
+                                <span>${escapeHtml(part.description)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `
+                : '';
             detail.innerHTML = `
                 <code class="cron-detail-value">${escapeHtml(field.value)}</code>
                 <div class="cron-detail-title">第 ${field.position} 位 · ${escapeHtml(field.label)}</div>
                 <div class="cron-detail-meaning">${escapeHtml(field.meaning)}</div>
                 <div class="cron-detail-meta">${escapeHtml(field.role)} · 可用范围：${escapeHtml(field.range)}</div>
+                ${syntaxExplanation}
             `;
         }
 
