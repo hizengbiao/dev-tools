@@ -743,6 +743,21 @@
 - 完成记录：2026-07-23 已增加 MyBatis SQL 自动识别与格式化，支持 mapper/select/insert/update/delete/sql 容器以及 if、foreach、choose、when、otherwise、where、set、trim 等动态标签的通用层级缩进，并继续提取标签内 SQL 的表名和占位符；SQL 工具版本更新至 V1.02。
 - 完成记录：2026-07-23 已在 mapper 顶层 select/insert/update/delete/sql 语句之间增加空行；将格式化、压缩和清空按钮移至输入区顶部，固定编辑器高度并扩大桌面端内容宽度；修复版本更新弹窗样式和关闭按钮，SQL 工具版本更新至 V1.03。
 
+## Cron 表达式解析
+
+### TODO-CRON-001：表达式字段可视化
+
+- 状态：`[x]`
+- 优先级：`P1`
+- 类型：功能增强
+- 目标：通过可视化方式解释 Cron 表达式每个位置的字段含义，降低 Linux 与 Quartz 字段顺序的理解成本。
+- 建议合入：`cron-parser.html`、`cron-parser.js`。
+- 验收标准：
+  - 提供明确的表达式可视化按钮。
+  - 支持 Linux 5 段和 Spring / Quartz 6、7 段表达式。
+  - 每个字段展示位置、名称、原始值、可用范围和当前取值含义。
+- 完成记录：2026-07-23 已新增 Cron 表达式可视化按钮和按位字段卡片，覆盖 Linux 5 段及 Spring / Quartz 6、7 段表达式，并补充字段模型与页面接入测试；Cron 工具版本更新至 V1.10。
+
 ## Nginx 格式化
 
 ### TODO-NGINX-001：server 折叠摘要显示站点名称

@@ -396,6 +396,92 @@
             color: var(--muted-color);
         }
 
+        .cron-visualization {
+            margin-top: 12px;
+            padding: 14px;
+            border: 1px solid #b6d7ff;
+            border-radius: 8px;
+            background: #f6faff;
+        }
+
+        .cron-visualization[hidden] {
+            display: none;
+        }
+
+        .visualization-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .visualization-header h3 {
+            margin: 0;
+            font-size: 15px;
+        }
+
+        .visualization-type {
+            color: var(--accent-color);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .cron-field-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .cron-field-card {
+            position: relative;
+            min-width: 0;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 7px;
+            background: #fff;
+        }
+
+        .field-position {
+            display: inline-flex;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: #ddf4ff;
+            color: #0969da;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .field-value {
+            display: block;
+            margin: 9px 0 6px;
+            overflow-x: auto;
+            color: #cf222e;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 18px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .field-label {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .field-role,
+        .field-range,
+        .field-meaning {
+            margin-top: 6px;
+            color: var(--muted-color);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .field-meaning {
+            color: var(--text-color);
+            font-weight: 600;
+        }
+
         .result-list {
             display: grid;
             gap: 8px;
@@ -497,7 +583,7 @@
         <div class="tool-title">
             <h1>Cron 表达式解析与生成工具</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.09</span>
+                <span>V1.10</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -521,6 +607,7 @@
             </div>
             <div class="actions">
                 <button class="btn btn-primary" id="parse-btn" type="button">解析</button>
+                <button class="btn" id="visualize-btn" type="button" aria-controls="cron-visualization" aria-expanded="false">表达式可视化</button>
                 <button class="btn" id="sample-linux-btn" type="button">Linux 示例</button>
                 <button class="btn" id="sample-quartz-btn" type="button">Quartz 示例</button>
             </div>
@@ -528,6 +615,13 @@
             <div class="cron-explanation" id="cron-explanation">
                 <strong>执行说明</strong>
                 <span>解析后将在这里说明表达式的执行时间。</span>
+            </div>
+            <div class="cron-visualization" id="cron-visualization" hidden>
+                <div class="visualization-header">
+                    <h3>表达式字段说明</h3>
+                    <span class="visualization-type" id="visualization-type"></span>
+                </div>
+                <div class="cron-field-grid" id="cron-field-grid"></div>
             </div>
         </section>
 
@@ -636,6 +730,11 @@
                 <button class="close-modal changelog-close" type="button" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body changelog-body">
+                <div class="changelog-date">2026年7月23日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.10</div>
+                    <div>新增表达式可视化按钮，按位置展示 Linux 5 段及 Spring / Quartz 6、7 段表达式的字段名称、原始值、可用范围和当前含义。</div>
+                </div>
                 <div class="changelog-date">2026年7月14日</div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.09</div>
@@ -688,6 +787,10 @@
         const countInput = document.getElementById('count-input');
         const parseStatus = document.getElementById('parse-status');
         const cronExplanation = document.getElementById('cron-explanation');
+        const cronVisualization = document.getElementById('cron-visualization');
+        const visualizationType = document.getElementById('visualization-type');
+        const cronFieldGrid = document.getElementById('cron-field-grid');
+        const visualizeButton = document.getElementById('visualize-btn');
         const resultList = document.getElementById('result-list');
         const timezoneLabel = document.getElementById('timezone-label');
         const parserTab = document.getElementById('parser-tab');
@@ -721,6 +824,41 @@
             resultList.innerHTML = runs.map((date, index) => `
                 <div class="run-item">#${index + 1} ${formatDateTime(date)}</div>
             `).join('');
+        }
+
+        function escapeHtml(value) {
+            const span = document.createElement('span');
+            span.textContent = String(value);
+            return span.innerHTML;
+        }
+
+        function visualizeCronExpression() {
+            if (!parseCron()) {
+                cronVisualization.hidden = true;
+                visualizeButton.setAttribute('aria-expanded', 'false');
+                return;
+            }
+            try {
+                const visualization = CronParser.visualizeCron(cronInput.value);
+                visualizationType.textContent = visualization.typeLabel;
+                cronFieldGrid.innerHTML = visualization.fields.map(field => `
+                    <article class="cron-field-card">
+                        <span class="field-position">第 ${field.position} 位</span>
+                        <code class="field-value">${escapeHtml(field.value)}</code>
+                        <div class="field-label">${escapeHtml(field.label)}</div>
+                        <div class="field-role">${escapeHtml(field.role)}</div>
+                        <div class="field-range">可用范围：${escapeHtml(field.range)}</div>
+                        <div class="field-meaning">${escapeHtml(field.meaning)}</div>
+                    </article>
+                `).join('');
+                cronVisualization.hidden = false;
+                visualizeButton.setAttribute('aria-expanded', 'true');
+            } catch (error) {
+                cronVisualization.hidden = true;
+                visualizeButton.setAttribute('aria-expanded', 'false');
+                parseStatus.textContent = `可视化失败：${error.message}`;
+                parseStatus.className = 'status error';
+            }
         }
 
         function switchMode(mode) {
@@ -821,14 +959,17 @@
                 parseStatus.className = 'status';
                 cronExplanation.innerHTML = `<strong>执行说明</strong><span>${explanation}</span>`;
                 renderRuns(runs);
+                return true;
             } catch (error) {
                 parseStatus.textContent = `解析失败：${error.message}`;
                 parseStatus.className = 'status error';
                 cronExplanation.innerHTML = '<strong>执行说明</strong><span>表达式无效，修正后可查看执行时间说明。</span>';
+                return false;
             }
         }
 
         document.getElementById('parse-btn').addEventListener('click', parseCron);
+        visualizeButton.addEventListener('click', visualizeCronExpression);
         parserTab.addEventListener('click', () => switchMode('parser'));
         generatorTab.addEventListener('click', () => switchMode('generator'));
         scheduleType.addEventListener('change', () => {
@@ -878,6 +1019,10 @@
                 return;
             }
             ClipboardUtils.copyText(currentRuns.map(formatDateTime).join('\n'), { successMessage: '执行时间已复制' });
+        });
+        cronInput.addEventListener('input', () => {
+            cronVisualization.hidden = true;
+            visualizeButton.setAttribute('aria-expanded', 'false');
         });
         cronInput.value = SampleData.getSample('cron.linuxEveryThirtyMinutes');
         parseCron();

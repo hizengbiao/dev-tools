@@ -7,6 +7,15 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
     const MONTH_ALIASES = { JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6, JUL: 7, AUG: 8, SEP: 9, OCT: 10, NOV: 11, DEC: 12 };
     const WEEK_ALIASES = { SUN: 0, MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6 };
+    const FIELD_DEFINITIONS = {
+        second: { label: '秒', range: '0-59', role: '一分钟内的第几秒', unit: '秒' },
+        minute: { label: '分钟', range: '0-59', role: '一小时内的第几分钟', unit: '分钟' },
+        hour: { label: '小时', range: '0-23', role: '一天内的第几小时', unit: '小时' },
+        day: { label: '日期', range: '1-31', role: '一个月中的第几天', unit: '日' },
+        month: { label: '月份', range: '1-12 或 JAN-DEC', role: '一年中的月份', unit: '个月' },
+        week: { label: '星期', range: '0-7 或 SUN-SAT', role: '一周中的星期几，0 和 7 都表示周日', unit: '天' },
+        year: { label: '年份', range: '1970-2099', role: '限定执行年份', unit: '年' }
+    };
 
     function detectCronType(expression) {
         const fields = String(expression ?? '').trim().split(/\s+/).filter(Boolean).length;
@@ -394,6 +403,81 @@
         }).join('、');
     }
 
+    function formatVisualizationValue(source, key) {
+        if (key === 'month') return formatMonth(source);
+        if (key === 'week') return formatWeek(source);
+        return formatField(source);
+    }
+
+    function describeVisualizationValue(source, key) {
+        const value = String(source).toUpperCase();
+        const definition = FIELD_DEFINITIONS[key];
+        if (value === '*') return `任意${definition.label}`;
+        if (value === '?') return `不指定${definition.label}，由日期和星期中的另一项决定`;
+        if (key === 'day' && value === 'L') return '当月最后一天';
+        if (key === 'day' && value === 'LW') return '当月最后一个工作日';
+
+        const nearestWeekday = key === 'day' && value.match(/^(\d+)W$/);
+        if (nearestWeekday) return `最接近当月 ${Number(nearestWeekday[1])} 日的工作日`;
+
+        const nthWeekday = key === 'week' && value.match(/^([A-Z]{3}|\d+)#([1-5])$/);
+        if (nthWeekday) {
+            return `当月第${formatOrdinal(Number(nthWeekday[2]))}个${formatWeekdayToken(nthWeekday[1])}`;
+        }
+
+        const lastWeekday = key === 'week' && value.match(/^([A-Z]{3}|\d+)L$/);
+        if (lastWeekday) return `当月最后一个${formatWeekdayToken(lastWeekday[1])}`;
+
+        const step = value.match(/^(\*|\d+)\/(\d+)$/);
+        if (step) {
+            return step[1] === '*'
+                ? `在${definition.label}范围内每隔 ${step[2]} ${definition.unit}`
+                : `从 ${step[1]} 开始每隔 ${step[2]} ${definition.unit}`;
+        }
+
+        const rangeWithStep = value.match(/^(\d+)-(\d+)\/(\d+)$/);
+        if (rangeWithStep) {
+            return `从 ${rangeWithStep[1]} 到 ${rangeWithStep[2]}，每隔 ${rangeWithStep[3]} ${definition.unit}`;
+        }
+
+        const formatted = formatVisualizationValue(value, key);
+        if (value.includes(',')) return `指定多个${definition.label}：${formatted}`;
+        if (value.includes('-')) return `${definition.label}范围：${formatted}`;
+        return `指定${definition.label}：${formatted}`;
+    }
+
+    function visualizeCron(expression) {
+        const parts = String(expression ?? '').trim().split(/\s+/).filter(Boolean);
+        const info = detectCronType(expression);
+        parseCron(expression);
+        const keys = info.type === 'linux'
+            ? ['minute', 'hour', 'day', 'month', 'week']
+            : info.fields === 6
+                ? ['second', 'minute', 'hour', 'day', 'month', 'week']
+                : ['second', 'minute', 'hour', 'day', 'month', 'week', 'year'];
+        const typeLabel = info.type === 'linux'
+            ? 'Linux 5 段'
+            : info.fields === 6 ? 'Spring / Quartz 6 段' : 'Quartz 7 段';
+
+        return {
+            type: info.type,
+            typeLabel,
+            fieldCount: info.fields,
+            fields: keys.map((key, index) => {
+                const definition = FIELD_DEFINITIONS[key];
+                return {
+                    position: index + 1,
+                    key,
+                    label: definition.label,
+                    value: parts[index],
+                    range: definition.range,
+                    role: definition.role,
+                    meaning: describeVisualizationValue(parts[index], key)
+                };
+            })
+        };
+    }
+
     function nearestWeekdayOfMonth(year, month, targetDay) {
         const lastDay = daysInMonth(year, month);
         if (targetDay > lastDay) return null;
@@ -555,6 +639,7 @@
         parseField,
         parseCron,
         explainCron,
+        visualizeCron,
         matches,
         getNextRuns,
     };

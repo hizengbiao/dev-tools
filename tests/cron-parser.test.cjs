@@ -89,6 +89,38 @@ assert.strictEqual(cron.explainCron('0 0 0 L * ?'), '每月最后一天 00:00:00
 assert.strictEqual(cron.explainCron('0 0 18 LW * ?'), '每月最后一个工作日 18:00:00 执行。');
 assert.strictEqual(cron.explainCron('0 0 9 ? * MON#2'), '每月第二个周一 09:00:00 执行。');
 
+const linuxVisualization = cron.visualizeCron('*/15 9-18 * * MON-FRI');
+assert.strictEqual(linuxVisualization.typeLabel, 'Linux 5 段');
+assert.deepStrictEqual(
+    linuxVisualization.fields.map(field => [field.position, field.label, field.value]),
+    [
+        [1, '分钟', '*/15'],
+        [2, '小时', '9-18'],
+        [3, '日期', '*'],
+        [4, '月份', '*'],
+        [5, '星期', 'MON-FRI']
+    ]
+);
+assert.strictEqual(linuxVisualization.fields[0].meaning, '在分钟范围内每隔 15 分钟');
+assert.strictEqual(linuxVisualization.fields[4].meaning, '星期范围：周一至周五');
+
+const quartzVisualization = cron.visualizeCron('0 30 9 ? JAN MON#2 2027');
+assert.strictEqual(quartzVisualization.typeLabel, 'Quartz 7 段');
+assert.deepStrictEqual(
+    quartzVisualization.fields.map(field => field.label),
+    ['秒', '分钟', '小时', '日期', '月份', '星期', '年份']
+);
+assert.strictEqual(quartzVisualization.fields[3].meaning, '不指定日期，由日期和星期中的另一项决定');
+assert.strictEqual(quartzVisualization.fields[5].meaning, '当月第二个周一');
+assert.strictEqual(quartzVisualization.fields[6].range, '1970-2099');
+const springVisualization = cron.visualizeCron('0 */5 * * * ?');
+assert.strictEqual(springVisualization.typeLabel, 'Spring / Quartz 6 段');
+assert.deepStrictEqual(
+    springVisualization.fields.map(field => field.label),
+    ['秒', '分钟', '小时', '日期', '月份', '星期']
+);
+assert.throws(() => cron.visualizeCron('* * *'), /Cron expression must have 5, 6, or 7 fields/);
+
 const nextLinux = cron.getNextRuns('*/30 * * * *', {
     from: new Date('2026-07-11T10:05:00Z'),
     count: 3,
@@ -166,9 +198,17 @@ const page = fs.readFileSync(path.join(root, 'cron-parser.html'), 'utf8');
 assert.match(page, /<title>Cron 表达式解析与生成工具<\/title>/);
 assert.match(page, /<script src="cron-parser\.js"><\/script>/);
 assert.match(page, /<script src="cron-generator\.js"><\/script>/);
-assert.match(page, /<span>V1\.09<\/span>/);
+assert.match(page, /<span>V1\.10<\/span>/);
 assert.match(page, /id="cron-explanation"/);
 assert.match(page, /CronParser\.explainCron/);
+assert.match(page, /id="visualize-btn"/);
+assert.match(page, /id="cron-visualization"[^>]*hidden/);
+assert.match(page, /id="cron-field-grid"/);
+assert.match(page, /CronParser\.visualizeCron/);
+assert.match(page, /if \(!parseCron\(\)\)/);
+assert.match(page, /第 \$\{field\.position\} 位/);
+assert.match(page, /可用范围：\$\{escapeHtml\(field\.range\)\}/);
+assert.match(page, /<div class="changelog-date">2026年7月23日<\/div>[\s\S]*?<div class="changelog-version">V1\.10<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.09<\/div>[\s\S]*?<div class="changelog-version">V1\.08<\/div>[\s\S]*?<div class="changelog-version">V1\.07<\/div>[\s\S]*?<div class="changelog-version">V1\.06<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>[\s\S]*?<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
 assert.match(page, /支持月份和星期英文缩写，以及 Quartz 的 \?、L、W、LW、# 语法/);
 assert.match(page, /Spring \/ Quartz 6 段/);
