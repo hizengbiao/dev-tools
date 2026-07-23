@@ -179,7 +179,7 @@
     function explainCron(expression) {
         const parts = String(expression ?? '').trim().split(/\s+/).filter(Boolean);
         const { type } = detectCronType(expression);
-        parseCron(expression);
+        const parsed = parseCron(expression);
 
         const fields = type === 'linux'
             ? { second: '0', minute: parts[0], hour: parts[1], day: parts[2], month: parts[3], week: parts[4], year: '*' }
@@ -375,6 +375,57 @@
             && isAny(fields.month)
             && isAny(fields.year)) {
             return `每${formatWeek(fields.week)}，在 ${formatField(fields.hour)} 点整点执行。`;
+        }
+
+        const hasStepField = [fields.second, fields.minute, fields.hour, fields.day, fields.month, fields.year]
+            .some(value => value.includes('/'));
+        const timeCombinationCount = parsed.hourValues.length * parsed.minuteValues.length * parsed.secondValues.length;
+        if (hasStepField
+            && parsed.weekAny
+            && !parsed.daySpecial
+            && !parsed.weekSpecial
+            && !isAny(fields.hour)
+            && !isAny(fields.minute)
+            && (type === 'linux' || !isAny(fields.second))
+            && timeCombinationCount <= 12
+            && (isAny(fields.day) || parsed.dayValues.length <= 12)
+            && (isAny(fields.month) || parsed.monthValues.length <= 12)
+            && (isAny(fields.year) || !parsed.yearValues || parsed.yearValues.length <= 12)) {
+            const joinValues = values => values.join('、');
+            let calendarText;
+            if (!parsed.yearValues) {
+                if (isAny(fields.month)) {
+                    calendarText = isAny(fields.day)
+                        ? '每天'
+                        : `每月的 ${joinValues(parsed.dayValues)} 日`;
+                } else {
+                    calendarText = isAny(fields.day)
+                        ? `每年 ${joinValues(parsed.monthValues)} 月的每一天`
+                        : `每年 ${joinValues(parsed.monthValues)} 月的 ${joinValues(parsed.dayValues)} 日`;
+                }
+            } else if (isAny(fields.month)) {
+                calendarText = isAny(fields.day)
+                    ? `在 ${joinValues(parsed.yearValues)} 年的每一天`
+                    : `在 ${joinValues(parsed.yearValues)} 年每月的 ${joinValues(parsed.dayValues)} 日`;
+            } else {
+                calendarText = isAny(fields.day)
+                    ? `在 ${joinValues(parsed.yearValues)} 年 ${joinValues(parsed.monthValues)} 月的每一天`
+                    : `在 ${joinValues(parsed.yearValues)} 年 ${joinValues(parsed.monthValues)} 月的 ${joinValues(parsed.dayValues)} 日`;
+            }
+
+            const times = [];
+            parsed.hourValues.forEach(hour => {
+                parsed.minuteValues.forEach(minute => {
+                    parsed.secondValues.forEach(second => {
+                        times.push(type === 'linux'
+                            ? `${pad(hour)}:${pad(minute)}`
+                            : `${pad(hour)}:${pad(minute)}:${pad(second)}`);
+                    });
+                });
+            });
+            return calendarText === '每天'
+                ? `每天在 ${times.join('、')} 执行。`
+                : `${calendarText}，在 ${times.join('、')} 执行。`;
         }
 
         const descriptions = [];

@@ -964,7 +964,7 @@
         <div class="tool-title">
             <h1>Cron 表达式解析与生成工具</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.15</span>
+                <span>V1.16</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -1138,6 +1138,10 @@
             </div>
             <div class="modal-body changelog-body">
                 <div class="changelog-date">2026年7月24日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.16</div>
+                    <div>统一处理日期、月份、小时、分钟和秒的组合步进表达式：根据解析后的实际取值生成日期范围和执行时刻，不再把多个字段机械拼接成“字段为从某值开始每隔某值”的句子。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.15</div>
                     <div>优化带起点的分钟和秒步进表达式执行说明：例如 <code>6/30 * * * *</code> 直接说明为“每小时在第 6、36 分钟执行”，避免生硬的字段拼接语句。</div>
