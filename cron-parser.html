@@ -553,7 +553,8 @@
             flex: 1;
             min-width: 0;
             padding: 18px;
-            overflow: auto;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
 
         .cron-visualizer-view.active {
@@ -561,20 +562,24 @@
         }
 
         .cron-flow-canvas {
-            min-width: max-content;
+            width: 100%;
+            min-width: 0;
             padding: 18px 8px 24px;
         }
 
         .cron-flow-sequence {
             display: flex;
+            width: 100%;
+            min-width: 0;
             align-items: center;
         }
 
         .cron-flow-terminal {
             display: grid;
-            flex: 0 0 auto;
-            width: 86px;
-            height: 86px;
+            flex: 0 1 76px;
+            width: 76px;
+            min-width: 56px;
+            aspect-ratio: 1;
             place-items: center;
             border-radius: 50%;
             background: linear-gradient(135deg, #0969da, #8250df);
@@ -589,7 +594,9 @@
 
         .cron-flow-connector {
             position: relative;
-            flex: 0 0 42px;
+            flex: 1 1 36px;
+            min-width: 10px;
+            max-width: 42px;
             height: 2px;
             overflow: hidden;
             background: #8c959f;
@@ -624,10 +631,11 @@
         }
 
         .cron-flow-node {
-            flex: 0 0 auto;
-            width: 132px;
+            flex: 0 1 124px;
+            width: 124px;
+            min-width: 96px;
             min-height: 116px;
-            padding: 11px;
+            padding: 10px;
             border: 2px solid color-mix(in srgb, var(--field-color) 70%, #ffffff);
             border-radius: 12px;
             background: color-mix(in srgb, var(--field-color) 9%, #ffffff);
@@ -822,6 +830,37 @@
                 grid-row: auto;
                 text-align: left;
             }
+
+            .cron-flow-canvas {
+                padding-inline: 0;
+            }
+
+            .cron-flow-sequence {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 8px;
+            }
+
+            .cron-flow-connector {
+                display: none;
+            }
+
+            .cron-flow-terminal {
+                width: 56px;
+                min-width: 0;
+                justify-self: center;
+                font-size: 12px;
+            }
+
+            .cron-flow-node {
+                width: auto;
+                min-width: 0;
+                padding: 8px;
+            }
+
+            .cron-node-meaning {
+                display: none;
+            }
         }
 
         .result-list {
@@ -925,7 +964,7 @@
         <div class="tool-title">
             <h1>Cron 表达式解析与生成工具</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.13</span>
+                <span>V1.14</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -1099,6 +1138,10 @@
             </div>
             <div class="modal-body changelog-body">
                 <div class="changelog-date">2026年7月24日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.14</div>
+                    <div>优化 Cron 字段流程图的响应式布局：桌面端自动压缩节点和连接线，6/7 段表达式可在弹窗内完整显示，不再出现横向滚动条；窄屏下改为三列自适应排列。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.13</div>
                     <div>增强 Cron 步进表达式说明：针对 <code>*/30</code>、<code>0/3</code> 等写法，分别解释斜杠左侧、斜杠本身和右侧数值的含义，并结合当前字段说明最终触发时间。</div>
