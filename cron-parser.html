@@ -396,90 +396,392 @@
             color: var(--muted-color);
         }
 
-        .cron-visualization {
-            margin-top: 12px;
-            padding: 14px;
-            border: 1px solid #b6d7ff;
-            border-radius: 8px;
-            background: #f6faff;
+        .modal-content.cron-visualizer-dialog {
+            width: min(1280px, calc(100vw - 48px));
+            max-width: none;
+            max-height: calc(100vh - 48px);
+            animation: cronVisualizerEnter 0.2s ease-out;
         }
 
-        .cron-visualization[hidden] {
-            display: none;
+        @keyframes cronVisualizerEnter {
+            from {
+                opacity: 0;
+                transform: translateY(-16px) scale(0.985);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
 
-        .visualization-header {
+        .cron-visualizer-body {
+            flex: 1;
+            min-height: 0;
+            padding: 0;
+            overflow: auto;
+        }
+
+        .cron-visualizer-layout {
             display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 12px;
+            min-height: 0;
+            flex-direction: column;
         }
 
-        .visualization-header h3 {
-            margin: 0;
-            font-size: 15px;
-        }
-
-        .visualization-type {
-            color: var(--accent-color);
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        .cron-field-grid {
+        .cron-visualizer-source {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border-color);
+            background: linear-gradient(135deg, #f6f8fa 0%, #eef7ff 100%);
         }
 
-        .cron-field-card {
-            position: relative;
-            min-width: 0;
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 7px;
-            background: #fff;
-        }
-
-        .field-position {
-            display: inline-flex;
-            padding: 2px 7px;
-            border-radius: 999px;
-            background: #ddf4ff;
-            color: #0969da;
-            font-size: 11px;
-            font-weight: 700;
-        }
-
-        .field-value {
-            display: block;
-            margin: 9px 0 6px;
-            overflow-x: auto;
-            color: #cf222e;
-            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-            font-size: 18px;
+        .cron-source-label {
+            color: var(--muted-color);
+            font-size: 13px;
             font-weight: 700;
             white-space: nowrap;
         }
 
-        .field-label {
-            font-size: 14px;
+        .cron-source-track {
+            display: flex;
+            min-width: 0;
+            align-items: center;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 4px;
+        }
+
+        .cron-source-token {
+            flex: 0 0 auto;
+            min-width: 58px;
+            padding: 8px 11px;
+            border: 1px solid color-mix(in srgb, var(--field-color) 65%, #ffffff);
+            border-radius: 8px;
+            background: color-mix(in srgb, var(--field-color) 12%, #ffffff);
+            color: #24292f;
+            cursor: pointer;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 15px;
+            font-weight: 700;
+            transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+        }
+
+        .cron-source-token:hover,
+        .cron-source-token.active {
+            transform: translateY(-2px);
+            background: color-mix(in srgb, var(--field-color) 22%, #ffffff);
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--field-color) 32%, transparent);
+        }
+
+        .cron-source-raw {
+            min-width: 0;
+            overflow-x: auto;
+            color: var(--danger-color);
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            white-space: pre;
+        }
+
+        .visualization-type {
+            padding: 4px 9px;
+            border-radius: 999px;
+            background: #ddf4ff;
+            color: var(--accent-color);
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .cron-visualizer-summary {
+            margin: 14px 18px 0;
+            padding: 12px 14px;
+            border-left: 4px solid var(--accent-color);
+            border-radius: 7px;
+            background: #f0f7ff;
+            color: #24292f;
+            line-height: 1.6;
+        }
+
+        .cron-visualizer-tabs {
+            display: flex;
+            gap: 4px;
+            margin-top: 12px;
+            padding: 0 18px;
+            border-bottom: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .cron-visualizer-tab {
+            flex: 0 0 auto;
+            padding: 10px 14px;
+            border: 0;
+            border-bottom: 2px solid transparent;
+            background: transparent;
+            color: var(--muted-color);
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .cron-visualizer-tab.active {
+            border-bottom-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .cron-visualizer-error {
+            display: none;
+            margin: 16px 18px 0;
+            padding: 11px 13px;
+            border: 1px solid #ff8182;
+            border-radius: 7px;
+            background: #ffebe9;
+            color: var(--danger-color);
+        }
+
+        .cron-visualizer-error.active {
+            display: block;
+        }
+
+        .cron-visualizer-views {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .cron-visualizer-view {
+            display: none;
+            flex: 1;
+            min-width: 0;
+            padding: 18px;
+            overflow: auto;
+        }
+
+        .cron-visualizer-view.active {
+            display: block;
+        }
+
+        .cron-flow-canvas {
+            min-width: max-content;
+            padding: 18px 8px 24px;
+        }
+
+        .cron-flow-sequence {
+            display: flex;
+            align-items: center;
+        }
+
+        .cron-flow-terminal {
+            display: grid;
+            flex: 0 0 auto;
+            width: 86px;
+            height: 86px;
+            place-items: center;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0969da, #8250df);
+            color: #fff;
+            font-weight: 800;
+            box-shadow: 0 8px 22px rgba(9, 105, 218, 0.22);
+        }
+
+        .cron-flow-terminal.end {
+            background: linear-gradient(135deg, #1a7f37, #2da44e);
+        }
+
+        .cron-flow-connector {
+            position: relative;
+            flex: 0 0 42px;
+            height: 2px;
+            overflow: hidden;
+            background: #8c959f;
+        }
+
+        .cron-flow-connector::before {
+            position: absolute;
+            top: -4px;
+            right: -1px;
+            width: 0;
+            height: 0;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+            border-left: 7px solid #8c959f;
+            content: "";
+        }
+
+        .cron-flow-connector::after {
+            position: absolute;
+            top: -2px;
+            left: -8px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            content: "";
+            animation: cronFlowPulse 2s linear infinite;
+        }
+
+        @keyframes cronFlowPulse {
+            to { transform: translateX(52px); }
+        }
+
+        .cron-flow-node {
+            flex: 0 0 auto;
+            width: 132px;
+            min-height: 116px;
+            padding: 11px;
+            border: 2px solid color-mix(in srgb, var(--field-color) 70%, #ffffff);
+            border-radius: 12px;
+            background: color-mix(in srgb, var(--field-color) 9%, #ffffff);
+            color: var(--text-color);
+            text-align: left;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .cron-flow-node:hover,
+        .cron-flow-node.active {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px color-mix(in srgb, var(--field-color) 25%, transparent);
+        }
+
+        .cron-node-position,
+        .field-position {
+            color: var(--muted-color);
+            font-size: 11px;
             font-weight: 700;
         }
 
-        .field-role,
-        .field-range,
-        .field-meaning {
+        .cron-node-value,
+        .field-value {
+            display: block;
+            margin: 7px 0;
+            overflow-x: auto;
+            color: color-mix(in srgb, var(--field-color) 72%, #24292f);
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 19px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .cron-node-label,
+        .field-label {
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .cron-node-meaning {
+            display: -webkit-box;
             margin-top: 6px;
+            overflow: hidden;
+            color: var(--muted-color);
+            font-size: 11px;
+            line-height: 1.45;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+        }
+
+        .cron-field-detail {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            gap: 12px 18px;
+            margin-top: 4px;
+            padding: 16px 18px;
+            border: 1px solid color-mix(in srgb, var(--field-color, #0969da) 48%, #d0d7de);
+            border-left: 5px solid var(--field-color, #0969da);
+            border-radius: 10px;
+            background: linear-gradient(135deg, #ffffff, color-mix(in srgb, var(--field-color, #0969da) 8%, #ffffff));
+        }
+
+        .cron-detail-value {
+            grid-row: span 2;
+            align-self: center;
+            min-width: 92px;
+            color: var(--field-color, #0969da);
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 26px;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        .cron-detail-title {
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .cron-detail-meta,
+        .field-role,
+        .field-range {
             color: var(--muted-color);
             font-size: 12px;
             line-height: 1.5;
         }
 
+        .cron-detail-meaning,
         .field-meaning {
-            color: var(--text-color);
+            line-height: 1.6;
             font-weight: 600;
+        }
+
+        .cron-field-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 12px;
+        }
+
+        .cron-field-card {
+            min-width: 0;
+            padding: 14px;
+            border: 1px solid color-mix(in srgb, var(--field-color) 45%, #d0d7de);
+            border-top: 4px solid var(--field-color);
+            border-radius: 10px;
+            background: #fff;
+            color: var(--text-color);
+            text-align: left;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .cron-field-card:hover,
+        .cron-field-card.active {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 18px color-mix(in srgb, var(--field-color) 20%, transparent);
+        }
+
+        .field-value {
+            margin: 9px 0 6px;
+        }
+
+        .field-role,
+        .field-range,
+        .field-meaning {
+            margin-top: 7px;
+        }
+
+        .cron-visualizer-empty {
+            padding: 28px;
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            color: var(--muted-color);
+            text-align: center;
+        }
+
+        @media (max-width: 640px) {
+            .modal-content.cron-visualizer-dialog {
+                width: calc(100vw - 16px);
+                max-height: calc(100vh - 16px);
+            }
+
+            .cron-visualizer-source {
+                grid-template-columns: 1fr;
+            }
+
+            .cron-field-detail {
+                grid-template-columns: 1fr;
+            }
+
+            .cron-detail-value {
+                grid-row: auto;
+                text-align: left;
+            }
         }
 
         .result-list {
@@ -583,7 +885,7 @@
         <div class="tool-title">
             <h1>Cron 表达式解析与生成工具</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.10</span>
+                <span>V1.11</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -607,7 +909,7 @@
             </div>
             <div class="actions">
                 <button class="btn btn-primary" id="parse-btn" type="button">解析</button>
-                <button class="btn" id="visualize-btn" type="button" aria-controls="cron-visualization" aria-expanded="false">表达式可视化</button>
+                <button class="btn" id="visualize-btn" type="button" aria-controls="cron-visualizer-modal" aria-expanded="false">表达式可视化</button>
                 <button class="btn" id="sample-linux-btn" type="button">Linux 示例</button>
                 <button class="btn" id="sample-quartz-btn" type="button">Quartz 示例</button>
             </div>
@@ -615,13 +917,6 @@
             <div class="cron-explanation" id="cron-explanation">
                 <strong>执行说明</strong>
                 <span>解析后将在这里说明表达式的执行时间。</span>
-            </div>
-            <div class="cron-visualization" id="cron-visualization" hidden>
-                <div class="visualization-header">
-                    <h3>表达式字段说明</h3>
-                    <span class="visualization-type" id="visualization-type"></span>
-                </div>
-                <div class="cron-field-grid" id="cron-field-grid"></div>
             </div>
         </section>
 
@@ -723,6 +1018,39 @@
         </div>
     </main>
 
+    <div id="cron-visualizer-modal" class="modal-overlay" role="dialog" aria-modal="true"
+        aria-labelledby="cronVisualizerTitle" aria-hidden="true">
+        <div class="modal-content cron-visualizer-dialog">
+            <div class="modal-header">
+                <h3 id="cronVisualizerTitle">Cron 表达式可视化</h3>
+                <button class="close-modal" id="closeCronVisualizerBtn" type="button" aria-label="关闭 Cron 表达式可视化">&times;</button>
+            </div>
+            <div class="modal-body cron-visualizer-body">
+                <div class="cron-visualizer-layout">
+                    <div class="cron-visualizer-source">
+                        <span class="cron-source-label">当前 Cron 表达式</span>
+                        <div class="cron-source-track" id="cronVisualizerSource" aria-live="polite"></div>
+                        <span class="visualization-type" id="visualization-type"></span>
+                    </div>
+                    <div class="cron-visualizer-summary" id="cronVisualizerSummary"></div>
+                    <div class="cron-visualizer-tabs" role="tablist" aria-label="Cron 表达式可视化视图">
+                        <button class="cron-visualizer-tab active" id="cronFlowTab" type="button" role="tab"
+                            data-view="flow" aria-selected="true" aria-controls="cronFlowView" tabindex="0">字段流程图</button>
+                        <button class="cron-visualizer-tab" id="cronFieldsTab" type="button" role="tab"
+                            data-view="fields" aria-selected="false" aria-controls="cronFieldsView" tabindex="-1">逐位说明</button>
+                    </div>
+                    <div class="cron-visualizer-error" id="cronVisualizerError" role="alert" aria-live="polite"></div>
+                    <div class="cron-visualizer-views">
+                        <div class="cron-visualizer-view active" id="cronFlowView" role="tabpanel"
+                            aria-labelledby="cronFlowTab"></div>
+                        <div class="cron-visualizer-view" id="cronFieldsView" role="tabpanel"
+                            aria-labelledby="cronFieldsTab" hidden></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="changelog-modal" class="modal-overlay changelog-overlay">
         <div class="modal-content changelog-dialog">
             <div class="modal-header changelog-header">
@@ -730,6 +1058,11 @@
                 <button class="close-modal changelog-close" type="button" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body changelog-body">
+                <div class="changelog-date">2026年7月24日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.11</div>
+                    <div>将 Cron 可视化升级为弹窗交互，参考正则可视化提供字段流程图和逐位说明；当前表达式片段、流程节点及详情可联动高亮。</div>
+                </div>
                 <div class="changelog-date">2026年7月23日</div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.10</div>
@@ -787,10 +1120,17 @@
         const countInput = document.getElementById('count-input');
         const parseStatus = document.getElementById('parse-status');
         const cronExplanation = document.getElementById('cron-explanation');
-        const cronVisualization = document.getElementById('cron-visualization');
+        const cronVisualizerModal = document.getElementById('cron-visualizer-modal');
+        const cronVisualizerSource = document.getElementById('cronVisualizerSource');
+        const cronVisualizerSummary = document.getElementById('cronVisualizerSummary');
+        const cronVisualizerError = document.getElementById('cronVisualizerError');
         const visualizationType = document.getElementById('visualization-type');
-        const cronFieldGrid = document.getElementById('cron-field-grid');
         const visualizeButton = document.getElementById('visualize-btn');
+        const cronVisualizerTabs = [...document.querySelectorAll('.cron-visualizer-tab')];
+        const cronVisualizerViews = {
+            flow: document.getElementById('cronFlowView'),
+            fields: document.getElementById('cronFieldsView')
+        };
         const resultList = document.getElementById('result-list');
         const timezoneLabel = document.getElementById('timezone-label');
         const parserTab = document.getElementById('parser-tab');
@@ -808,6 +1148,9 @@
         const generatorResults = document.getElementById('generator-results');
         let currentRuns = [];
         let currentGeneratedFormats = [];
+        let currentCronVisualization = null;
+        let activeCronVisualizerView = 'flow';
+        let cronVisualizerReturnFocus = null;
 
         const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || '本地时区';
         const currentTimezoneOffsetMinutes = -new Date().getTimezoneOffset();
@@ -832,32 +1175,152 @@
             return span.innerHTML;
         }
 
-        function visualizeCronExpression() {
-            if (!parseCron()) {
-                cronVisualization.hidden = true;
-                visualizeButton.setAttribute('aria-expanded', 'false');
-                return;
-            }
+        const cronFieldColors = ['#0969da', '#8250df', '#bf8700', '#1a7f37', '#cf222e', '#0a7f8c', '#bc4c00'];
+
+        function getCronFieldColor(position) {
+            return cronFieldColors[(position - 1) % cronFieldColors.length];
+        }
+
+        function getCronFieldStyle(field) {
+            return `--field-color:${getCronFieldColor(field.position)}`;
+        }
+
+        function renderCronSource(fields) {
+            cronVisualizerSource.setAttribute('aria-label', cronInput.value);
+            cronVisualizerSource.innerHTML = fields.map(field => `
+                <button class="cron-source-token" type="button" data-cron-position="${field.position}"
+                    style="${getCronFieldStyle(field)}" title="查看第 ${field.position} 位：${escapeHtml(field.label)}">
+                    ${escapeHtml(field.value)}
+                </button>
+            `).join('');
+        }
+
+        function renderCronFlow(fields) {
+            const nodes = fields.map(field => `
+                <span class="cron-flow-connector" aria-hidden="true"></span>
+                <button class="cron-flow-node" type="button" data-cron-position="${field.position}"
+                    style="${getCronFieldStyle(field)}">
+                    <span class="cron-node-position">第 ${field.position} 位</span>
+                    <code class="cron-node-value">${escapeHtml(field.value)}</code>
+                    <span class="cron-node-label">${escapeHtml(field.label)}</span>
+                    <span class="cron-node-meaning">${escapeHtml(field.meaning)}</span>
+                </button>
+            `).join('');
+            cronVisualizerViews.flow.innerHTML = `
+                <div class="cron-flow-canvas">
+                    <div class="cron-flow-sequence">
+                        <span class="cron-flow-terminal">读取</span>
+                        ${nodes}
+                        <span class="cron-flow-connector" aria-hidden="true"></span>
+                        <span class="cron-flow-terminal end">触发</span>
+                    </div>
+                </div>
+                <div class="cron-field-detail" id="cronFieldDetail"></div>
+            `;
+        }
+
+        function renderCronFieldCards(fields) {
+            cronVisualizerViews.fields.innerHTML = `
+                <div class="cron-field-grid">
+                    ${fields.map(field => `
+                        <button class="cron-field-card" type="button" data-cron-position="${field.position}"
+                            style="${getCronFieldStyle(field)}">
+                            <span class="field-position">第 ${field.position} 位</span>
+                            <code class="field-value">${escapeHtml(field.value)}</code>
+                            <span class="field-label">${escapeHtml(field.label)}</span>
+                            <div class="field-role">${escapeHtml(field.role)}</div>
+                            <div class="field-range">可用范围：${escapeHtml(field.range)}</div>
+                            <div class="field-meaning">${escapeHtml(field.meaning)}</div>
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function selectCronField(position) {
+            if (!currentCronVisualization) return;
+            const field = currentCronVisualization.fields.find(item => item.position === Number(position));
+            if (!field) return;
+            cronVisualizerModal.querySelectorAll('[data-cron-position]').forEach(element => {
+                element.classList.toggle('active', Number(element.dataset.cronPosition) === field.position);
+            });
+            const detail = document.getElementById('cronFieldDetail');
+            if (!detail) return;
+            detail.style.setProperty('--field-color', getCronFieldColor(field.position));
+            detail.innerHTML = `
+                <code class="cron-detail-value">${escapeHtml(field.value)}</code>
+                <div class="cron-detail-title">第 ${field.position} 位 · ${escapeHtml(field.label)}</div>
+                <div class="cron-detail-meaning">${escapeHtml(field.meaning)}</div>
+                <div class="cron-detail-meta">${escapeHtml(field.role)} · 可用范围：${escapeHtml(field.range)}</div>
+            `;
+        }
+
+        function isCronVisualizerOpen() {
+            return cronVisualizerModal.style.display === 'flex';
+        }
+
+        function activateCronVisualizerView(viewName, shouldFocus = false) {
+            if (!cronVisualizerViews[viewName]) return;
+            activeCronVisualizerView = viewName;
+            cronVisualizerTabs.forEach(tab => {
+                const active = tab.dataset.view === viewName;
+                tab.classList.toggle('active', active);
+                tab.setAttribute('aria-selected', String(active));
+                tab.tabIndex = active ? 0 : -1;
+                if (active && shouldFocus) tab.focus();
+            });
+            Object.entries(cronVisualizerViews).forEach(([name, view]) => {
+                const active = name === viewName;
+                view.classList.toggle('active', active);
+                view.hidden = !active;
+            });
+        }
+
+        function refreshCronVisualization() {
             try {
                 const visualization = CronParser.visualizeCron(cronInput.value);
+                currentCronVisualization = visualization;
+                parseCron();
                 visualizationType.textContent = visualization.typeLabel;
-                cronFieldGrid.innerHTML = visualization.fields.map(field => `
-                    <article class="cron-field-card">
-                        <span class="field-position">第 ${field.position} 位</span>
-                        <code class="field-value">${escapeHtml(field.value)}</code>
-                        <div class="field-label">${escapeHtml(field.label)}</div>
-                        <div class="field-role">${escapeHtml(field.role)}</div>
-                        <div class="field-range">可用范围：${escapeHtml(field.range)}</div>
-                        <div class="field-meaning">${escapeHtml(field.meaning)}</div>
-                    </article>
-                `).join('');
-                cronVisualization.hidden = false;
-                visualizeButton.setAttribute('aria-expanded', 'true');
+                cronVisualizerSummary.textContent = CronParser.explainCron(cronInput.value);
+                cronVisualizerSummary.hidden = false;
+                cronVisualizerError.classList.remove('active');
+                cronVisualizerError.textContent = '';
+                renderCronSource(visualization.fields);
+                renderCronFlow(visualization.fields);
+                renderCronFieldCards(visualization.fields);
+                selectCronField(visualization.fields[0].position);
             } catch (error) {
-                cronVisualization.hidden = true;
-                visualizeButton.setAttribute('aria-expanded', 'false');
-                parseStatus.textContent = `可视化失败：${error.message}`;
-                parseStatus.className = 'status error';
+                currentCronVisualization = null;
+                parseCron();
+                visualizationType.textContent = '无法识别';
+                cronVisualizerSource.innerHTML = `<code class="cron-source-raw">${escapeHtml(cronInput.value || '（空）')}</code>`;
+                cronVisualizerSummary.hidden = true;
+                cronVisualizerError.classList.add('active');
+                cronVisualizerError.textContent = `解析失败：${error.message}`;
+                Object.values(cronVisualizerViews).forEach(view => {
+                    view.innerHTML = '<div class="cron-visualizer-empty">修正表达式后重新打开可视化。</div>';
+                });
+            }
+        }
+
+        function openCronVisualizer() {
+            cronVisualizerReturnFocus = document.activeElement;
+            cronVisualizerModal.style.display = 'flex';
+            cronVisualizerModal.setAttribute('aria-hidden', 'false');
+            visualizeButton.setAttribute('aria-expanded', 'true');
+            activateCronVisualizerView(activeCronVisualizerView);
+            refreshCronVisualization();
+            const activeTab = cronVisualizerTabs.find(tab => tab.dataset.view === activeCronVisualizerView);
+            if (activeTab) activeTab.focus();
+        }
+
+        function closeCronVisualizer() {
+            cronVisualizerModal.style.display = 'none';
+            cronVisualizerModal.setAttribute('aria-hidden', 'true');
+            visualizeButton.setAttribute('aria-expanded', 'false');
+            if (cronVisualizerReturnFocus && typeof cronVisualizerReturnFocus.focus === 'function') {
+                cronVisualizerReturnFocus.focus();
             }
         }
 
@@ -969,7 +1432,33 @@
         }
 
         document.getElementById('parse-btn').addEventListener('click', parseCron);
-        visualizeButton.addEventListener('click', visualizeCronExpression);
+        visualizeButton.addEventListener('click', openCronVisualizer);
+        document.getElementById('closeCronVisualizerBtn').addEventListener('click', closeCronVisualizer);
+        cronVisualizerTabs.forEach((tab, index) => {
+            tab.addEventListener('click', () => activateCronVisualizerView(tab.dataset.view));
+            tab.addEventListener('keydown', event => {
+                const keys = ['ArrowLeft', 'ArrowRight', 'Home', 'End'];
+                if (!keys.includes(event.key)) return;
+                event.preventDefault();
+                let nextIndex = index;
+                if (event.key === 'ArrowLeft') nextIndex = (index - 1 + cronVisualizerTabs.length) % cronVisualizerTabs.length;
+                if (event.key === 'ArrowRight') nextIndex = (index + 1) % cronVisualizerTabs.length;
+                if (event.key === 'Home') nextIndex = 0;
+                if (event.key === 'End') nextIndex = cronVisualizerTabs.length - 1;
+                activateCronVisualizerView(cronVisualizerTabs[nextIndex].dataset.view, true);
+            });
+        });
+        cronVisualizerModal.addEventListener('click', event => {
+            if (event.target === cronVisualizerModal) {
+                closeCronVisualizer();
+                return;
+            }
+            const fieldTarget = event.target.closest('[data-cron-position]');
+            if (fieldTarget) selectCronField(fieldTarget.dataset.cronPosition);
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && isCronVisualizerOpen()) closeCronVisualizer();
+        });
         parserTab.addEventListener('click', () => switchMode('parser'));
         generatorTab.addEventListener('click', () => switchMode('generator'));
         scheduleType.addEventListener('change', () => {
@@ -1019,10 +1508,6 @@
                 return;
             }
             ClipboardUtils.copyText(currentRuns.map(formatDateTime).join('\n'), { successMessage: '执行时间已复制' });
-        });
-        cronInput.addEventListener('input', () => {
-            cronVisualization.hidden = true;
-            visualizeButton.setAttribute('aria-expanded', 'false');
         });
         cronInput.value = SampleData.getSample('cron.linuxEveryThirtyMinutes');
         parseCron();
