@@ -12,6 +12,7 @@
     <script src="clipboard-utils.js"></script>
     <script src="editor-lines.js"></script>
     <script src="text-splitter.js"></script>
+    <script src="regex-risk-analyzer.js"></script>
     <script src="text-masker.js"></script>
     <style>
         :root {
@@ -461,7 +462,7 @@
         }
 
         .mask-config-content {
-            width: min(780px, calc(100vw - 40px));
+            width: min(980px, calc(100vw - 40px));
         }
 
         .mask-config-note {
@@ -477,7 +478,7 @@
         .mask-mapping-head,
         .mask-mapping-row {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 30px minmax(0, 1fr) 62px;
+            grid-template-columns: 92px minmax(180px, 1.4fr) 76px 28px minmax(150px, 1fr) 62px;
             gap: 8px;
             align-items: center;
         }
@@ -489,7 +490,7 @@
             font-weight: 600;
         }
 
-        .mask-mapping-head span:nth-child(2) {
+        .mask-mapping-head span:nth-child(4) {
             text-align: center;
         }
 
@@ -499,26 +500,84 @@
         }
 
         .mask-mapping-row + .mask-mapping-row {
-            margin-top: 8px;
+            margin-top: 10px;
         }
 
-        .mask-mapping-row input {
+        .mask-field {
+            min-width: 0;
+        }
+
+        .mask-field-label {
+            display: none;
+            margin-bottom: 4px;
+            color: var(--muted-color);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .mask-mapping-row input,
+        .mask-mapping-row select {
             min-width: 0;
             width: 100%;
             padding: 8px 10px;
             border: 1px solid var(--border-color);
             border-radius: 6px;
+            background: #fff;
+            color: var(--text-color);
             outline: none;
         }
 
-        .mask-mapping-row input:focus {
+        .mask-mapping-row input:focus,
+        .mask-mapping-row select:focus {
             border-color: var(--accent-color);
             box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
+        }
+
+        .mask-mapping-row input:disabled {
+            background: #f6f8fa;
+            color: var(--muted-color);
+            cursor: not-allowed;
+        }
+
+        .mask-mapping-row.has-error input[aria-invalid="true"],
+        .mask-mapping-row.has-error select[aria-invalid="true"] {
+            border-color: var(--danger-color);
+            box-shadow: 0 0 0 2px rgba(207, 34, 46, 0.15);
         }
 
         .mask-arrow {
             color: var(--muted-color);
             text-align: center;
+        }
+
+        .mask-row-hint {
+            display: none;
+            grid-column: 1 / -1;
+            margin: 0;
+            color: var(--muted-color);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .mask-mapping-row.is-regex .mask-row-hint {
+            display: block;
+        }
+
+        .mask-row-hint.warning,
+        .mask-row-hint.error {
+            display: block;
+            padding: 6px 8px;
+            border-radius: 5px;
+        }
+
+        .mask-row-hint.warning {
+            background: #fff8c5;
+            color: #633c01;
+        }
+
+        .mask-row-hint.error {
+            background: #ffebe9;
+            color: var(--danger-color);
         }
 
         .mask-config-actions,
@@ -670,26 +729,41 @@
             .hint {
                 flex-basis: 100%;
             }
+        }
 
+        @media (max-width: 720px) {
             .mask-mapping-head {
                 display: none;
             }
 
             .mask-mapping-row {
-                grid-template-columns: 1fr 34px;
+                grid-template-columns: minmax(0, 1fr) 34px;
+                padding: 10px;
+                border: 1px solid var(--border-color);
+                border-radius: 7px;
+                background: #f6f8fa;
             }
 
             .mask-mapping-row .mask-arrow {
                 display: none;
             }
 
-            .mask-mapping-row input {
+            .mask-field-label {
+                display: block;
+            }
+
+            .mask-mapping-row .mask-field {
                 grid-column: 1;
             }
 
             .mask-mapping-row .remove-mask-mapping-btn {
                 grid-column: 2;
-                grid-row: 1 / span 2;
+                grid-row: 1 / span 4;
+                align-self: start;
+            }
+
+            .mask-row-hint {
+                grid-column: 1 / -1;
             }
         }
     </style>
@@ -700,7 +774,7 @@
         <div class="tool-title">
             <h1>文本智能拆分</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.15</span>
+                <span>V1.16</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -726,7 +800,7 @@
                         启用脱敏
                     </label>
                     <button class="btn" id="maskConfigBtn" type="button">脱敏配置</button>
-                    <button class="btn" id="unmaskBtn" type="button" title="将输入文本中的脱敏文本恢复为映射中的原文，并显示在右侧">反脱敏</button>
+                    <button class="btn" id="unmaskBtn" type="button" title="恢复固定文本映射；正则脱敏不可还原">反脱敏</button>
                     <button class="btn btn-primary" id="splitBtn" type="button">开始拆分</button>
                     <button class="btn btn-danger" id="clearBtn" type="button">清空</button>
                 </div>
@@ -774,6 +848,10 @@
             </div>
             <div class="modal-body changelog-body">
                 <div class="changelog-date">2026年8月13日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.16</div>
+                    <div>脱敏映射新增正则表达式类型，支持 i/m/s/u 标志、全局匹配和捕获组替换，并提供 IPv4 脱敏示例；旧版固定文本配置自动兼容，正则映射明确为仅单向脱敏。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.15</div>
                     <div>优化拆分结果全屏查看：正文限制为适合阅读的最大宽度并居中显示，普通文本和连续长字符都会自动换行；改用逐行布局，使换行后的正文仍与行号准确对应。</div>
@@ -855,13 +933,14 @@
                 <button class="close-modal" type="button" id="closeMaskConfigBtn" aria-label="关闭">&times;</button>
             </div>
             <div class="modal-body">
-                <p class="mask-config-note">配置仅以明文保存在当前浏览器中，本功能是本地文本替换，不是加密。开始拆分时执行“脱敏前 → 脱敏后”，反脱敏时执行相反替换。</p>
+                <p class="mask-config-note">配置仅以明文保存在当前浏览器中，本功能是本地文本替换，不是加密。固定文本支持脱敏和反脱敏；正则表达式会自动全局匹配，仅用于单向脱敏、无法还原原文，替换文本可使用 <code>$1</code> 或 <code>$&lt;名称&gt;</code> 引用捕获组。</p>
                 <div class="mask-mapping-head" aria-hidden="true">
-                    <span>脱敏前文本</span><span>替换为</span><span>脱敏后文本</span><span>操作</span>
+                    <span>类型</span><span>匹配内容</span><span>标志</span><span>替换为</span><span>替换文本</span><span>操作</span>
                 </div>
                 <div class="mask-mappings" id="maskMappings"></div>
                 <div class="mask-config-actions">
                     <button class="btn btn-small" id="addMaskMappingBtn" type="button">新增映射</button>
+                    <button class="btn btn-small" id="addIpv4MaskExampleBtn" type="button">添加 IPv4 示例</button>
                     <button class="btn btn-small" id="importMaskConfigBtn" type="button">导入配置</button>
                     <button class="btn btn-small" id="exportMaskConfigBtn" type="button">导出配置</button>
                     <input id="maskConfigFileInput" type="file" accept="application/json,.json" hidden>
@@ -910,6 +989,7 @@
         let currentResultMode = 'split';
         let maskConfig = { ...TextMasker.DEFAULT_CONFIG, mappings: [] };
         let toastTimer;
+        const IPV4_MASK_PATTERN = String.raw`\b(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\.(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\.(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\.(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\b`;
 
         function escapeHtml(value) {
             return value
@@ -1038,27 +1118,144 @@
             }
 
             const strategy = splitStrategy.value;
-            const source = maskingEnabled.checked
-                ? TextMasker.maskText(inputText.value, maskConfig.mappings)
-                : inputText.value;
+            let source = inputText.value;
+            if (maskingEnabled.checked) {
+                try {
+                    source = TextMasker.maskText(source, maskConfig.mappings);
+                } catch (error) {
+                    openMaskConfig();
+                    showMaskMappingError(error);
+                    return;
+                }
+            }
             const segments = TextSplitter.splitTextByStrategy(source, limit, strategy);
             renderResults(segments, { source, mode: 'split' });
             const maskMessage = maskingEnabled.checked && maskConfig.mappings.length ? '并完成脱敏' : '';
             showToast(`已拆分为 ${segments.length} 段${maskMessage}`);
         }
 
-        function createMaskMappingRow(mapping = { plain: '', masked: '' }) {
+        function createMaskMappingRow(mapping = { type: 'literal', plain: '', masked: '', flags: '' }) {
             const row = document.createElement('div');
             row.className = 'mask-mapping-row';
             row.innerHTML = `
-                <input class="mask-plain-input" type="text" aria-label="脱敏前文本" placeholder="例如 prod-db.example.com">
+                <label class="mask-field mask-type-field">
+                    <span class="mask-field-label">类型</span>
+                    <select class="mask-type-select" aria-label="映射类型">
+                        <option value="literal">固定文本</option>
+                        <option value="regex">正则</option>
+                    </select>
+                </label>
+                <label class="mask-field mask-plain-field">
+                    <span class="mask-field-label mask-plain-label">匹配内容</span>
+                    <input class="mask-plain-input" type="text" aria-label="脱敏前文本" placeholder="例如 prod-db.example.com">
+                </label>
+                <label class="mask-field mask-flags-field">
+                    <span class="mask-field-label">标志</span>
+                    <input class="mask-flags-input" type="text" aria-label="正则表达式标志" placeholder="imsu" maxlength="5">
+                </label>
                 <span class="mask-arrow" aria-hidden="true">→</span>
-                <input class="mask-masked-input" type="text" aria-label="脱敏后文本" placeholder="例如 DB_HOST">
+                <label class="mask-field mask-masked-field">
+                    <span class="mask-field-label mask-masked-label">替换文本</span>
+                    <input class="mask-masked-input" type="text" aria-label="脱敏后文本" placeholder="例如 DB_HOST">
+                </label>
                 <button class="btn btn-small btn-danger remove-mask-mapping-btn" type="button">删除</button>
+                <p class="mask-row-hint" role="status"></p>
             `;
+            row.querySelector('.mask-type-select').value = mapping.type === 'regex' ? 'regex' : 'literal';
             row.querySelector('.mask-plain-input').value = mapping.plain ?? '';
             row.querySelector('.mask-masked-input').value = mapping.masked ?? '';
+            row.querySelector('.mask-flags-input').value = mapping.flags ?? '';
+            updateMaskMappingRow(row);
             return row;
+        }
+
+        function updateMaskMappingRow(row) {
+            const type = row.querySelector('.mask-type-select').value;
+            const isRegex = type === 'regex';
+            const plainInput = row.querySelector('.mask-plain-input');
+            const maskedInput = row.querySelector('.mask-masked-input');
+            const flagsInput = row.querySelector('.mask-flags-input');
+            const hint = row.querySelector('.mask-row-hint');
+
+            row.classList.toggle('is-regex', isRegex);
+            plainInput.placeholder = isRegex ? String.raw`例如 \b\d{1,3}(?:\.\d{1,3}){3}\b` : '例如 prod-db.example.com';
+            plainInput.setAttribute('aria-label', isRegex ? '正则表达式' : '脱敏前文本');
+            row.querySelector('.mask-plain-label').textContent = isRegex ? '正则表达式' : '脱敏前文本';
+            maskedInput.placeholder = isRegex ? '例如 [IP] 或 $1***' : '例如 DB_HOST';
+            maskedInput.setAttribute('aria-label', isRegex ? '正则替换文本' : '脱敏后文本');
+            row.querySelector('.mask-masked-label').textContent = isRegex ? '替换文本' : '脱敏后文本';
+            flagsInput.disabled = !isRegex;
+            flagsInput.placeholder = isRegex ? 'imsu' : '—';
+
+            if (!isRegex || row.classList.contains('has-error')) {
+                if (!isRegex && !row.classList.contains('has-error')) {
+                    hint.className = 'mask-row-hint';
+                    hint.textContent = '';
+                }
+                return;
+            }
+
+            const risks = RegexRiskAnalyzer.analyzeRegexRisks(plainInput.value);
+            if (risks.length) {
+                const riskNames = [...new Set(risks.map((risk) => risk.type === 'nested-quantifier' ? '嵌套量词' : '重叠分支'))];
+                hint.className = 'mask-row-hint warning';
+                hint.textContent = `正则仅单向脱敏；检测到${riskNames.join('、')}，在长文本中可能执行较慢，请确认规则范围。`;
+                return;
+            }
+            hint.className = 'mask-row-hint';
+            hint.textContent = '正则仅用于单向脱敏；全局匹配已自动启用，可选标志为 i、m、s、u。';
+        }
+
+        function getMaskMappingErrorMessage(error) {
+            const rowLabel = Number.isInteger(error?.mappingIndex) ? `第 ${error.mappingIndex + 1} 条映射` : '脱敏映射';
+            const messages = {
+                INCOMPLETE_MAPPING: `${rowLabel}的匹配内容和替换文本都需要填写`,
+                INVALID_MAPPING_TYPE: `${rowLabel}的类型无效`,
+                DUPLICATE_PLAIN: `${rowLabel}的固定文本与其他映射重复`,
+                DUPLICATE_MASKED: `${rowLabel}的替换文本与可反脱敏映射冲突`,
+                DUPLICATE_REGEX: `${rowLabel}的正则表达式和标志与其他映射重复`,
+                DUPLICATE_REGEX_FLAG: `${rowLabel}包含重复的正则标志`,
+                INVALID_REGEX_FLAGS: `${rowLabel}包含不支持的正则标志，仅支持 i、m、s、u（g 已自动启用）`,
+                INVALID_REGEX: `${rowLabel}的正则表达式语法无效`,
+                EMPTY_REGEX_MATCH: `${rowLabel}的正则会匹配空文本，请改为至少匹配一个字符`,
+                PATTERN_TOO_LONG: `${rowLabel}的匹配内容过长`,
+                REPLACEMENT_TOO_LONG: `${rowLabel}的替换文本过长`,
+                TOO_MANY_MAPPINGS: '脱敏映射最多支持 100 条',
+            };
+            return messages[error?.code] || error?.message || '脱敏映射配置无效，请检查后重试';
+        }
+
+        function clearMaskMappingRowError(row) {
+            row.classList.remove('has-error');
+            row.querySelectorAll('[aria-invalid="true"]').forEach((control) => control.removeAttribute('aria-invalid'));
+            updateMaskMappingRow(row);
+        }
+
+        function clearMaskMappingErrors() {
+            maskMappings.querySelectorAll('.mask-mapping-row').forEach(clearMaskMappingRowError);
+        }
+
+        function showMaskMappingError(error) {
+            const message = getMaskMappingErrorMessage(error);
+            const rows = Array.from(maskMappings.querySelectorAll('.mask-mapping-row'));
+            const row = Number.isInteger(error?.mappingIndex) ? rows[error.mappingIndex] : null;
+            if (row) {
+                row.classList.add('has-error');
+                const fieldSelectors = {
+                    type: '.mask-type-select',
+                    plain: '.mask-plain-input',
+                    flags: '.mask-flags-input',
+                    masked: '.mask-masked-input',
+                };
+                const control = row.querySelector(fieldSelectors[error.field] || '.mask-plain-input');
+                control?.setAttribute('aria-invalid', 'true');
+                const hint = row.querySelector('.mask-row-hint');
+                hint.className = 'mask-row-hint error';
+                hint.textContent = message;
+                row.scrollIntoView({ block: 'nearest' });
+                control?.focus();
+            }
+            showToast(message);
         }
 
         function renderMaskMappings(mappings) {
@@ -1067,10 +1264,35 @@
             rows.forEach((mapping) => maskMappings.appendChild(createMaskMappingRow(mapping)));
         }
 
+        function addIpv4MaskExample() {
+            const row = createMaskMappingRow({
+                type: 'regex',
+                plain: IPV4_MASK_PATTERN,
+                masked: '[IP]',
+                flags: '',
+            });
+            const existingRows = Array.from(maskMappings.querySelectorAll('.mask-mapping-row'));
+            const onlyRow = existingRows.length === 1 ? existingRows[0] : null;
+            const onlyRowIsEmpty = onlyRow
+                && !onlyRow.querySelector('.mask-plain-input').value.trim()
+                && !onlyRow.querySelector('.mask-masked-input').value.trim();
+            if (onlyRowIsEmpty) {
+                onlyRow.replaceWith(row);
+            } else {
+                maskMappings.appendChild(row);
+            }
+            maskMappings.scrollTop = maskMappings.scrollHeight;
+            row.querySelector('.mask-plain-input').focus();
+            showToast('已添加 IPv4 正则示例，保存后生效');
+        }
+
         function readMaskMappings() {
+            clearMaskMappingErrors();
             return TextMasker.validateMappings(Array.from(maskMappings.querySelectorAll('.mask-mapping-row')).map((row) => ({
+                type: row.querySelector('.mask-type-select').value,
                 plain: row.querySelector('.mask-plain-input').value,
                 masked: row.querySelector('.mask-masked-input').value,
+                flags: row.querySelector('.mask-flags-input').value,
             })));
         }
 
@@ -1089,6 +1311,7 @@
             try {
                 maskConfig = TextMasker.parseConfig(saved);
                 maskingEnabled.checked = maskConfig.enabled;
+                localStorage.setItem(TextMasker.STORAGE_KEY, TextMasker.stringifyConfig(maskConfig));
             } catch (error) {
                 maskConfig = { ...TextMasker.DEFAULT_CONFIG, mappings: [] };
                 maskingEnabled.checked = true;
@@ -1114,7 +1337,7 @@
                 closeMaskConfig();
                 showToast(`已保存 ${maskConfig.mappings.length} 条脱敏映射`);
             } catch (error) {
-                showToast(error.message.includes('both sides') ? '每条映射的两边都需要填写' : '映射内容不能重复，请检查配置');
+                showMaskMappingError(error);
             }
         }
 
@@ -1126,8 +1349,13 @@
                 return;
             }
             const unmaskedText = TextMasker.unmaskText(inputText.value, maskConfig.mappings);
+            const skippedRegexCount = maskConfig.mappings.filter((mapping) => mapping.type === 'regex').length;
             renderResults([unmaskedText], { mode: 'unmask' });
-            showToast(maskConfig.mappings.length ? '反脱敏结果已显示' : '尚未配置映射，已显示原文');
+            if (skippedRegexCount) {
+                showToast(`反脱敏结果已显示；${skippedRegexCount} 条正则映射不可还原，已跳过`);
+            } else {
+                showToast(maskConfig.mappings.length ? '反脱敏结果已显示' : '尚未配置映射，已显示原文');
+            }
         }
 
         async function importMaskConfig(file) {
@@ -1155,7 +1383,7 @@
                 URL.revokeObjectURL(url);
                 showToast('脱敏配置已导出');
             } catch (error) {
-                showToast(error.message.includes('both sides') ? '请先补全映射内容' : '映射内容不能重复，请检查配置');
+                showMaskMappingError(error);
             }
         }
 
@@ -1246,8 +1474,9 @@
         document.getElementById('addMaskMappingBtn').addEventListener('click', () => {
             const row = createMaskMappingRow();
             maskMappings.appendChild(row);
-            row.querySelector('input').focus();
+            row.querySelector('.mask-plain-input').focus();
         });
+        document.getElementById('addIpv4MaskExampleBtn').addEventListener('click', addIpv4MaskExample);
         document.getElementById('importMaskConfigBtn').addEventListener('click', () => {
             document.getElementById('maskConfigFileInput').click();
         });
@@ -1264,6 +1493,14 @@
             if (!maskMappings.children.length) {
                 maskMappings.appendChild(createMaskMappingRow());
             }
+        });
+        maskMappings.addEventListener('input', (event) => {
+            const row = event.target.closest('.mask-mapping-row');
+            if (row) clearMaskMappingRowError(row);
+        });
+        maskMappings.addEventListener('change', (event) => {
+            const row = event.target.closest('.mask-mapping-row');
+            if (row) clearMaskMappingRowError(row);
         });
         maskingEnabled.addEventListener('change', () => {
             persistMaskConfig({ ...maskConfig, enabled: maskingEnabled.checked });
