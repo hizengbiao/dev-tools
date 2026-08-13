@@ -789,7 +789,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V1.93</span>
+            <span>V1.94</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -822,6 +822,13 @@
                 <button class="close-modal changelog-close" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body changelog-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年8月13日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.94</div>
+                        <div class="changelog-desc">修复树形结果编辑或删除键值对后，立即点击“编辑”“压缩”或“格式化”仍使用修改前内容的问题。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月23日</div>
                     <div class="changelog-entry">
@@ -1295,6 +1302,7 @@
         const treeToolbar = document.getElementById('tree-toolbar');
 
         let currentObj = null;
+        let hasCurrentValue = false;
         let isTreeMode = false;
         let sourceDirty = false; // Flag to defer expensive stringification
         let expandedStringFieldPaths = [];
@@ -1307,6 +1315,11 @@
         saveState();
 
         inputArea.addEventListener('input', () => {
+            if (!isTreeMode) {
+                currentObj = null;
+                hasCurrentValue = false;
+                sourceDirty = false;
+            }
             if (!isInputting) {
                 isInputting = true;
                 setTimeout(() => {
@@ -1343,7 +1356,7 @@
         }
 
         function syncToInput() {
-            if (currentObj !== null) {
+            if (hasCurrentValue) {
                 inputArea.value = JSON.stringify(currentObj, null, 4);
                 sourceDirty = false;
             }
@@ -1357,9 +1370,15 @@
         }
 
         function undo() {
+            if (sourceDirty) {
+                ensureSynced();
+            }
             if (historyIndex > 0) {
                 historyIndex--;
                 inputArea.value = historyStack[historyIndex];
+                currentObj = null;
+                hasCurrentValue = false;
+                sourceDirty = false;
                 if (isTreeMode) parseAndRender();
             }
         }
@@ -1368,6 +1387,9 @@
             if (historyIndex < historyStack.length - 1) {
                 historyIndex++;
                 inputArea.value = historyStack[historyIndex];
+                currentObj = null;
+                hasCurrentValue = false;
+                sourceDirty = false;
                 if (isTreeMode) parseAndRender();
             }
         }
@@ -1397,8 +1419,9 @@
         }
 
         function showEditor() {
-            // If we have a parsed object, sync the formatted content to the input area
-            if (currentObj !== null) {
+            // Only sync while leaving tree mode. Re-clicking "编辑" in source mode
+            // must not overwrite source changes with the last parsed object.
+            if (isTreeMode && hasCurrentValue) {
                 inputArea.value = JSON.stringify(currentObj, null, 4);
                 sourceDirty = false;
                 saveState();
@@ -1407,10 +1430,12 @@
         }
 
         function handleFormat(allowAutoFix = true) {
-            // If we are in tree mode and have dirty data, re-render from object instead of input
-            if (isTreeMode && sourceDirty) {
-                reRenderTree();
+            // Tree edits make currentObj newer than the source textarea. Always flush
+            // that object first, even if another interaction has just switched the view.
+            if (sourceDirty && hasCurrentValue) {
                 ensureSynced();
+                reRenderTree();
+                switchMode('tree');
                 showToast("同步格式化成功 ✅");
                 return;
             }
@@ -1431,6 +1456,9 @@
                     return;
                 }
                 inputArea.value = text;
+                currentObj = null;
+                hasCurrentValue = false;
+                sourceDirty = false;
                 saveState(); // Update undo history
 
                 // Try to format
@@ -1443,6 +1471,8 @@
 
         function loadJsonSample() {
             inputArea.value = SampleData.getSample('json.nestedExample');
+            currentObj = null;
+            hasCurrentValue = false;
             sourceDirty = false;
             saveState();
             handleFormat();
@@ -1450,8 +1480,9 @@
 
         function handleMinify() {
             // Prioritize currentObj if we are in Tree Mode (to capture sorting)
-            if (isTreeMode && currentObj) {
+            if (isTreeMode && hasCurrentValue) {
                 inputArea.value = JSON.stringify(currentObj);
+                sourceDirty = false;
                 saveState();
                 switchMode('source');
                 showToast("压缩成功 (已保留排序) ✅");
@@ -1463,6 +1494,9 @@
             try {
                 const parsed = JSON.parse(raw);
                 inputArea.value = JSON.stringify(parsed);
+                currentObj = parsed;
+                hasCurrentValue = true;
+                sourceDirty = false;
                 saveState();
                 switchMode('source');
                 showToast("压缩成功 ✅");
@@ -1473,6 +1507,9 @@
         }
 
         function fixJson(options = {}) {
+            if (sourceDirty && hasCurrentValue) {
+                ensureSynced();
+            }
             const autoTriggered = options.autoTriggered === true;
             let raw = inputArea.value.trim();
             if (!raw) return;
@@ -1927,6 +1964,8 @@
             outputDiv.innerHTML = '';
             expandedStringFieldPaths = [];
             currentObj = null;
+            hasCurrentValue = false;
+            sourceDirty = false;
             switchMode('source');
             errorMsg.style.display = 'none';
         }
@@ -1939,6 +1978,7 @@
                 // Allow switch but it's empty
                 outputDiv.innerHTML = '';
                 currentObj = null;
+                hasCurrentValue = false;
                 sourceDirty = false;
                 errorMsg.style.display = 'none';
                 errorMsg.textContent = '';
@@ -1947,6 +1987,8 @@
             try {
                 const parsed = JSON.parse(raw);
                 currentObj = parsed;
+                hasCurrentValue = true;
+                sourceDirty = false;
                 outputDiv.innerHTML = '';
                 errorMsg.style.display = 'none';
                 errorMsg.textContent = '';
@@ -1968,7 +2010,7 @@
 
         function copyCurrentContent() {
             // Smart copy based on mode
-            if (isTreeMode && currentObj) {
+            if (isTreeMode && hasCurrentValue) {
                 copyText(JSON.stringify(currentObj, null, 4));
             } else {
                 copyText(inputArea.value);
@@ -1978,7 +2020,7 @@
 
 
         function ensureCurrentJsonObject() {
-            if (currentObj !== null) {
+            if (hasCurrentValue) {
                 return true;
             }
             return parseAndRender();
@@ -1986,6 +2028,7 @@
 
         function applyJsonObjectChange(nextObj) {
             currentObj = nextObj;
+            hasCurrentValue = true;
             syncToInput();
             saveState();
             reRenderTree();
@@ -2060,7 +2103,7 @@
 
         // Sort/Order Logic (Operates on currentObj)
         function sortJson(asc) {
-            if (!currentObj) return;
+            if (!hasCurrentValue || currentObj === null || typeof currentObj !== 'object') return;
             currentObj = JsonSorter.sortObjectKeys(currentObj, asc);
             syncToInput();
             saveState();
@@ -2111,6 +2154,9 @@
 
         // Java Conversion Logic
         function handleJavaConvert() {
+            if (sourceDirty && hasCurrentValue) {
+                ensureSynced();
+            }
             const raw = inputArea.value.trim();
             if (!raw) return;
 
@@ -2119,6 +2165,9 @@
                     const obj = JSON.parse(raw);
                     const javaCode = JsonJavaConverter.jsonToJava(obj);
                     inputArea.value = javaCode;
+                    currentObj = null;
+                    hasCurrentValue = false;
+                    sourceDirty = false;
                     switchMode('source');
                     saveState();
                     showToast("已转换为 Java 代码 ✅");
@@ -2129,6 +2178,9 @@
                 try {
                     const jsonObj = JsonJavaConverter.javaToJson(raw);
                     inputArea.value = JSON.stringify(jsonObj, null, 4);
+                    currentObj = jsonObj;
+                    hasCurrentValue = true;
+                    sourceDirty = false;
                     switchMode('source');
                     saveState();
                     showToast("已转换为 JSON ✅");
@@ -2777,7 +2829,7 @@
          * 判断是否应该自动格式化（小文件自动，大文件手动）
          */
         function shouldAutoFormat() {
-            if (!currentObj) return true;
+            if (!hasCurrentValue) return true;
             const jsonStr = JSON.stringify(currentObj, null, 4);
             const lineCount = jsonStr.split('\n').length;
             return lineCount < 1000;
@@ -2933,6 +2985,7 @@
 
         function setValueByPathWithoutRerender(path, value) {
             currentObj = JsonPathEditor.setValueAtPath(currentObj, path, value);
+            hasCurrentValue = true;
             sourceDirty = true;
         }
 
@@ -2944,6 +2997,7 @@
 
         function renameKeyWithoutRerender(parentPath, oldKey, newKey) {
             currentObj = JsonPathEditor.renameKeyAtPath(currentObj, parentPath, oldKey, newKey);
+            hasCurrentValue = true;
             sourceDirty = true;
         }
 
@@ -2993,14 +3047,14 @@
 
             // Cleanup helper to remove event listener
             const cleanup = () => {
-                document.removeEventListener('click', outsideClickListener);
+                document.removeEventListener('click', outsideClickListener, true);
             };
 
             const outsideClickListener = (e) => {
                 if (!editorDiv.contains(e.target)) {
-                    cleanup();
                     try {
                         const newData = JSON.parse(textarea.value);
+                        cleanup();
                         setValueByPathWithoutRerender(path, newData);
 
                         // 智能格式化：小文件直接渲染
@@ -3044,14 +3098,24 @@
 
                         editorDiv.replaceWith(previewEl);
                     } catch (err) {
-                        editorDiv.replaceWith(container);
+                        // Do not let the outside action continue with stale data when
+                        // the pending subtree cannot be committed.
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (typeof e.stopImmediatePropagation === 'function') {
+                            e.stopImmediatePropagation();
+                        }
+                        showToast("JSON 格式错误: " + err.message);
+                        textarea.focus();
                     }
                 }
             };
 
-            // Delay adding the listener to avoid triggering it immediately with the current click
+            // Use the capture phase so an outside toolbar click commits the subtree
+            // before the button's onclick reads currentObj or the source textarea.
+            // Delaying registration still avoids handling the click that opened the editor.
             setTimeout(() => {
-                document.addEventListener('click', outsideClickListener);
+                document.addEventListener('click', outsideClickListener, true);
             }, 0);
 
             const btnRow = document.createElement('div');
@@ -3148,6 +3212,7 @@
         function handleDelete(path) {
             if (path.length === 0) {
                 currentObj = null;
+                hasCurrentValue = false;
                 inputArea.value = '';
                 outputDiv.innerHTML = '';
                 sourceDirty = false;
