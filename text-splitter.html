@@ -774,7 +774,7 @@
         <div class="tool-title">
             <h1>文本智能拆分</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.16</span>
+                <span>V1.17</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -791,7 +791,7 @@
                         <option value="characters">硬字符</option>
                     </select>
                     <label for="maxLength">每段最大长度</label>
-                    <input id="maxLength" type="number" min="1" step="1" value="2900">
+                    <input id="maxLength" type="number" min="1" step="1" value="2850">
                     <span class="hint" id="strategyHint">智能边界：优先在靠近上限的换行、标点或单词空格处拆分</span>
                 </div>
                 <div class="toolbar-actions">
@@ -848,6 +848,10 @@
             </div>
             <div class="modal-body changelog-body">
                 <div class="changelog-date">2026年8月13日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.17</div>
+                    <div>将每段最大长度的默认值由 2900 调整为 2850。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.16</div>
                     <div>脱敏映射新增正则表达式类型，支持 i/m/s/u 标志、全局匹配和捕获组替换，并提供 IPv4 脱敏示例；旧版固定文本配置自动兼容，正则映射明确为仅单向脱敏。</div>

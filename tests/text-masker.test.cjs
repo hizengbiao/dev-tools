@@ -224,8 +224,8 @@ assert.doesNotMatch(page, /event\.target === maskConfigModal/);
 const escapeHandler = page.match(/document\.addEventListener\('keydown',[\s\S]*?\n        \}\);/);
 assert.ok(escapeHandler, 'Escape key handler should exist');
 assert.doesNotMatch(escapeHandler[0], /closeMaskConfig\(\)/);
-assert.match(page, /<span>V1\.16<\/span>/);
-assert.match(page, /<div class="changelog-date">2026\u5e748\u670813\u65e5<\/div>[\s\S]*?<div class="changelog-version">V1\.16<\/div>[\s\S]*?<div class="changelog-version">V1\.15<\/div>/);
+assert.match(page, /<span>V1\.17<\/span>/);
+assert.match(page, /<div class="changelog-date">2026\u5e748\u670813\u65e5<\/div>[\s\S]*?<div class="changelog-version">V1\.17<\/div>[\s\S]*?<div class="changelog-version">V1\.16<\/div>[\s\S]*?<div class="changelog-version">V1\.15<\/div>/);
 assert.match(page, /<div class="changelog-date">2026\u5e747\u670823\u65e5<\/div>[\s\S]*?<div class="changelog-version">V1\.14<\/div>/);
 assert.match(page, /<div class="changelog-date">2026\u5e747\u670815\u65e5<\/div>[\s\S]*?<div class="changelog-version">V1\.09<\/div>/);
 
