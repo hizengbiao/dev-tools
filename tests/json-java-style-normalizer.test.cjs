@@ -67,4 +67,14 @@ assert.strictEqual(
     "['alpha', 1, true, null, ['quoted'], {name=x}, ['nested', 2]]"
 );
 
+const execComputeResDto = 'ExecComputeResDTO(id=0, execStatus=EXEC_SUCCESS, log=null, disconnected=false, kfQuery=false, recordSource=DOCKER_REPORT, dstTypeEnum=PRIVATE_LINE, relationData={"netstatReportFlag":false,"linktraceReportFlag":false,"cmbAgentReportFlag":false,"srcServiceUnitId":"L6.2@L6_xft_task_UAT_UAT","id":0,"dstCode":"221.1.243.227@21","dockerReportFlag":true}, originData=ReportedDataPreProcessDO(id=0, srcType=ServiceUnit, srcCode=L6.2@L6_xft_task_UAT_UAT, dstType=Ip, dstCode=221.1.243.227@21, dstHost=null, data={"dstIp":"221.1.243.227","dstPort":21,"dstHost":"","protocol":"kafka","connectionState":"","esUserName":"consumer:xft_tax_staff","dstOriginPath":"","lastUpdateTime":"2026-04-27T03:11:58 08:00","serviceUnitCode":"L6.2@L6_xft_task_UAT_UAT","clusterName":"cstest-biz-02-sk-oa","nameSpace":"34df-6hb-uat-default","appName":"lw36-xft-tax-task-k38lq","dstInfo":{"code":"221.1.243.227@21","type":"Ip","host":null}}, recordSource=DOCKER_REPORT, subSource=null, execStatus=WAIT_EXEC, log=容器应用外访数据上报, envType=OA, firstRecordTime=null, recentRecordTime=1777230718000, useServiceConn=false, disconnected=false, ignore=false, databaseStatistics=null), errType=null, err=null, reportDataIdentify=L6.2@L6_xft_task_UAT_UAT@221.1.243.227@21, matchTracks=[RelationMatchTrack(type=MATCH_WITH_PRIVATE_LINE, data=221.1.243.227@21)], multiResult=[])';
+const normalizedExecComputeResDto = normalizer.normalizeJavaStyleObject(execComputeResDto);
+assert.match(normalizedExecComputeResDto, /^\{id:0, execStatus:'EXEC_SUCCESS'/);
+assert.match(normalizedExecComputeResDto, /relationData:\{"netstatReportFlag":false/);
+assert.match(normalizedExecComputeResDto, /originData:\{id:0, srcType:'ServiceUnit'/);
+assert.match(normalizedExecComputeResDto, /data:\{"dstIp":"221\.1\.243\.227"/);
+assert.match(normalizedExecComputeResDto, /log:'容器应用外访数据上报'/);
+assert.match(normalizedExecComputeResDto, /matchTracks:\[\{type:'MATCH_WITH_PRIVATE_LINE', data:'221\.1\.243\.227@21'\}\]/);
+assert.match(normalizedExecComputeResDto, /multiResult:\[\]\}$/);
+
 console.log('json java style normalizer passed');

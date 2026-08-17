@@ -789,7 +789,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V1.95</span>
+            <span>V1.96</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -824,6 +824,10 @@
             <div class="modal-body changelog-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年8月18日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.96</div>
+                        <div class="changelog-desc">增强混合 Java DTO 格式化：支持外层 DTO、嵌套 DTO、原生 JSON 对象及 DTO 对象列表同时出现，避免将 DTO 内第一个 JSON 对象误识别为根数据。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.95</div>
                         <div class="changelog-desc">增强 Java DTO 字符串格式化：支持协议、IP、地址组、服务和端口等方括号列表，正确识别字符串元素、数字、空列表和 null。</div>
@@ -1577,7 +1581,9 @@
                 raw = raw.replace(/[,，.。]+\s*$/, "");
 
                 // Drop a human-readable log label before a root JSON object/array.
-                raw = JsonRepairNormalizer.stripLeadingLabelBeforeJson(raw);
+                if (!JsonJavaStyleNormalizer.looksLikeJavaClassObject(raw)) {
+                    raw = JsonRepairNormalizer.stripLeadingLabelBeforeJson(raw);
+                }
 
                 // 1. Remove backslash-newline continuations (line continuation)
                 raw = raw.replace(/\\\r?\n/g, "");

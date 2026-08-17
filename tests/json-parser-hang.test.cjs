@@ -9,8 +9,8 @@ const script = [...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>
     .map((match) => match[1])
     .join('\n');
 
-assert.match(page, /<span>V1\.95<\/span>/);
-assert.match(page, /<div class="changelog-date">2026年8月18日<\/div>[\s\S]*?<div class="changelog-version">V1\.95<\/div>/);
+assert.match(page, /<span>V1\.96<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年8月18日<\/div>[\s\S]*?<div class="changelog-version">V1\.96<\/div>[\s\S]*?<div class="changelog-version">V1\.95<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年8月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.94<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月23日<\/div>[\s\S]*?<div class="changelog-version">V1\.93<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月15日<\/div>[\s\S]*?<div class="changelog-version">V1\.92<\/div>/);
@@ -60,6 +60,7 @@ assert.doesNotMatch(page, /function copyJsonKeyPaths\(\)/);
 assert.match(page, /JsonRepairGuards\.shouldSkipJsonRepair\(raw\)/);
 assert.match(page, /JsonAssignmentExtractor\.extractJsonValueFromAssignmentLog\(raw\)/);
 assert.match(page, /!JsonJavaStyleNormalizer\.looksLikeJavaClassObject\(raw\)/);
+assert.match(page, /!JsonJavaStyleNormalizer\.looksLikeJavaClassObject\(raw\)[\s\S]*?JsonRepairNormalizer\.stripLeadingLabelBeforeJson\(raw\)/);
 assert.match(page, /JsonRepairNormalizer\.stripCommentsOutsideStrings\(raw\)/);
 assert.match(page, /JsonRepairNormalizer\.fixChineseColons\(raw\)/);
 assert.match(page, /JsonRepairNormalizer\.addMissingCommas\(raw\)/);
@@ -326,6 +327,22 @@ assert.deepStrictEqual(repairedSecurityStrategy.tcpPortList, [21]);
 assert.strictEqual(repairedSecurityStrategy.originalDstPortList, null);
 assert.strictEqual(repairedSecurityStrategy.businessName, '平联一区');
 assert.strictEqual(repairedSecurityStrategy.ruleId, 117);
+
+const execComputeResDto = 'ExecComputeResDTO(id=0, execStatus=EXEC_SUCCESS, log=null, disconnected=false, kfQuery=false, recordSource=DOCKER_REPORT, dstTypeEnum=PRIVATE_LINE, relationData={"netstatReportFlag":false,"linktraceReportFlag":false,"cmbAgentReportFlag":false,"srcServiceUnitId":"L6.2@L6_xft_task_UAT_UAT","id":0,"dstCode":"221.1.243.227@21","dockerReportFlag":true}, originData=ReportedDataPreProcessDO(id=0, srcType=ServiceUnit, srcCode=L6.2@L6_xft_task_UAT_UAT, dstType=Ip, dstCode=221.1.243.227@21, dstHost=null, data={"dstIp":"221.1.243.227","dstPort":21,"dstHost":"","protocol":"kafka","connectionState":"","esUserName":"consumer:xft_tax_staff","dstOriginPath":"","lastUpdateTime":"2026-04-27T03:11:58 08:00","serviceUnitCode":"L6.2@L6_xft_task_UAT_UAT","clusterName":"cstest-biz-02-sk-oa","nameSpace":"34df-6hb-uat-default","appName":"lw36-xft-tax-task-k38lq","dstInfo":{"code":"221.1.243.227@21","type":"Ip","host":null}}, recordSource=DOCKER_REPORT, subSource=null, execStatus=WAIT_EXEC, log=容器应用外访数据上报, envType=OA, firstRecordTime=null, recentRecordTime=1777230718000, useServiceConn=false, disconnected=false, ignore=false, databaseStatistics=null), errType=null, err=null, reportDataIdentify=L6.2@L6_xft_task_UAT_UAT@221.1.243.227@21, matchTracks=[RelationMatchTrack(type=MATCH_WITH_PRIVATE_LINE, data=221.1.243.227@21)], multiResult=[])';
+const execComputeHarness = createHarness();
+execComputeHarness.elements.get('json-input').value = execComputeResDto;
+execComputeHarness.context.fixJson();
+const repairedExecCompute = JSON.parse(execComputeHarness.elements.get('json-input').value);
+assert.strictEqual(repairedExecCompute.execStatus, 'EXEC_SUCCESS');
+assert.strictEqual(repairedExecCompute.relationData.dockerReportFlag, true);
+assert.strictEqual(repairedExecCompute.originData.data.dstInfo.type, 'Ip');
+assert.strictEqual(repairedExecCompute.originData.log, '容器应用外访数据上报');
+assert.strictEqual(repairedExecCompute.originData.recentRecordTime, 1777230718000);
+assert.deepStrictEqual(repairedExecCompute.matchTracks, [{
+    type: 'MATCH_WITH_PRIVATE_LINE',
+    data: '221.1.243.227@21',
+}]);
+assert.deepStrictEqual(repairedExecCompute.multiResult, []);
 
 const bracketPrefixedParamsLog = '[b3d7e0c5433eda2b3460][FeignRequest][DaFeignService][docail]params={"cluster":"tc-jht03","productId":"L03","appName":"cta","artifactId":"cmata","serviceUuid":"L.03@cata_UAT_UAT"}';
 
