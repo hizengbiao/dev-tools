@@ -13,7 +13,7 @@
     <script src="editor-lines.js"></script>
     <script src="text-splitter.js"></script>
     <script src="regex-risk-analyzer.js"></script>
-    <script src="text-masker.js"></script>
+    <script src="text-masker.js?v=2"></script>
     <style>
         :root {
             --bg-color: #f4f6f8;
@@ -774,7 +774,7 @@
         <div class="tool-title">
             <h1>文本智能拆分</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.17</span>
+                <span>V1.18</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -847,6 +847,11 @@
                 <button class="close-modal changelog-close" type="button" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body changelog-body">
+                <div class="changelog-date">2026年8月17日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.18</div>
+                    <div>修复部分浏览器因缓存旧版脱敏脚本而导致正则替换失效的问题；脱敏脚本改为版本化加载，并在运行时版本过旧时阻止配置被静默降级或覆盖，提示强制刷新后重试。</div>
+                </div>
                 <div class="changelog-date">2026年8月13日</div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.17</div>
@@ -993,6 +998,7 @@
         let currentResultMode = 'split';
         let maskConfig = { ...TextMasker.DEFAULT_CONFIG, mappings: [] };
         let toastTimer;
+        const REQUIRED_TEXT_MASKER_VERSION = 2;
         const IPV4_MASK_PATTERN = String.raw`\b(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\.(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\.(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\.(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\b`;
 
         function escapeHtml(value) {
@@ -1006,6 +1012,17 @@
 
         function showToast(message) {
             ClipboardUtils.showToast(message, { duration: 1800 });
+        }
+
+        function isMaskingRuntimeReady() {
+            return typeof TextMasker !== 'undefined'
+                && TextMasker.CONFIG_VERSION === REQUIRED_TEXT_MASKER_VERSION;
+        }
+
+        function requireMaskingRuntime() {
+            if (isMaskingRuntimeReady()) return true;
+            showToast('脱敏脚本版本过旧，请按 Ctrl+F5 强制刷新后重试');
+            return false;
         }
 
         async function writeClipboardText(value) {
@@ -1124,6 +1141,7 @@
             const strategy = splitStrategy.value;
             let source = inputText.value;
             if (maskingEnabled.checked) {
+                if (!requireMaskingRuntime()) return;
                 try {
                     source = TextMasker.maskText(source, maskConfig.mappings);
                 } catch (error) {
@@ -1307,6 +1325,10 @@
         }
 
         function loadMaskConfig() {
+            if (!isMaskingRuntimeReady()) {
+                maskingEnabled.checked = false;
+                return;
+            }
             const saved = localStorage.getItem(TextMasker.STORAGE_KEY);
             if (!saved) {
                 maskingEnabled.checked = true;
@@ -1324,6 +1346,7 @@
         }
 
         function openMaskConfig() {
+            if (!requireMaskingRuntime()) return;
             renderMaskMappings(maskConfig.mappings);
             maskConfigModal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
