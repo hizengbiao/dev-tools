@@ -789,7 +789,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V1.94</span>
+            <span>V1.95</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -822,6 +822,13 @@
                 <button class="close-modal changelog-close" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body changelog-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年8月18日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.95</div>
+                        <div class="changelog-desc">增强 Java DTO 字符串格式化：支持协议、IP、地址组、服务和端口等方括号列表，正确识别字符串元素、数字、空列表和 null。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年8月13日</div>
                     <div class="changelog-entry">
@@ -1576,7 +1583,9 @@
                 raw = raw.replace(/\\\r?\n/g, "");
 
                 // 1a. Extract JSON payload from log fragments like [trace][tag]params={...}
-                raw = JsonAssignmentExtractor.extractJsonValueFromAssignmentLog(raw);
+                if (!JsonJavaStyleNormalizer.looksLikeJavaClassObject(raw)) {
+                    raw = JsonAssignmentExtractor.extractJsonValueFromAssignmentLog(raw);
+                }
 
                 // 2. Check if this looks like an escaped JSON string (has \" pattern)
                 if (raw.includes('\\"') && !/^\s*[\[{]/.test(raw)) {

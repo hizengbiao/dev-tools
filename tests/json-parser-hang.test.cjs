@@ -9,7 +9,8 @@ const script = [...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>
     .map((match) => match[1])
     .join('\n');
 
-assert.match(page, /<span>V1\.94<\/span>/);
+assert.match(page, /<span>V1\.95<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年8月18日<\/div>[\s\S]*?<div class="changelog-version">V1\.95<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年8月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.94<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月23日<\/div>[\s\S]*?<div class="changelog-version">V1\.93<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月15日<\/div>[\s\S]*?<div class="changelog-version">V1\.92<\/div>/);
@@ -58,6 +59,7 @@ assert.doesNotMatch(page, /JsonKeyPaths\.extractJsonKeyPaths\(target\)/);
 assert.doesNotMatch(page, /function copyJsonKeyPaths\(\)/);
 assert.match(page, /JsonRepairGuards\.shouldSkipJsonRepair\(raw\)/);
 assert.match(page, /JsonAssignmentExtractor\.extractJsonValueFromAssignmentLog\(raw\)/);
+assert.match(page, /!JsonJavaStyleNormalizer\.looksLikeJavaClassObject\(raw\)/);
 assert.match(page, /JsonRepairNormalizer\.stripCommentsOutsideStrings\(raw\)/);
 assert.match(page, /JsonRepairNormalizer\.fixChineseColons\(raw\)/);
 assert.match(page, /JsonRepairNormalizer\.addMissingCommas\(raw\)/);
@@ -306,6 +308,24 @@ assert.equal(
     JSON.parse(repaired[0][0].data).attributes.database_name,
     'db-0.cn_30100,db-1.cn_30100,db-2.cn_30100/db'
 );
+
+const securityStrategyDto = 'SecurityStrategyDTO(protocolList=[ICMP, tcp], originalDstPortList=null, udpPortList=[], businessName=平联一区, description=ZangXiNuo, urlPatternList=null, srcIpv4List=[221.19.128.0/20, 221.10.80.0/20, 221.19.128.0/20], scheduleList=null, srcAddressList=[335532_id8_SrcGrp], mip=122.55.86.13, action=permit, startTime=null, ruleId=117, area=sz, srcZone=Intranet, dstAddressList=[10.1.243.227/32], dstFqdnList=[], dstZone=Extranet, transSrcIpList=[188.0.8.36/32], dstIpv4List=[110.1.23.27/32], transDstIpList=[150.12.106.21/32], dstIpv6List=[], serviceList=[PING, TCP00021], transDstPort=null, tcpPortList=[21], srcIpv6List=[], endTime=null, status=enable)';
+const securityStrategyHarness = createHarness();
+securityStrategyHarness.elements.get('json-input').value = securityStrategyDto;
+securityStrategyHarness.context.fixJson();
+const repairedSecurityStrategy = JSON.parse(securityStrategyHarness.elements.get('json-input').value);
+assert.deepStrictEqual(repairedSecurityStrategy.protocolList, ['ICMP', 'tcp']);
+assert.deepStrictEqual(repairedSecurityStrategy.udpPortList, []);
+assert.deepStrictEqual(repairedSecurityStrategy.srcIpv4List, [
+    '221.19.128.0/20',
+    '221.10.80.0/20',
+    '221.19.128.0/20',
+]);
+assert.deepStrictEqual(repairedSecurityStrategy.serviceList, ['PING', 'TCP00021']);
+assert.deepStrictEqual(repairedSecurityStrategy.tcpPortList, [21]);
+assert.strictEqual(repairedSecurityStrategy.originalDstPortList, null);
+assert.strictEqual(repairedSecurityStrategy.businessName, '平联一区');
+assert.strictEqual(repairedSecurityStrategy.ruleId, 117);
 
 const bracketPrefixedParamsLog = '[b3d7e0c5433eda2b3460][FeignRequest][DaFeignService][docail]params={"cluster":"tc-jht03","productId":"L03","appName":"cta","artifactId":"cmata","serviceUuid":"L.03@cata_UAT_UAT"}';
 

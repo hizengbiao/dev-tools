@@ -10,6 +10,7 @@
         let result = normalizeJavaObjectParentheses(trimmed);
         result = stripJavaClassPrefixes(result);
         result = removeDanglingSingleQuotesOutsideStrings(result);
+        result = quoteJavaListValuesOutsideStrings(result);
         result = quoteJavaMapValuesOutsideStrings(result);
         result = replaceEqualsOutsideStrings(result);
         return result;
@@ -19,6 +20,10 @@
         return /^\s*[A-Za-z_$][A-Za-z0-9_$]*\s*\{/.test(raw) ||
             /^\s*\[\s*[A-Za-z_$][A-Za-z0-9_$]*\s*\{/.test(raw) ||
             hasUnquotedEquals(raw);
+    }
+
+    function looksLikeJavaClassObject(raw) {
+        return /^\s*(?:\[\s*)?[A-Za-z_$][A-Za-z0-9_$]*\s*[({]/.test(String(raw || ''));
     }
 
     function hasUnquotedEquals(raw) {
@@ -226,6 +231,125 @@
         return result;
     }
 
+    function quoteJavaListValuesOutsideStrings(raw) {
+        let result = '';
+        let i = 0;
+
+        while (i < raw.length) {
+            const char = raw[i];
+            if (char === '"' || char === "'") {
+                const stringEnd = findStringEnd(raw, i, char);
+                result += raw.slice(i, stringEnd);
+                i = stringEnd;
+                continue;
+            }
+
+            if (char !== '[') {
+                result += char;
+                i++;
+                continue;
+            }
+
+            const closeIndex = findMatchingSquareBracket(raw, i);
+            if (closeIndex === -1) {
+                result += char;
+                i++;
+                continue;
+            }
+
+            const inner = raw.slice(i + 1, closeIndex);
+            result += '[' + splitTopLevelItems(inner).map(normalizeJavaListItem).join(',') + ']';
+            i = closeIndex + 1;
+        }
+
+        return result;
+    }
+
+    function findMatchingSquareBracket(raw, openIndex) {
+        let depth = 0;
+        let inString = false;
+        let stringChar = '';
+        let escaped = false;
+
+        for (let i = openIndex; i < raw.length; i++) {
+            const char = raw[i];
+            if (inString) {
+                if (escaped) {
+                    escaped = false;
+                } else if (char === '\\') {
+                    escaped = true;
+                } else if (char === stringChar) {
+                    inString = false;
+                }
+                continue;
+            }
+
+            if (char === '"' || char === "'") {
+                inString = true;
+                stringChar = char;
+            } else if (char === '[') {
+                depth++;
+            } else if (char === ']' && --depth === 0) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    function splitTopLevelItems(raw) {
+        const items = [];
+        let start = 0;
+        let depth = 0;
+        let inString = false;
+        let stringChar = '';
+        let escaped = false;
+
+        for (let i = 0; i < raw.length; i++) {
+            const char = raw[i];
+            if (inString) {
+                if (escaped) {
+                    escaped = false;
+                } else if (char === '\\') {
+                    escaped = true;
+                } else if (char === stringChar) {
+                    inString = false;
+                }
+                continue;
+            }
+
+            if (char === '"' || char === "'") {
+                inString = true;
+                stringChar = char;
+            } else if (char === '{' || char === '[' || char === '(') {
+                depth++;
+            } else if (char === '}' || char === ']' || char === ')') {
+                depth = Math.max(0, depth - 1);
+            } else if (char === ',' && depth === 0) {
+                items.push(raw.slice(start, i));
+                start = i + 1;
+            }
+        }
+
+        items.push(raw.slice(start));
+        return items;
+    }
+
+    function normalizeJavaListItem(itemText) {
+        const leadingWhitespace = itemText.match(/^\s*/)[0];
+        const trailingWhitespace = itemText.match(/\s*$/)[0];
+        const value = itemText.slice(leadingWhitespace.length, itemText.length - trailingWhitespace.length);
+        if (!value) return itemText;
+
+        const normalizedValue = quoteJavaListValuesOutsideStrings(value);
+        if (/^["'{\[]/.test(normalizedValue) || isJsonPrimitive(normalizedValue)) {
+            return leadingWhitespace + normalizedValue + trailingWhitespace;
+        }
+
+        const escapedValue = normalizedValue.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        return leadingWhitespace + "'" + escapedValue + "'" + trailingWhitespace;
+    }
+
     function findJavaMapValueEnd(raw, start) {
         let depth = 0;
         let inString = false;
@@ -409,7 +533,9 @@
         normalizeJavaStyleObject,
         normalizeJavaObjectParentheses,
         looksLikeJavaStyleObject,
+        looksLikeJavaClassObject,
         hasUnquotedEquals,
+        quoteJavaListValuesOutsideStrings,
         quoteJavaMapValuesOutsideStrings,
         replaceEqualsOutsideStrings,
     };
