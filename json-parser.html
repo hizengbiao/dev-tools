@@ -789,7 +789,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V1.97</span>
+            <span>V1.98</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -824,6 +824,10 @@
             <div class="modal-body changelog-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年8月31日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.98</div>
+                        <div class="changelog-desc">支持格式化带限定类名的多层 Java DTO，例如 <code>OuterDTO.InnerItem(...)</code>；同时支持在 DTO 的 Map 键值中还原 <code>\_</code> 和 <code>\@</code> 转义。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.97</div>
                         <div class="changelog-desc">修复格式化带反斜杠转义引号的 JSON 数组时页面卡死的问题；新增有界多层解码，并保证异常分词始终推进，兼容 <code>\_</code> 形式的字段名转义。</div>

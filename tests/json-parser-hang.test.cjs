@@ -9,7 +9,8 @@ const script = [...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>
     .map((match) => match[1])
     .join('\n');
 
-assert.match(page, /<span>V1\.97<\/span>/);
+assert.match(page, /<span>V1\.98<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年8月31日<\/div>[\s\S]*?<div class="changelog-version">V1\.98<\/div>[\s\S]*?<div class="changelog-version">V1\.97<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年8月31日<\/div>[\s\S]*?<div class="changelog-version">V1\.97<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年8月18日<\/div>[\s\S]*?<div class="changelog-version">V1\.96<\/div>[\s\S]*?<div class="changelog-version">V1\.95<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年8月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.94<\/div>/);
@@ -364,6 +365,23 @@ assert.deepStrictEqual(repairedExecCompute.matchTracks, [{
     data: '221.1.243.227@21',
 }]);
 assert.deepStrictEqual(repairedExecCompute.multiResult, []);
+
+const qualifiedMetricDto = String.raw`lkn34ndMetricDTO(resource={sun3k4kl=V7.0\@CL\_DEV\_DEV}, metrics=[lkn34ndMetricDTO.lkn34ndMetricItem(name=bee\_\_operations, metricType=Sum, dataPoints=[lkn34ndMetricDTO.lkn34ndDataPointItem(attributes={database\_name=5.4.11.133\_121\_CRB\_r1\_s1}, aggregation={latest=6.0, latest\_time=2026-08-26 10:47:23})])])`;
+const qualifiedMetricHarness = createHarness();
+qualifiedMetricHarness.elements.get('json-input').value = qualifiedMetricDto;
+qualifiedMetricHarness.context.handleFormat();
+assert.equal(qualifiedMetricHarness.elements.get('error-msg').style.display, 'none');
+assert.deepStrictEqual(JSON.parse(qualifiedMetricHarness.elements.get('json-input').value), {
+    resource: { sun3k4kl: 'V7.0@CL_DEV_DEV' },
+    metrics: [{
+        name: 'bee__operations',
+        metricType: 'Sum',
+        dataPoints: [{
+            attributes: { database_name: '5.4.11.133_121_CRB_r1_s1' },
+            aggregation: { latest: 6, latest_time: '2026-08-26 10:47:23' },
+        }],
+    }],
+});
 
 const bracketPrefixedParamsLog = '[b3d7e0c5433eda2b3460][FeignRequest][DaFeignService][docail]params={"cluster":"tc-jht03","productId":"L03","appName":"cta","artifactId":"cmata","serviceUuid":"L.03@cata_UAT_UAT"}';
 

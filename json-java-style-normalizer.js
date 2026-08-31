@@ -8,6 +8,7 @@
         }
 
         let result = normalizeJavaObjectParentheses(trimmed);
+        result = normalizeJavaBareEscapesOutsideStrings(result);
         result = stripJavaClassPrefixes(result);
         result = removeDanglingSingleQuotesOutsideStrings(result);
         result = quoteJavaListValuesOutsideStrings(result);
@@ -23,7 +24,7 @@
     }
 
     function looksLikeJavaClassObject(raw) {
-        return /^\s*(?:\[\s*)?[A-Za-z_$][A-Za-z0-9_$]*\s*[({]/.test(String(raw || ''));
+        return /^\s*(?:\[\s*)?[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*\s*[({]/.test(String(raw || ''));
     }
 
     function hasUnquotedEquals(raw) {
@@ -72,7 +73,7 @@
                 continue;
             }
 
-            const classMatch = raw.slice(i).match(/^([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/);
+            const classMatch = raw.slice(i).match(/^([A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*)\s*\(/);
             const previousIndex = findPreviousNonWhitespace(raw, i - 1);
             const allowedStart = previousIndex === -1 || /[=:\[,{(]/.test(raw[previousIndex]);
 
@@ -416,8 +417,46 @@
         return leadingWhitespace + "'" + escapedValue + "'" + trailingWhitespace;
     }
 
+    function normalizeJavaBareEscapesOutsideStrings(raw) {
+        let result = '';
+        let inString = false;
+        let stringChar = '';
+        let escaped = false;
+
+        for (let i = 0; i < raw.length; i++) {
+            const char = raw[i];
+
+            if (inString) {
+                result += char;
+                if (escaped) {
+                    escaped = false;
+                } else if (char === '\\') {
+                    escaped = true;
+                } else if (char === stringChar) {
+                    inString = false;
+                }
+                continue;
+            }
+
+            if (char === '"' || char === "'") {
+                inString = true;
+                stringChar = char;
+                result += char;
+                continue;
+            }
+
+            if (char === '\\' && /[_@]/.test(raw[i + 1] || '')) {
+                continue;
+            }
+
+            result += char;
+        }
+
+        return result;
+    }
+
     function stripJavaClassPrefixes(raw) {
-        return raw.replace(/(^|[=:\[,]\s*)[A-Za-z_$][A-Za-z0-9_$]*(?=\s*\{)/g, '$1');
+        return raw.replace(/(^|[=:\[,]\s*)[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*(?=\s*\{)/g, '$1');
     }
 
     function replaceEqualsOutsideStrings(raw) {
@@ -538,6 +577,7 @@
         quoteJavaListValuesOutsideStrings,
         quoteJavaMapValuesOutsideStrings,
         replaceEqualsOutsideStrings,
+        normalizeJavaBareEscapesOutsideStrings,
     };
 
     if (typeof module !== 'undefined' && module.exports) {

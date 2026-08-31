@@ -35,6 +35,7 @@ assert.strictEqual(normalizer.hasUnquotedEquals('a=b'), true);
 assert.strictEqual(normalizer.replaceEqualsOutsideStrings('"a=b"=c'), '"a=b":c');
 assert.strictEqual(normalizer.looksLikeJavaStyleObject('callback({"value":1})'), false);
 assert.strictEqual(normalizer.looksLikeJavaClassObject('SecurityStrategyDTO(protocolList=[ICMP])'), true);
+assert.strictEqual(normalizer.looksLikeJavaClassObject('lkn34ndMetricDTO.lkn34ndMetricItem(name=value)'), true);
 assert.strictEqual(normalizer.looksLikeJavaClassObject('FaultPoint{name=x, events=[POLLIN]}'), true);
 assert.strictEqual(normalizer.looksLikeJavaClassObject('params={"value":1}'), false);
 
@@ -76,5 +77,16 @@ assert.match(normalizedExecComputeResDto, /data:\{"dstIp":"221\.1\.243\.227"/);
 assert.match(normalizedExecComputeResDto, /log:'容器应用外访数据上报'/);
 assert.match(normalizedExecComputeResDto, /matchTracks:\[\{type:'MATCH_WITH_PRIVATE_LINE', data:'221\.1\.243\.227@21'\}\]/);
 assert.match(normalizedExecComputeResDto, /multiResult:\[\]\}$/);
+
+const qualifiedMetricDto = String.raw`lkn34ndMetricDTO(resource={sun3k4kl=V7.0\@CL\_DEV\_DEV}, metrics=[lkn34ndMetricDTO.lkn34ndMetricItem(name=bee\_\_operations, metricType=Sum, dataPoints=[lkn34ndMetricDTO.lkn34ndDataPointItem(attributes={database\_name=5.4.11.133\_121\_CRB\_r1\_s1}, aggregation={latest=6.0, latest\_time=2026-08-26 10:47:23})])])`;
+const normalizedQualifiedMetricDto = normalizer.normalizeJavaStyleObject(qualifiedMetricDto);
+assert.match(normalizedQualifiedMetricDto, /^\{resource:\{sun3k4kl:'V7\.0@CL_DEV_DEV'\}/);
+assert.match(normalizedQualifiedMetricDto, /metrics:\[\{name:'bee__operations', metricType:'Sum'/);
+assert.match(normalizedQualifiedMetricDto, /dataPoints:\[\{attributes:\{database_name:'5\.4\.11\.133_121_CRB_r1_s1'\}/);
+assert.match(normalizedQualifiedMetricDto, /aggregation:\{latest:6\.0, latest_time:'2026-08-26 10:47:23'\}\}\]\}\]\}$/);
+assert.strictEqual(
+    normalizer.normalizeJavaBareEscapesOutsideStrings(String.raw`{bare\_key=value\@host, quoted="keep\_escape"}`),
+    String.raw`{bare_key=value@host, quoted="keep\_escape"}`
+);
 
 console.log('json java style normalizer passed');
