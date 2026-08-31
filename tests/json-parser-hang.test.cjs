@@ -9,7 +9,8 @@ const script = [...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>
     .map((match) => match[1])
     .join('\n');
 
-assert.match(page, /<span>V1\.96<\/span>/);
+assert.match(page, /<span>V1\.97<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年8月31日<\/div>[\s\S]*?<div class="changelog-version">V1\.97<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年8月18日<\/div>[\s\S]*?<div class="changelog-version">V1\.96<\/div>[\s\S]*?<div class="changelog-version">V1\.95<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年8月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.94<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月23日<\/div>[\s\S]*?<div class="changelog-version">V1\.93<\/div>/);
@@ -58,6 +59,7 @@ assert.doesNotMatch(page, /function handleExtractJsonKeyPaths\(\)/);
 assert.doesNotMatch(page, /JsonKeyPaths\.extractJsonKeyPaths\(target\)/);
 assert.doesNotMatch(page, /function copyJsonKeyPaths\(\)/);
 assert.match(page, /JsonRepairGuards\.shouldSkipJsonRepair\(raw\)/);
+assert.match(page, /JsonRepairNormalizer\.normalizeEscapedJsonContainer\(raw\)/);
 assert.match(page, /JsonAssignmentExtractor\.extractJsonValueFromAssignmentLog\(raw\)/);
 assert.match(page, /!JsonJavaStyleNormalizer\.looksLikeJavaClassObject\(raw\)/);
 assert.match(page, /!JsonJavaStyleNormalizer\.looksLikeJavaClassObject\(raw\)[\s\S]*?JsonRepairNormalizer\.stripLeadingLabelBeforeJson\(raw\)/);
@@ -287,6 +289,25 @@ assert.ok(elapsedMs < 200, `non-JSON regex snippet should fail fast, took ${elap
 assert.equal(elements.get('json-output').innerHTML, '');
 assert.equal(elements.get('error-msg').style.display, 'block');
 assert.match(elements.get('error-msg').textContent, /JSON|修复|格式/);
+
+const escapedRoutesInput = String.raw`[{\\"hosts\\":[\\"imgcache-uat.alb-uat.cmbchina.cn\\"],\\"methods\\":[],\\"paths\\":[\\"/api\\"],\\"regex\_priority\\":0,\\"preserve\_host\\":false,\\"protocols\\":[\\"http\\",\\"https\\"],\\"strip\_path\\":false}]`;
+const escapedRoutesHarness = createHarness();
+escapedRoutesHarness.elements.get('json-input').value = escapedRoutesInput;
+const escapedRoutesStarted = Date.now();
+escapedRoutesHarness.context.handleFormat();
+const escapedRoutesElapsedMs = Date.now() - escapedRoutesStarted;
+
+assert.ok(escapedRoutesElapsedMs < 200, `escaped JSON should format without hanging, took ${escapedRoutesElapsedMs}ms`);
+assert.equal(escapedRoutesHarness.elements.get('error-msg').style.display, 'none');
+assert.deepStrictEqual(JSON.parse(escapedRoutesHarness.elements.get('json-input').value), [{
+    hosts: ['imgcache-uat.alb-uat.cmbchina.cn'],
+    methods: [],
+    paths: ['/api'],
+    regex_priority: 0,
+    preserve_host: false,
+    protocols: ['http', 'https'],
+    strip_path: false,
+}]);
 
 const truncatedNestedArray = `[
     [

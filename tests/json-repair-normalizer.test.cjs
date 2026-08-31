@@ -6,6 +6,22 @@ const normalizer = require('../json-repair-normalizer.js');
 const page = fs.readFileSync(path.resolve(__dirname, '../json-parser.html'), 'utf8');
 
 assert.match(page, /<script src="json-repair-normalizer\.js"><\/script>/);
+
+const escapedRoutes = String.raw`[{\\"hosts\\":[\\"imgcache-uat.alb-uat.cmbchina.cn\\"],\\"methods\\":[],\\"paths\\":[\\"/api\\"],\\"regex\_priority\\":0,\\"preserve\_host\\":false,\\"protocols\\":[\\"http\\",\\"https\\"],\\"strip\_path\\":false}]`;
+const normalizedEscapedRoutes = normalizer.normalizeEscapedJsonContainer(escapedRoutes);
+assert.deepStrictEqual(JSON.parse(normalizedEscapedRoutes), [{
+    hosts: ['imgcache-uat.alb-uat.cmbchina.cn'],
+    methods: [],
+    paths: ['/api'],
+    regex_priority: 0,
+    preserve_host: false,
+    protocols: ['http', 'https'],
+    strip_path: false,
+}]);
+
+const malformedEscapedStarted = Date.now();
+assert.doesNotThrow(() => normalizer.addQuotesToUnquotedStrings(String.raw`[{\"broken\":}]`));
+assert.ok(Date.now() - malformedEscapedStarted < 200, 'malformed escaped input must not hang');
 assert.match(page, /JsonRepairNormalizer\.stripCommentsOutsideStrings\(raw\)/);
 assert.match(page, /JsonRepairNormalizer\.fixChineseColons\(raw\)/);
 assert.match(page, /JsonRepairNormalizer\.addMissingCommas\(raw\)/);

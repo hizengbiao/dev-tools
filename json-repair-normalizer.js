@@ -279,6 +279,11 @@
             while (tokenEnd < raw.length && !/[\s{}[\],:"]/.test(raw[tokenEnd])) {
                 tokenEnd++;
             }
+            if (tokenEnd === i) {
+                result += char;
+                i++;
+                continue;
+            }
             const token = raw.slice(i, tokenEnd);
 
             let afterToken = tokenEnd;
@@ -310,6 +315,58 @@
         return result;
     }
 
+    function decodeEscapedJsonLayer(raw) {
+        let result = '';
+
+        for (let i = 0; i < raw.length; i++) {
+            const char = raw[i];
+            const nextChar = raw[i + 1];
+
+            if (char !== '\\' || nextChar === undefined) {
+                result += char;
+                continue;
+            }
+
+            if (nextChar === '\\') {
+                result += '\\';
+                i++;
+            } else if (nextChar === '"') {
+                result += '"';
+                i++;
+            } else if (nextChar === '_') {
+                result += '_';
+                i++;
+            } else {
+                result += char;
+            }
+        }
+
+        return result;
+    }
+
+    function normalizeEscapedJsonContainer(raw, maxLayers = 4) {
+        const source = String(raw || '');
+        if (!/^\s*[\[{]/.test(source) || !source.includes('\\"')) {
+            return source;
+        }
+
+        let candidate = source;
+        for (let layer = 0; layer <= maxLayers; layer++) {
+            try {
+                JSON.parse(candidate);
+                return candidate;
+            } catch (error) {
+                if (layer === maxLayers) break;
+            }
+
+            const decoded = decodeEscapedJsonLayer(candidate);
+            if (decoded === candidate) break;
+            candidate = decoded;
+        }
+
+        return source;
+    }
+
     const api = {
         stripCommentsOutsideStrings,
         fixChineseColons,
@@ -318,6 +375,8 @@
         isJsonPrimitive,
         addMissingCommas,
         addQuotesToUnquotedStrings,
+        decodeEscapedJsonLayer,
+        normalizeEscapedJsonContainer,
     };
 
     if (typeof module !== 'undefined' && module.exports) {
