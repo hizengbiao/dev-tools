@@ -789,7 +789,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V1.99</span>
+            <span>V2.00</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -824,6 +824,10 @@
             <div class="modal-body changelog-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年9月7日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V2.00</div>
+                        <div class="changelog-desc">修复快速输入、连续树形编辑、清空后的撤销与重做，保留局部编辑器原生撤销；修复 DTO URL、引号内类名和单引号日志被误处理，避免将数组误当日志标签删除；嵌套 JSON 字符串恢复时保留内层类型。更新相关脚本版本标识，避免浏览器沿用旧缓存。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.99</div>
                         <div class="changelog-desc">修复宽松 JSON 清理逗号时误改字符串内容、数组删除后下标错位和局部编辑后复制旧值的问题；防止重命名覆盖已有字段，保留特殊键名，并修复根 JSON 字符串的展开与恢复。</div>
@@ -1311,13 +1315,13 @@
     <script src="changelog.js"></script>
     <script src="clipboard-utils.js"></script>
     <script src="json-repair-guards.js"></script>
-    <script src="json-assignment-extractor.js"></script>
-    <script src="json-repair-normalizer.js"></script>
-    <script src="json-java-style-normalizer.js"></script>
-    <script src="json-sorter.js"></script>
-    <script src="json-path-editor.js"></script>
+    <script src="json-assignment-extractor.js?v=2.00"></script>
+    <script src="json-repair-normalizer.js?v=2.00"></script>
+    <script src="json-java-style-normalizer.js?v=2.00"></script>
+    <script src="json-sorter.js?v=2.00"></script>
+    <script src="json-path-editor.js?v=2.00"></script>
     <script src="json-path-query.js"></script>
-    <script src="json-string-fields.js"></script>
+    <script src="json-string-fields.js?v=2.00"></script>
     <script src="json-dom-path-utils.js"></script>
     <script src="json-bracket-matcher.js"></script>
     <script src="json-java-converter.js"></script>
@@ -1348,7 +1352,9 @@
                 currentObj = null;
                 hasCurrentValue = false;
                 sourceDirty = false;
+                expandedStringFieldPaths = [];
             }
+            if (historyIndex < historyStack.length - 1) historyStack.splice(historyIndex + 1);
             if (!isInputting) {
                 isInputting = true;
                 setTimeout(() => {
@@ -1359,8 +1365,13 @@
         });
 
         document.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
-            if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); redo(); }
+            // Local editors own their native undo stack; do not replace the whole
+            // document while an inline value, subtree or modal field is being edited.
+            if (e.target !== inputArea && e.target.closest && e.target.closest('input, textarea, [contenteditable="true"]')) return;
+            if (!(e.ctrlKey || e.metaKey)) return;
+            const key = e.key.toLowerCase();
+            if (key === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+            if (key === 'y') { e.preventDefault(); redo(); }
         });
 
         let tooltipTimer;
@@ -1377,10 +1388,14 @@
         tooltipEl.onmouseleave = () => tooltipEl.style.display = 'none';
 
         function saveState() {
-            const val = inputArea.value;
-            if (historyIndex >= 0 && historyStack[historyIndex] === val) return;
+            const state = {
+                text: sourceDirty && hasCurrentValue ? JSON.stringify(currentObj, null, 4) : inputArea.value,
+                expandedPaths: expandedStringFieldPaths.map((path) => [...path]),
+            };
+            const previous = historyStack[historyIndex];
+            if (previous && previous.text === state.text && JSON.stringify(previous.expandedPaths) === JSON.stringify(state.expandedPaths)) return;
             if (historyIndex < historyStack.length - 1) historyStack.splice(historyIndex + 1);
-            historyStack.push(val);
+            historyStack.push(state);
             historyIndex++;
         }
 
@@ -1399,28 +1414,33 @@
         }
 
         function undo() {
-            if (sourceDirty) {
-                ensureSynced();
-            }
+            saveState();
             if (historyIndex > 0) {
-                historyIndex--;
-                inputArea.value = historyStack[historyIndex];
-                currentObj = null;
-                hasCurrentValue = false;
-                sourceDirty = false;
-                if (isTreeMode) parseAndRender();
+                restoreHistoryState(--historyIndex);
             }
         }
 
         function redo() {
+            saveState();
             if (historyIndex < historyStack.length - 1) {
-                historyIndex++;
-                inputArea.value = historyStack[historyIndex];
+                restoreHistoryState(++historyIndex);
+            }
+        }
+
+        function restoreHistoryState(index) {
+            const state = historyStack[index];
+            inputArea.value = state.text;
+            expandedStringFieldPaths = state.expandedPaths.map((path) => [...path]);
+            sourceDirty = false;
+            try {
+                currentObj = JSON.parse(state.text);
+                hasCurrentValue = true;
+            } catch (error) {
                 currentObj = null;
                 hasCurrentValue = false;
-                sourceDirty = false;
-                if (isTreeMode) parseAndRender();
             }
+            errorMsg.style.display = 'none';
+            if (isTreeMode) parseAndRender();
         }
 
         // --- Modal Control ---
@@ -1459,6 +1479,7 @@
         }
 
         function handleFormat(allowAutoFix = true) {
+            saveState();
             // Tree edits make currentObj newer than the source textarea. Always flush
             // that object first, even if another interaction has just switched the view.
             if (sourceDirty && hasCurrentValue) {
@@ -1484,10 +1505,12 @@
                     showToast("剪贴板为空");
                     return;
                 }
+                saveState();
                 inputArea.value = text;
                 currentObj = null;
                 hasCurrentValue = false;
                 sourceDirty = false;
+                expandedStringFieldPaths = [];
                 saveState(); // Update undo history
 
                 // Try to format
@@ -1499,15 +1522,18 @@
         }
 
         function loadJsonSample() {
+            saveState();
             inputArea.value = SampleData.getSample('json.nestedExample');
             currentObj = null;
             hasCurrentValue = false;
             sourceDirty = false;
+            expandedStringFieldPaths = [];
             saveState();
             handleFormat();
         }
 
         function handleMinify() {
+            saveState();
             // Prioritize currentObj if we are in Tree Mode (to capture sorting)
             if (isTreeMode && hasCurrentValue) {
                 inputArea.value = JSON.stringify(currentObj);
@@ -1536,6 +1562,7 @@
         }
 
         function fixJson(options = {}) {
+            saveState();
             if (sourceDirty && hasCurrentValue) {
                 ensureSynced();
             }
@@ -1577,10 +1604,15 @@
 
             try {
                 // Remove single-line and multi-line comments
+                // DTO URLs are bare values until normalized. Protect them before
+                // interpreting // or /* as comments.
+                if (JsonJavaStyleNormalizer.looksLikeJavaClassObject(raw)) {
+                    raw = JsonJavaStyleNormalizer.normalizeJavaStyleObject(raw);
+                }
                 raw = JsonRepairNormalizer.stripCommentsOutsideStrings(raw);
 
-                // 0. Remove trailing comma or period (common copy-paste artifacts)
-                raw = raw.replace(/[,，.。]+\s*$/, "");
+                // 0. Remove trailing copy-paste punctuation.
+                raw = raw.replace(/[,，.。;；]+\s*$/, "");
 
                 // 0a. Strip outer quotes first if the entire content is wrapped
                 if ((raw.startsWith('"') && raw.endsWith('"')) ||
@@ -1588,20 +1620,8 @@
                     raw = raw.slice(1, -1);
                 }
 
-                // 0b. Strip double-bracket tags like [[xxx]] at start and/or end
-                // Handles: [[tag]]content[[tag]], [[tag]]content[[/tag]], [[tag]]content, content[[tag]]
-                // Remove [[xxx]] or [[/xxx]] at start (with optional newline/whitespace)
-                raw = raw.replace(/^\s*\[\[[^\]]+\]\]\s*/, "");
-                // Remove [[xxx]] or [[/xxx]] at end
-                raw = raw.replace(/\s*\[\[\/?[^\]]+\]\]\s*$/, "");
-
-                // 0c. Strip single-bracket tags like [XXX] at start and/or end
-                // Handles: [tag]content[tag], [tag]content[/tag], [tag]content, content[/tag]
-                // Be careful not to remove JSON array brackets - only remove if it looks like a tag (uppercase, no spaces inside)
-                // Remove [TAG] or [tag] at start (tag should be letters/underscores, not starting with { or ")
-                raw = raw.replace(/^\s*\[([A-Za-z_][A-Za-z0-9_]*)\]\s*/, "");
-                // Remove [TAG], [/TAG], [tag], or [/tag] at end
-                raw = raw.replace(/\s*\[\/?([A-Za-z_][A-Za-z0-9_]*)\]\s*$/, "");
+                // Only remove log tags when a separate structured payload remains.
+                raw = JsonRepairNormalizer.stripJsonLogTags(raw);
 
                 // 0d. Check again for outer quotes after tag removal
                 raw = raw.trim();
@@ -1610,8 +1630,8 @@
                     raw = raw.slice(1, -1);
                 }
 
-                // 0e. Remove trailing comma or period again after stripping
-                raw = raw.replace(/[,，.。]+\s*$/, "");
+                // 0e. Remove trailing punctuation again after stripping.
+                raw = raw.replace(/[,，.。;；]+\s*$/, "");
 
                 // Drop a human-readable log label before a root JSON object/array.
                 if (!JsonJavaStyleNormalizer.looksLikeJavaClassObject(raw)) {
@@ -1688,6 +1708,7 @@
         }
 
         function parseRepairedJson(raw) {
+            if (!raw.trim()) throw new Error('未找到可解析的 JSON 内容');
             try {
                 return JSON.parse(raw);
             } catch (firstErr) {
@@ -2014,6 +2035,7 @@
         }
 
         function clearAll() {
+            saveState();
             inputArea.value = '';
             outputDiv.innerHTML = '';
             expandedStringFieldPaths = [];
@@ -2022,6 +2044,7 @@
             sourceDirty = false;
             switchMode('source');
             errorMsg.style.display = 'none';
+            saveState();
         }
 
         function parseAndRender() {
@@ -2107,7 +2130,11 @@
         }
 
         function removeExpandedJsonStringFieldPath(path) {
-            expandedStringFieldPaths = expandedStringFieldPaths.filter((item) => !sameJsonPath(item, path));
+            expandedStringFieldPaths = expandedStringFieldPaths.filter((item) => !isJsonPathWithin(item, path));
+        }
+
+        function isJsonPathWithin(candidate, parent) {
+            return candidate.length >= parent.length && parent.every((part, index) => String(part) === String(candidate[index]));
         }
 
         function expandJsonStringFieldAtPath(path) {
@@ -2121,6 +2148,7 @@
                 return;
             }
 
+            saveState();
             addExpandedJsonStringFieldPath(result.expandedPath);
             applyJsonObjectChange(result.value);
             showToast('已展开这个 JSON 字符串字段');
@@ -2131,12 +2159,13 @@
                 return;
             }
 
-            const restored = JsonStringFields.restoreStringifiedJsonFieldAtPath(currentObj, path);
+            const restored = JsonStringFields.restoreStringifiedJsonFieldAtPath(currentObj, path, expandedStringFieldPaths);
             if (!restored.restoredPath) {
                 showToast('当前字段没有可恢复的 JSON 字符串内容');
                 return;
             }
 
+            saveState();
             removeExpandedJsonStringFieldPath(restored.restoredPath);
             applyJsonObjectChange(restored.value);
             showToast('已恢复这个 JSON 字符串字段');
@@ -2161,6 +2190,7 @@
         // Sort/Order Logic (Operates on currentObj)
         function sortJson(asc) {
             if (!hasCurrentValue || currentObj === null || typeof currentObj !== 'object') return;
+            saveState();
             currentObj = JsonSorter.sortObjectKeys(currentObj, asc);
             syncToInput();
             saveState();
@@ -2212,6 +2242,7 @@
 
         // Java Conversion Logic
         function handleJavaConvert() {
+            saveState();
             if (sourceDirty && hasCurrentValue) {
                 ensureSynced();
             }
@@ -2223,6 +2254,7 @@
                     const obj = JSON.parse(raw);
                     const javaCode = JsonJavaConverter.jsonToJava(obj);
                     inputArea.value = javaCode;
+                    expandedStringFieldPaths = [];
                     currentObj = null;
                     hasCurrentValue = false;
                     sourceDirty = false;
@@ -2236,6 +2268,7 @@
                 try {
                     const jsonObj = JsonJavaConverter.javaToJson(raw);
                     inputArea.value = JSON.stringify(jsonObj, null, 4);
+                    expandedStringFieldPaths = [];
                     currentObj = jsonObj;
                     hasCurrentValue = true;
                     sourceDirty = false;
@@ -3076,9 +3109,15 @@
         }
 
         function setValueByPathWithoutRerender(path, value) {
+            saveState();
             currentObj = JsonPathEditor.setValueAtPath(currentObj, path, value);
+            expandedStringFieldPaths = expandedStringFieldPaths.filter((candidate) =>
+                !isJsonPathWithin(candidate, path) ||
+                (candidate.length === path.length && value !== null && typeof value === 'object')
+            );
             hasCurrentValue = true;
             sourceDirty = true;
+            saveState();
         }
 
 
@@ -3088,6 +3127,7 @@
         }
 
         function renameKeyWithoutRerender(parentPath, oldKey, newKey) {
+            saveState();
             currentObj = JsonPathEditor.renameKeyAtPath(currentObj, parentPath, oldKey, newKey);
             expandedStringFieldPaths = expandedStringFieldPaths.map((path) => {
                 if (path.length > parentPath.length && parentPath.every((part, i) => part === path[i]) && path[parentPath.length] === oldKey) {
@@ -3097,10 +3137,12 @@
             });
             hasCurrentValue = true;
             sourceDirty = true;
+            saveState();
         }
 
 
         function handleAddProperty(path, isArray) {
+            saveState();
             let target = currentObj;
             for (let i = 0; i < path.length; i++) {
                 target = target[path[i]];
@@ -3308,9 +3350,11 @@
         }
 
         function handleDelete(path) {
+            saveState();
             if (path.length === 0) {
                 currentObj = null;
                 hasCurrentValue = false;
+                expandedStringFieldPaths = [];
                 inputArea.value = '';
                 outputDiv.innerHTML = '';
                 sourceDirty = false;
@@ -3359,6 +3403,7 @@
                 return candidate;
             };
             expandedStringFieldPaths = expandedStringFieldPaths.map(remap).filter(Boolean);
+            saveState();
             if (Array.isArray(parent)) {
                 const collapsed = getCollapsedPaths().map((p) => remap(JSON.parse(p))).filter(Boolean).map((p) => JSON.stringify(p));
                 syncToInput();

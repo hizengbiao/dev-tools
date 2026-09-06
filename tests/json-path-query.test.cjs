@@ -42,7 +42,7 @@ assert.doesNotMatch(page, /id="json-path-result"/);
 assert.doesNotMatch(page, /function handleJsonPathQuery\(\)/);
 assert.doesNotMatch(page, /JsonPathQuery\.queryJsonPath\(target, pathInput\.value\)/);
 assert.doesNotMatch(page, /function copyJsonPathResult\(\)/);
-assert.match(page, /<span>V1\.99<\/span>/);
+assert.match(page, /<span>V2\.00<\/span>/);
 assert.match(page, /<div class="changelog-date">2026年8月31日<\/div>[\s\S]*?<div class="changelog-version">V1\.98<\/div>[\s\S]*?<div class="changelog-version">V1\.97<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年8月31日<\/div>[\s\S]*?<div class="changelog-version">V1\.97<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年8月18日<\/div>[\s\S]*?<div class="changelog-version">V1\.96<\/div>[\s\S]*?<div class="changelog-version">V1\.95<\/div>/);

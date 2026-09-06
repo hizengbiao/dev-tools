@@ -76,4 +76,53 @@ assert.strictEqual(stringFields.restoreStringifiedJsonFieldAtPath(rootExpanded.v
 const specialField = JSON.parse('{"__proto__":"{\\"ok\\":true}"}');
 assert.strictEqual(JSON.stringify(stringFields.expandStringifiedJsonFieldAtPath(specialField, ['__proto__']).value), '{"__proto__":{"ok":true}}');
 
+// Restoring a parent must preserve JSON strings expanded inside it, while
+// leaving unrelated expanded siblings untouched and keeping edits to the data.
+const nestedOriginal = {
+    payload: JSON.stringify({ nested: JSON.stringify([{ value: JSON.stringify({ ok: true }) }]) }),
+    other: JSON.stringify({ keep: true }),
+};
+const nestedPaths = [['payload'], ['payload', 'nested'], ['payload', 'nested', 0, 'value'], ['other']];
+let nestedExpanded = nestedOriginal;
+for (const fieldPath of nestedPaths) {
+    nestedExpanded = stringFields.expandStringifiedJsonFieldAtPath(nestedExpanded, fieldPath).value;
+}
+const nestedRestored = stringFields.restoreStringifiedJsonFieldAtPath(nestedExpanded, ['payload'], nestedPaths);
+assert.strictEqual(nestedRestored.value.payload, nestedOriginal.payload);
+assert.deepStrictEqual(nestedRestored.value.other, { keep: true });
+assert.deepStrictEqual(nestedExpanded.payload.nested[0].value, { ok: true });
+
+nestedExpanded.payload.nested[0].value.ok = false;
+const staleAndDuplicatePaths = [
+    ...nestedPaths, ['payload', 'nested', '0', 'value'], ['payload', 'missing', 'child'],
+    ['payload', '__proto__'], ['payload', 'nested', 0, 'value', 'ok', 'child'], null, 'payload',
+];
+const editedRestored = stringFields.restoreStringifiedJsonFieldAtPath(nestedExpanded, ['payload'], staleAndDuplicatePaths);
+const restoredArray = JSON.parse(JSON.parse(editedRestored.value.payload).nested);
+assert.deepStrictEqual(JSON.parse(restoredArray[0].value), { ok: false });
+assert.deepStrictEqual(editedRestored.value.other, { keep: true });
+
+const nestedRoot = stringFields.restoreStringifiedJsonFieldAtPath(nestedExpanded.payload, [], [
+    [], ['nested'], ['nested', 0, 'value'], ['nested'], ['missing', 'child'],
+]);
+assert.strictEqual(nestedRoot.value, editedRestored.value.payload);
+assert.strictEqual(stringFields.restoreStringifiedJsonFields(nestedExpanded.payload, [
+    [], ['nested'], ['nested', 0, 'value'],
+]), editedRestored.value.payload);
+
+const specialNestedOriginal = JSON.parse('{"__proto__":"{\\"constructor\\":\\"{\\\\\\"ok\\\\\\":true}\\"}"}');
+const specialNestedPaths = [['__proto__'], ['__proto__', 'constructor']];
+let specialNestedExpanded = specialNestedOriginal;
+for (const fieldPath of specialNestedPaths) {
+    specialNestedExpanded = stringFields.expandStringifiedJsonFieldAtPath(specialNestedExpanded, fieldPath).value;
+}
+assert.deepStrictEqual(stringFields.restoreStringifiedJsonFieldAtPath(
+    specialNestedExpanded, ['__proto__'], specialNestedPaths,
+).value, specialNestedOriginal);
+const ordinaryObject = {};
+const inheritedRestore = stringFields.restoreStringifiedJsonFieldAtPath(ordinaryObject, ['__proto__']);
+assert.strictEqual(inheritedRestore.restoredPath, null);
+assert.strictEqual(inheritedRestore.value, ordinaryObject);
+assert.deepStrictEqual(stringFields.restoreStringifiedJsonFields(ordinaryObject, [['__proto__']]), {});
+
 console.log('json string fields behavior passed');

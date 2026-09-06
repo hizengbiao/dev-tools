@@ -60,6 +60,7 @@
     function findBalancedJsonValueEnd(raw, start) {
         const stack = [];
         let inString = false;
+        let stringChar = '';
         let escaped = false;
 
         for (let i = start; i < raw.length; i++) {
@@ -70,14 +71,15 @@
                     escaped = false;
                 } else if (char === '\\') {
                     escaped = true;
-                } else if (char === '"') {
+                } else if (char === stringChar) {
                     inString = false;
                 }
                 continue;
             }
 
-            if (char === '"') {
+            if (char === '"' || char === "'") {
                 inString = true;
+                stringChar = char;
                 continue;
             }
 

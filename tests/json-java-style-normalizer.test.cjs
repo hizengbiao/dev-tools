@@ -5,7 +5,7 @@ const path = require('node:path');
 const normalizer = require('../json-java-style-normalizer.js');
 const page = fs.readFileSync(path.resolve(__dirname, '../json-parser.html'), 'utf8');
 
-assert.match(page, /<script src="json-java-style-normalizer\.js"><\/script>/);
+assert.match(page, /<script src="json-java-style-normalizer\.js\?v=2\.00"><\/script>/);
 assert.match(page, /JsonJavaStyleNormalizer\.normalizeJavaStyleObject\(raw\)/);
 assert.doesNotMatch(page, /function normalizeJavaStyleObject\(raw\)/);
 assert.doesNotMatch(page, /function quoteJavaMapValuesOutsideStrings\(raw\)/);
@@ -23,6 +23,19 @@ assert.strictEqual(
 assert.strictEqual(
     normalizer.normalizeJavaStyleObject('{"expr":"a=b","value":1}'),
     '{"expr":"a=b","value":1}'
+);
+
+assert.strictEqual(
+    normalizer.normalizeJavaStyleObject('DTO(message="x:Child{a=1}", child=ChildDTO{id=1})'),
+    '{message:"x:Child{a=1}", child:{id:1}}'
+);
+assert.strictEqual(
+    normalizer.normalizeJavaStyleObject(String.raw`DTO(message='quoted\' text:pkg.Child{a=1}', children=[pkg.Child{id=1}])`),
+    String.raw`{message:'quoted\' text:pkg.Child{a=1}', children:[{id:1}]}`
+);
+assert.strictEqual(
+    normalizer.normalizeJavaStyleObject(String.raw`DTO(message="quoted\" text[Child{x=1}]", ok=true)`),
+    String.raw`{message:"quoted\" text[Child{x=1}]", ok:true}`
 );
 
 assert.strictEqual(

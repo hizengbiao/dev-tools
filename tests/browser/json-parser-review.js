@@ -48,6 +48,69 @@ async (page) => {
     await page.getByRole('button', { name: '恢复 JSON 字符串', exact: true }).click();
     await page.getByRole('button', { name: '📦 压缩', exact: true }).click();
     if (JSON.parse(await input.inputValue()) !== '{"ok":true}') throw Error('root string restore failed');
+
+    // Pending textarea input must be captured even before its 500ms history timer.
+    await input.fill('{"n":1}');
+    await page.getByRole('button', { name: '⚡ 格式化', exact: true }).click();
+    await page.getByRole('button', { name: '✏️ 编辑', exact: true }).click();
+    await input.fill('{"n":2}');
+    await input.press('ControlOrMeta+z');
+    if (JSON.parse(await input.inputValue()).n !== 1) throw Error('pending input undo failed');
+    await input.press('ControlOrMeta+Shift+z');
+    if (JSON.parse(await input.inputValue()).n !== 2) throw Error('shift redo failed');
+    await input.press('ControlOrMeta+z');
+    await input.fill('{"n":3}');
+    await page.getByRole('button', { name: '↪️ 重做', exact: true }).click();
+    if (JSON.parse(await input.inputValue()).n !== 3) throw Error('redo replaced new input');
+    await page.getByRole('button', { name: '🧹 清空', exact: true }).click();
+    await page.getByRole('button', { name: '↩️ 撤销', exact: true }).click();
+    if (JSON.parse(await input.inputValue()).n !== 3) throw Error('clear undo failed');
+    await page.getByRole('button', { name: '↪️ 重做', exact: true }).click();
+    if (await input.inputValue() !== '') throw Error('clear redo failed');
+
+    await input.fill('{"n":0,"m":0}');
+    await page.getByRole('button', { name: '⚡ 格式化', exact: true }).click();
+    for (const [key, value] of [['n', '1'], ['m', '2']]) {
+        await at([key]).locator('.number').click();
+        await page.locator('.edit-input').fill(value);
+        await page.locator('.edit-input').press('Enter');
+    }
+    await page.getByRole('button', { name: '↩️ 撤销', exact: true }).click();
+    if (await at(['n']).locator('.number').innerText() !== '1' || await at(['m']).locator('.number').innerText() !== '0') throw Error('tree undo skipped a change');
+    await page.getByRole('button', { name: '↩️ 撤销', exact: true }).click();
+    if (await at(['n']).locator('.number').innerText() !== '0') throw Error('second tree undo failed');
+    await at([]).locator(':scope > .json-row').getByRole('button', { name: '编辑值', exact: true }).click();
+    const subtree = page.locator('.subtree-textarea');
+    await subtree.press('ControlOrMeta+a');
+    await subtree.pressSequentially('{"n":8}');
+    await subtree.press('ControlOrMeta+z');
+    if (!await subtree.isVisible()) throw Error('local undo replaced the entire document');
+    await page.getByRole('button', { name: '取消', exact: true }).click();
+    await page.getByRole('button', { name: '📦 压缩', exact: true }).click();
+    if (JSON.parse(await input.inputValue()).n !== 0) throw Error('cancelled local edit was committed');
+
+    for (const [raw, expected] of [
+        ['DTO(url=http://example.com, id=1)', { url: 'http://example.com', id: 1 }],
+        ['DTO(message="x:Child{a=1}", ok=true)', { message: 'x:Child{a=1}', ok: true }],
+        ["payload={'text':'}','ok':1}", { text: '}', ok: 1 }],
+        ['[alpha]', ['alpha']],
+        ['[[1,2]];', [[1, 2]]],
+        ['[["x"]],', [['x']]],
+        ['[TAG]{"ok":1}[/TAG]', { ok: 1 }],
+    ]) {
+        await input.fill(raw);
+        await page.getByRole('button', { name: '⚡ 格式化', exact: true }).click();
+        await page.getByRole('button', { name: '📦 压缩', exact: true }).click();
+        if (JSON.stringify(JSON.parse(await input.inputValue())) !== JSON.stringify(expected)) throw Error('repair lost data: ' + raw);
+    }
+    const nestedOriginal = { payload: JSON.stringify({ nested: JSON.stringify({ ok: true }) }) };
+    await input.fill(JSON.stringify(nestedOriginal));
+    await page.getByRole('button', { name: '⚡ 格式化', exact: true }).click();
+    await at(['payload']).getByRole('button', { name: '展开 JSON 字符串', exact: true }).click();
+    await at(['payload', 'nested']).getByRole('button', { name: '展开 JSON 字符串', exact: true }).click();
+    await at(['payload']).locator(':scope > .json-row').getByRole('button', { name: '恢复 JSON 字符串', exact: true }).click();
+    await page.getByRole('button', { name: '📦 压缩', exact: true }).click();
+    if (JSON.stringify(JSON.parse(await input.inputValue())) !== JSON.stringify(nestedOriginal)) throw Error('restoring parent changed nested types');
     if (errors.length) throw Error(errors.join('\n'));
-    return { passed: 'edit, conflict, live copy, array deletion, string repair, special keys, root string', actual, special, pageErrors: errors };
+    return { passed: 'editing, copy, deletion, pending-input history, local undo, DTO/log repair, nested-string restore', actual, special, pageErrors: errors };
 }

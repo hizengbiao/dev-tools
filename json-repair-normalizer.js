@@ -157,6 +157,66 @@
         return source;
     }
 
+    function stripJsonLogTags(raw) {
+        const source = String(raw || '');
+        const leadingTag = /^\s*(?:\[\[[A-Za-z_][A-Za-z0-9_]*\]\]|\[[A-Za-z_][A-Za-z0-9_]*\])\s*/;
+        const trailingTag = /\s*(?:\[\[\/?[A-Za-z_][A-Za-z0-9_]*\]\]|\[\/?[A-Za-z_][A-Za-z0-9_]*\])\s*([,，.。;；]*)\s*$/;
+        const loneTag = /^(?:\[\[[A-Za-z_][A-Za-z0-9_]*\]\]|\[[A-Za-z_][A-Za-z0-9_]*\])$/;
+
+        function hasIndependentPayload(candidate) {
+            const value = candidate.trim().replace(/[,，.。;；]+\s*$/, '').trim();
+            if (!/^[\[{]/.test(value)) return false;
+            if (loneTag.test(value)) {
+                try {
+                    JSON.parse(value);
+                    return true;
+                } catch (error) {
+                    return false;
+                }
+            }
+
+            const stack = [];
+            let quote = '';
+            let escaped = false;
+            for (let i = 0; i < value.length; i++) {
+                const char = value[i];
+                if (quote) {
+                    if (escaped) escaped = false;
+                    else if (char === '\\') escaped = true;
+                    else if (char === quote) quote = '';
+                    continue;
+                }
+                if (char === '"' || char === "'") {
+                    quote = char;
+                } else if (char === '{' || char === '[') {
+                    stack.push(char);
+                } else if (char === '}' || char === ']') {
+                    const opening = stack.pop();
+                    if (opening !== (char === '}' ? '{' : '[')) return false;
+                    if (stack.length === 0) return i === value.length - 1;
+                }
+            }
+            return false;
+        }
+
+        let candidate = source;
+        while (true) {
+            let payload = candidate;
+            while (true) {
+                if (payload !== source && hasIndependentPayload(payload)) return payload.trim();
+                const suffix = payload.match(trailingTag);
+                if (!suffix) break;
+                payload = payload.slice(0, suffix.index) + suffix[1];
+            }
+
+            const prefix = candidate.match(leadingTag);
+            if (!prefix) break;
+            candidate = candidate.slice(prefix[0].length);
+        }
+
+        return source;
+    }
+
     function isCommasSeparatedNumbers(value) {
         if (!value.includes(',')) return false;
 
@@ -371,6 +431,7 @@
         stripCommentsOutsideStrings,
         fixChineseColons,
         stripLeadingLabelBeforeJson,
+        stripJsonLogTags,
         isCommasSeparatedNumbers,
         isJsonPrimitive,
         addMissingCommas,

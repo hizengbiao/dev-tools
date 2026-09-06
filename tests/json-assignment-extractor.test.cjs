@@ -5,7 +5,7 @@ const path = require('node:path');
 const extractor = require('../json-assignment-extractor.js');
 const page = fs.readFileSync(path.resolve(__dirname, '../json-parser.html'), 'utf8');
 
-assert.match(page, /<script src="json-assignment-extractor\.js"><\/script>/);
+assert.match(page, /<script src="json-assignment-extractor\.js\?v=2\.00"><\/script>/);
 assert.match(page, /JsonAssignmentExtractor\.extractJsonValueFromAssignmentLog\(raw\)/);
 assert.doesNotMatch(page, /function extractJsonValueFromAssignmentLog\(raw\)/);
 assert.doesNotMatch(page, /function looksLikeBracketPrefixedAssignmentLog\(raw\)/);
@@ -20,6 +20,19 @@ assert.strictEqual(
 assert.strictEqual(
     extractor.extractJsonValueFromAssignmentLog('prefix payload=[{"id":1},{"id":2}] suffix'),
     '[{"id":1},{"id":2}]'
+);
+
+assert.strictEqual(
+    extractor.extractJsonValueFromAssignmentLog("payload={'text':'}','ok':1} tail"),
+    "{'text':'}','ok':1}"
+);
+assert.strictEqual(
+    extractor.extractJsonValueFromAssignmentLog(String.raw`payload=[{'text':'don\'t close ] or }',"other":"'"},2] tail`),
+    String.raw`[{'text':'don\'t close ] or }',"other":"'"},2]`
+);
+assert.strictEqual(
+    extractor.extractJsonValueFromAssignmentLog("payload={'text':'unterminated } tail"),
+    "payload={'text':'unterminated } tail"
 );
 
 assert.strictEqual(

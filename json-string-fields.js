@@ -61,10 +61,8 @@
 
     function setAtPath(root, path, value) {
         if (!path.length) return value;
-        let current = root;
-        for (let i = 0; i < path.length - 1; i++) {
-            current = current[path[i]];
-        }
+        const current = getAtPath(root, path.slice(0, -1));
+        if (!isObject(current) || !Object.prototype.hasOwnProperty.call(current, path[path.length - 1])) return root;
         Object.defineProperty(current, path[path.length - 1], {
             value, enumerable: true, configurable: true, writable: true,
         });
@@ -72,14 +70,42 @@
     }
 
     function getAtPath(root, path) {
+        if (!isValidPath(path)) return undefined;
         let current = root;
         for (const key of path) {
-            if (current == null) {
+            if (!isObject(current) || !Object.prototype.hasOwnProperty.call(current, key)) {
                 return undefined;
             }
             current = current[key];
         }
         return current;
+    }
+
+    function isValidPath(path) {
+        return Array.isArray(path) && path.every((key) =>
+            typeof key === 'string' || (Number.isInteger(key) && key >= 0));
+    }
+
+    function restorePaths(root, paths) {
+        let value = clone(root);
+        const seen = new Set();
+        const orderedPaths = (Array.isArray(paths) ? paths : [])
+            .filter((path) => {
+                if (!isValidPath(path)) return false;
+                const key = JSON.stringify(path.map(String));
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            })
+            .sort((left, right) => right.length - left.length);
+
+        // Restore descendants first so serializing their parent preserves the
+        // original string boundaries, including any edits made while expanded.
+        orderedPaths.forEach((path) => {
+            const current = getAtPath(value, path);
+            if (isObject(current)) value = setAtPath(value, path, JSON.stringify(current));
+        });
+        return value;
     }
 
     function walk(value, path, pathText, visitor) {
@@ -155,27 +181,10 @@
     }
 
     function restoreStringifiedJsonFields(root, paths) {
-        const value = clone(root);
-
-        paths.forEach((path) => {
-            let current = value;
-            for (let i = 0; i < path.length - 1; i++) {
-                current = current[path[i]];
-                if (current == null) {
-                    return;
-                }
-            }
-
-            const key = path[path.length - 1];
-            if (isObject(current && current[key])) {
-                current[key] = JSON.stringify(current[key]);
-            }
-        });
-
-        return value;
+        return restorePaths(root, paths);
     }
 
-    function restoreStringifiedJsonFieldAtPath(root, path) {
+    function restoreStringifiedJsonFieldAtPath(root, path, expandedPaths = []) {
         const valueAtPath = getAtPath(root, path);
         if (!isObject(valueAtPath)) {
             return {
@@ -184,7 +193,10 @@
             };
         }
 
-        const value = setAtPath(clone(root), path, JSON.stringify(valueAtPath));
+        const descendants = (Array.isArray(expandedPaths) ? expandedPaths : []).filter((candidate) =>
+            isValidPath(candidate) && candidate.length > path.length &&
+            path.every((key, index) => String(key) === String(candidate[index])));
+        const value = restorePaths(root, [...descendants, path]);
 
         return {
             value,

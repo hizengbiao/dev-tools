@@ -456,7 +456,34 @@
     }
 
     function stripJavaClassPrefixes(raw) {
-        return raw.replace(/(^|[=:\[,]\s*)[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*(?=\s*\{)/g, '$1');
+        let result = '';
+        let i = 0;
+        let previous = '';
+
+        while (i < raw.length) {
+            const char = raw[i];
+            if (char === '"' || char === "'") {
+                const stringEnd = findStringEnd(raw, i, char);
+                result += raw.slice(i, stringEnd);
+                previous = char;
+                i = stringEnd;
+                continue;
+            }
+
+            if (!previous || /[=:\[,]/.test(previous)) {
+                const classMatch = raw.slice(i).match(/^[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*(?=\s*\{)/);
+                if (classMatch) {
+                    i += classMatch[0].length;
+                    continue;
+                }
+            }
+
+            result += char;
+            if (!/\s/.test(char)) previous = char;
+            i++;
+        }
+
+        return result;
     }
 
     function replaceEqualsOutsideStrings(raw) {

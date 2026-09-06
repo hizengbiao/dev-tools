@@ -9,7 +9,7 @@ const script = [...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>
     .map((match) => match[1])
     .join('\n');
 
-assert.match(page, /<span>V1\.99<\/span>/);
+assert.match(page, /<span>V2\.00<\/span>/);
 assert.match(page, /<div class="changelog-date">2026年9月7日<\/div>[\s\S]*?<div class="changelog-version">V1\.99<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年8月31日<\/div>[\s\S]*?<div class="changelog-version">V1\.98<\/div>[\s\S]*?<div class="changelog-version">V1\.97<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年8月31日<\/div>[\s\S]*?<div class="changelog-version">V1\.97<\/div>/);
@@ -34,20 +34,20 @@ assert.match(page, /<div class="changelog-date">2026年6月25日<\/div>[\s\S]*?<
 assert.match(page, /<div class="changelog-date">2026年6月11日<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.80<\/div>/);
 assert.match(page, /<script src="json-repair-guards\.js"><\/script>/);
-assert.match(page, /<script src="json-assignment-extractor\.js"><\/script>/);
-assert.match(page, /<script src="json-repair-normalizer\.js"><\/script>/);
-assert.match(page, /<script src="json-java-style-normalizer\.js"><\/script>/);
+assert.match(page, /<script src="json-assignment-extractor\.js\?v=2\.00"><\/script>/);
+assert.match(page, /<script src="json-repair-normalizer\.js\?v=2\.00"><\/script>/);
+assert.match(page, /<script src="json-java-style-normalizer\.js\?v=2\.00"><\/script>/);
 assert.match(page, /!JsonJavaStyleNormalizer\.looksLikeJavaStyleObject\(raw\)/);
 assert.match(page, /<script src="json-path-query\.js"><\/script>/);
 assert.doesNotMatch(page, /<script src="json-key-paths\.js"><\/script>/);
 assert.doesNotMatch(page, /<script src="json-search-results\.js"><\/script>/);
-assert.match(page, /<script src="json-string-fields\.js"><\/script>/);
+assert.match(page, /<script src="json-string-fields\.js\?v=2\.00"><\/script>/);
 assert.doesNotMatch(page, /<button[^>]+onclick="expandJsonStringFields\(\)"/);
 assert.doesNotMatch(page, /<button[^>]+onclick="restoreJsonStringFields\(\)"/);
 assert.match(page, /function expandJsonStringFieldAtPath\(path\)/);
 assert.match(page, /function restoreJsonStringFieldAtPath\(path\)/);
 assert.match(page, /JsonStringFields\.expandStringifiedJsonFieldAtPath\(currentObj, path\)/);
-assert.match(page, /JsonStringFields\.restoreStringifiedJsonFieldAtPath\(currentObj, path\)/);
+assert.match(page, /JsonStringFields\.restoreStringifiedJsonFieldAtPath\(currentObj, path, expandedStringFieldPaths\)/);
 assert.doesNotMatch(page, /id="json-path-input"/);
 assert.doesNotMatch(page, /id="json-path-result"/);
 assert.doesNotMatch(page, /function handleJsonPathQuery\(\)/);
@@ -677,3 +677,102 @@ assert.deepStrictEqual(JSON.parse(rootStringHarness.elements.get('json-input').v
 rootStringHarness.context.restoreJsonStringFieldAtPath([]);
 assert.strictEqual(JSON.parse(rootStringHarness.elements.get('json-input').value), '{"ok":true}');
 console.log('json parser live editing and array deletion regressions passed');
+
+const pendingHistory = createHarness();
+pendingHistory.elements.get('json-input').value = '{"n":1}';
+pendingHistory.context.saveState();
+pendingHistory.elements.get('json-input').value = '{"n":2}';
+pendingHistory.context.undo();
+assert.strictEqual(pendingHistory.elements.get('json-input').value, '{"n":1}', 'undo must capture input before the debounce timer runs');
+pendingHistory.context.redo();
+assert.strictEqual(pendingHistory.elements.get('json-input').value, '{"n":2}');
+pendingHistory.context.undo();
+pendingHistory.elements.get('json-input').value = '{"n":3}';
+pendingHistory.context.redo();
+assert.strictEqual(pendingHistory.elements.get('json-input').value, '{"n":3}', 'new input must invalidate the redo branch immediately');
+pendingHistory.context.clearAll();
+pendingHistory.context.undo();
+assert.strictEqual(pendingHistory.elements.get('json-input').value, '{"n":3}', 'clear must be undoable');
+pendingHistory.context.redo();
+assert.strictEqual(pendingHistory.elements.get('json-input').value, '');
+
+const multiEditHistory = createHarness();
+multiEditHistory.elements.get('json-input').value = '{"n":0}';
+multiEditHistory.context.handleFormat();
+multiEditHistory.context.setValueByPathWithoutRerender(['n'], 1);
+multiEditHistory.context.setValueByPathWithoutRerender(['n'], 2);
+multiEditHistory.context.undo();
+assert.strictEqual(JSON.parse(multiEditHistory.elements.get('json-input').value).n, 1, 'tree edits should undo one change at a time');
+multiEditHistory.context.undo();
+assert.strictEqual(JSON.parse(multiEditHistory.elements.get('json-input').value).n, 0);
+multiEditHistory.context.redo();
+multiEditHistory.context.setValueByPathWithoutRerender(['n'], 3);
+multiEditHistory.context.redo();
+multiEditHistory.context.showEditor();
+assert.strictEqual(JSON.parse(multiEditHistory.elements.get('json-input').value).n, 3);
+
+const expandHistory = createHarness();
+expandHistory.elements.get('json-input').value = '{"payload":"{\\"ok\\":true}"}';
+expandHistory.context.handleFormat();
+expandHistory.context.expandJsonStringFieldAtPath(['payload']);
+expandHistory.context.undo();
+assert.strictEqual(typeof JSON.parse(expandHistory.elements.get('json-input').value).payload, 'string');
+expandHistory.context.redo();
+assert.strictEqual(expandHistory.context.isExpandedJsonStringFieldPath(['payload']), true, 'redo should preserve the restore-string action');
+
+for (const [raw, expected] of [
+    ['DTO(url=http://example.com, id=1)', { url: 'http://example.com', id: 1 }],
+    ['DTO(message="x:Child{a=1}", ok=true)', { message: 'x:Child{a=1}', ok: true }],
+    ["payload={'text':'}','ok':1}", { text: '}', ok: 1 }],
+    ['[alpha]', ['alpha']],
+    ['[[1,2]];', [[1, 2]]],
+    ['[["x"]],', [['x']]],
+    ['[TAG]{"ok":1}[/TAG]', { ok: 1 }],
+    ['[[tag]]{"ok":1}[[/tag]]', { ok: 1 }],
+]) {
+    const repairHarness = createHarness();
+    repairHarness.elements.get('json-input').value = raw;
+    repairHarness.context.handleFormat();
+    assert.strictEqual(repairHarness.elements.get('error-msg').style.display, 'none');
+    assert.deepStrictEqual(JSON.parse(repairHarness.elements.get('json-input').value), expected);
+}
+
+const nestedStrings = createHarness();
+const nestedOriginal = { payload: JSON.stringify({ nested: JSON.stringify({ ok: true }) }) };
+nestedStrings.elements.get('json-input').value = JSON.stringify(nestedOriginal);
+nestedStrings.context.handleFormat();
+nestedStrings.context.expandJsonStringFieldAtPath(['payload']);
+nestedStrings.context.expandJsonStringFieldAtPath(['payload', 'nested']);
+nestedStrings.context.restoreJsonStringFieldAtPath(['payload']);
+assert.deepStrictEqual(JSON.parse(nestedStrings.elements.get('json-input').value), nestedOriginal, 'restoring a parent must retain nested string types');
+assert.strictEqual(nestedStrings.context.isExpandedJsonStringFieldPath(['payload', 'nested']), false);
+nestedStrings.context.expandJsonStringFieldAtPath(['payload']);
+nestedStrings.context.expandJsonStringFieldAtPath(['payload', 'nested']);
+nestedStrings.context.setValueByPathWithoutRerender(['payload'], { nested: { replacement: 1 } });
+assert.strictEqual(nestedStrings.context.isExpandedJsonStringFieldPath(['payload', 'nested']), false, 'replacement must discard stale descendant markers');
+nestedStrings.context.undo();
+assert.strictEqual(nestedStrings.context.isExpandedJsonStringFieldPath(['payload', 'nested']), true, 'undo must restore descendant markers');
+
+async function verifyReplacementHistory() {
+    for (const action of ['paste', 'sample']) {
+        const harness = createHarness();
+        const input = harness.elements.get('json-input');
+        input.value = '{"payload":"{\\"old\\":1}"}';
+        harness.context.handleFormat();
+        harness.context.expandJsonStringFieldAtPath(['payload']);
+        if (action === 'paste') {
+            harness.context.navigator.clipboard.readText = async () => '{"payload":{"new":2}}';
+            await harness.context.pasteAndFormat();
+        } else {
+            harness.context.SampleData = { getSample: () => '{"payload":{"new":2}}' };
+            harness.context.loadJsonSample();
+        }
+        harness.context.undo();
+        assert.deepStrictEqual(JSON.parse(input.value), { payload: { old: 1 } }, action + ' undo must return to the previous document in one step');
+        assert.strictEqual(harness.context.isExpandedJsonStringFieldPath(['payload']), true);
+        harness.context.redo();
+        assert.deepStrictEqual(JSON.parse(input.value), { payload: { new: 2 } });
+        assert.strictEqual(harness.context.isExpandedJsonStringFieldPath(['payload']), false);
+    }
+}
+verifyReplacementHistory().catch((error) => { console.error(error); process.exitCode = 1; });

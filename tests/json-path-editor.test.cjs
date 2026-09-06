@@ -52,7 +52,7 @@ assert.strictEqual({}.polluted, undefined);
 const nestedSpecial = { child: { original: 1 } };
 editor.renameKeyAtPath(nestedSpecial, ['child'], 'original', '__proto__');
 assert.strictEqual(JSON.stringify(nestedSpecial), '{"child":{"__proto__":1}}');
-assert.match(page, /<script src="json-path-editor\.js"><\/script>/);
+assert.match(page, /<script src="json-path-editor\.js\?v=2\.00"><\/script>/);
 assert.match(page, /JsonPathEditor\.setValueAtPath\(currentObj, path, value\)/);
 assert.match(page, /JsonPathEditor\.renameKeyAtPath\(currentObj, parentPath, oldKey, newKey\)/);
 
