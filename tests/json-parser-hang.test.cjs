@@ -9,7 +9,8 @@ const script = [...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>
     .map((match) => match[1])
     .join('\n');
 
-assert.match(page, /<span>V1\.98<\/span>/);
+assert.match(page, /<span>V1\.99<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年9月7日<\/div>[\s\S]*?<div class="changelog-version">V1\.99<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年8月31日<\/div>[\s\S]*?<div class="changelog-version">V1\.98<\/div>[\s\S]*?<div class="changelog-version">V1\.97<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年8月31日<\/div>[\s\S]*?<div class="changelog-version">V1\.97<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年8月18日<\/div>[\s\S]*?<div class="changelog-version">V1\.96<\/div>[\s\S]*?<div class="changelog-version">V1\.95<\/div>/);
@@ -82,7 +83,8 @@ function createElementStub(id = '') {
         id,
         value: '',
         textContent: '',
-        innerHTML: '',
+        get innerHTML() { return this._html || ''; },
+        set innerHTML(value) { this._html = value; this.children = []; },
         style: {},
         dataset: {},
         disabled: false,
@@ -112,13 +114,25 @@ function createElementStub(id = '') {
             this.children.push(child);
             return child;
         },
-        remove() {},
+        remove() {
+            if (this.parentElement) {
+                this.parentElement.children = this.parentElement.children.filter((child) => child !== this);
+                this.parentElement = null;
+            }
+        },
+        closest(selector) {
+            for (let node = this; node; node = node.parentElement) {
+                if (selector === '.json-node' && node.classList && node.classList.contains('json-node')) return node;
+            }
+            return null;
+        },
         replaceWith(replacement) {
             if (this.parentElement) {
                 const index = this.parentElement.children.indexOf(this);
                 if (index >= 0) {
                     replacement.parentElement = this.parentElement;
                     this.parentElement.children[index] = replacement;
+                    this.parentElement = null;
                 }
             }
             this.replacedWith = replacement;
@@ -127,6 +141,9 @@ function createElementStub(id = '') {
             return this === target || collectElements(this, (candidate) => candidate === target).length > 0;
         },
         querySelectorAll(selector) {
+            if (selector === '.json-node.collapsed') {
+                return this.querySelectorAll('.json-node').filter((el) => el.classList.contains('collapsed'));
+            }
             if (selector === '.json-node') {
                 return collectElements(this, (element) => element.className.split(/\s+/).includes('json-node'));
             }
@@ -184,6 +201,9 @@ function createHarness() {
             return { textContent: text };
         },
         querySelectorAll(selector) {
+            if (selector === '.json-node.collapsed') {
+                return this.querySelectorAll('.json-node').filter((el) => el.classList.contains('collapsed'));
+            }
             if (selector === '.json-node') {
                 return Array.from(elements.values()).flatMap((element) => element.querySelectorAll(selector));
             }
@@ -593,4 +613,67 @@ for (const [label, action] of [
     assert.equal(Object.hasOwn(result.profile, 'remove'), false, `删除后点击${label}不应恢复旧字段`);
 }
 
+const commaHarness = createHarness();
+const literalCommas = '{"text":"a,,b,}c[,d","items":[1,2,],}';
+commaHarness.elements.get('json-input').value = literalCommas;
+commaHarness.context.handleFormat();
+assert.deepStrictEqual(JSON.parse(commaHarness.elements.get('json-input').value), {
+    text: 'a,,b,}c[,d', items: [1, 2],
+}, 'repair must only clean punctuation outside strings');
+
+const ownPropertyHarness = createHarness();
+ownPropertyHarness.elements.get('json-input').value = '{"hasOwnProperty":false}';
+ownPropertyHarness.context.handleFormat();
+ownPropertyHarness.context.handleAddProperty([], false);
+assert.deepStrictEqual(JSON.parse(ownPropertyHarness.elements.get('json-input').value), {
+    hasOwnProperty: false, 新属性1: '新值',
+});
+
 console.log('json parser repair guards passed');
+
+// Keep timers deferred here to exercise the interval before a tree refresh.
+const liveHarness = createHarness();
+liveHarness.elements.get('json-input').value = '{"old":{"value":1},"other":2}';
+liveHarness.context.handleFormat();
+liveHarness.context.setTimeout = () => 0;
+vm.runInNewContext('setupAutoResize = () => {};', liveHarness.context);
+const liveNodes = () => collectElements(liveHarness.elements.get('json-output'), (el) => el.classList && el.classList.contains('json-node'));
+const oldNode = liveNodes().find((el) => el.dataset.path === '["old"]');
+const oldKey = collectElements(oldNode, (el) => el.className === 'key')[0];
+oldKey.onclick({ stopPropagation() {} });
+oldKey.replacedWith.value = 'renamed';
+oldKey.replacedWith.onblur();
+assert.strictEqual(oldNode.dataset.path, '["renamed"]');
+const leafNode = liveNodes().find((el) => el.dataset.path === '["renamed","value"]');
+const leafValue = collectElements(leafNode, (el) => el.className === 'number')[0];
+leafValue.onclick({ stopPropagation() {} });
+leafValue.replacedWith.value = '7';
+leafValue.replacedWith.onblur();
+collectElements(leafNode, (el) => el.textContent === '复制值')[0].onclick({ stopPropagation() {} });
+assert.strictEqual(liveHarness.getCopiedText(), '7', 'copy must read the committed value before rerender');
+collectElements(oldNode, (el) => el.textContent === '复制键')[0].onclick({ stopPropagation() {} });
+assert.strictEqual(liveHarness.getCopiedText(), 'renamed');
+liveHarness.context.handleMinify();
+assert.deepStrictEqual(JSON.parse(liveHarness.elements.get('json-input').value), { renamed: { value: 7 }, other: 2 });
+
+const arrayHarness = createHarness();
+arrayHarness.elements.get('json-input').value = '{"fold":{"keep":true},"list":["a","b","c"]}';
+arrayHarness.context.handleFormat();
+const arrayNodes = () => collectElements(arrayHarness.elements.get('json-output'), (el) => el.classList && el.classList.contains('json-node'));
+arrayNodes().find((el) => el.dataset.path === '["fold"]').classList.add('collapsed');
+arrayHarness.context.handleDelete(['list', '0']);
+const newFirst = arrayNodes().find((el) => el.dataset.path === '["list","0"]');
+assert.ok(collectElements(newFirst, (el) => el.textContent === '"b"').length);
+collectElements(newFirst, (el) => el.textContent === '删除值')[0].onclick({ stopPropagation() {} });
+arrayHarness.context.handleMinify();
+assert.deepStrictEqual(JSON.parse(arrayHarness.elements.get('json-input').value), { fold: { keep: true }, list: ['c'] });
+assert.ok(arrayNodes().find((el) => el.dataset.path === '["fold"]').classList.contains('collapsed'));
+
+const rootStringHarness = createHarness();
+rootStringHarness.elements.get('json-input').value = JSON.stringify('{"ok":true}');
+rootStringHarness.context.handleFormat();
+rootStringHarness.context.expandJsonStringFieldAtPath([]);
+assert.deepStrictEqual(JSON.parse(rootStringHarness.elements.get('json-input').value), { ok: true });
+rootStringHarness.context.restoreJsonStringFieldAtPath([]);
+assert.strictEqual(JSON.parse(rootStringHarness.elements.get('json-input').value), '{"ok":true}');
+console.log('json parser live editing and array deletion regressions passed');

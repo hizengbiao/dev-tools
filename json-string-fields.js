@@ -60,11 +60,15 @@
     }
 
     function setAtPath(root, path, value) {
+        if (!path.length) return value;
         let current = root;
         for (let i = 0; i < path.length - 1; i++) {
             current = current[path[i]];
         }
-        current[path[path.length - 1]] = value;
+        Object.defineProperty(current, path[path.length - 1], {
+            value, enumerable: true, configurable: true, writable: true,
+        });
+        return root;
     }
 
     function getAtPath(root, path) {
@@ -142,8 +146,7 @@
             };
         }
 
-        const value = clone(root);
-        setAtPath(value, path, clone(parsed));
+        const value = setAtPath(clone(root), path, clone(parsed));
 
         return {
             value,
@@ -181,8 +184,7 @@
             };
         }
 
-        const value = clone(root);
-        setAtPath(value, path, JSON.stringify(valueAtPath));
+        const value = setAtPath(clone(root), path, JSON.stringify(valueAtPath));
 
         return {
             value,

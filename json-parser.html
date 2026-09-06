@@ -789,7 +789,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V1.98</span>
+            <span>V1.99</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -822,6 +822,13 @@
                 <button class="close-modal changelog-close" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body changelog-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年9月7日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.99</div>
+                        <div class="changelog-desc">修复宽松 JSON 清理逗号时误改字符串内容、数组删除后下标错位和局部编辑后复制旧值的问题；防止重命名覆盖已有字段，保留特殊键名，并修复根 JSON 字符串的展开与恢复。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年8月31日</div>
                     <div class="changelog-entry">
@@ -1861,24 +1868,30 @@
          * Remove extra commas (leading, trailing, or consecutive)
          */
         function cleanupExtraCommas(raw) {
-            raw = raw.trim();
-
-            // Remove trailing commas before closing brackets
-            raw = raw.replace(/,(\s*[}\]])/g, '$1');
-
-            // Remove leading commas after opening brackets
-            raw = raw.replace(/([{\[])\s*,/g, '$1');
-
-            // Remove consecutive commas
-            raw = raw.replace(/,\s*,+/g, ',');
-
-            // Remove trailing commas at the very end
-            raw = raw.replace(/,\s*$/, '');
-
-            // Remove leading commas at the very start
-            raw = raw.replace(/^\s*,/, '');
-
-            return raw.trim();
+            let result = '';
+            let inString = false;
+            let escaped = false;
+            let previous = '';
+            for (let i = 0; i < raw.length; i++) {
+                const char = raw[i];
+                if (inString) {
+                    result += char;
+                    if (escaped) escaped = false;
+                    else if (char === '\\') escaped = true;
+                    else if (char === '"') { inString = false; previous = '"'; }
+                    continue;
+                }
+                if (char === '"') inString = true;
+                if (char === ',') {
+                    let next = i + 1;
+                    while (next < raw.length && /\s/.test(raw[next])) next++;
+                    if (!previous || previous === '[' || previous === '{' || previous === ',' ||
+                        next === raw.length || raw[next] === ']' || raw[next] === '}' || raw[next] === ',') continue;
+                }
+                result += char;
+                if (!/\s/.test(char)) previous = char;
+            }
+            return result.trim();
         }
 
         /**
@@ -2027,6 +2040,9 @@
             }
             try {
                 const parsed = JSON.parse(raw);
+                if (!hasCurrentValue || JSON.stringify(parsed) !== JSON.stringify(currentObj)) {
+                    expandedStringFieldPaths = [];
+                }
                 currentObj = parsed;
                 hasCurrentValue = true;
                 sourceDirty = false;
@@ -2153,6 +2169,7 @@
         }
 
         function reRenderTree() {
+            document.getElementById('path-tooltip').style.display = 'none';
             // Save collapsed state before re-rendering
             const collapsedPaths = getCollapsedPaths();
 
@@ -2246,6 +2263,8 @@
         function buildTree(data, level, key, isLast, path, lineState = { value: 1 }) {
             const container = document.createElement('div');
             container.className = 'json-node expanded';
+            const livePath = () => JSON.parse(container.dataset.path);
+            const liveValue = () => JsonPathEditor.getValueAtPath(currentObj, livePath());
 
             const isObj = typeof data === 'object' && data !== null;
             if (isObj) {
@@ -2287,9 +2306,10 @@
             if (key !== null) {
                 const keySpan = document.createElement('span');
                 keySpan.className = 'key';
-                keySpan.textContent = `"${key}"`;
+                keySpan.textContent = JSON.stringify(key);
 
                 keySpan.onmouseenter = (e) => {
+                    const path = livePath();
                     clearTimeout(tooltipTimer);
                     const tooltip = document.getElementById('path-tooltip');
                     if (path.length > 0) {
@@ -2356,7 +2376,7 @@
                 };
 
                 // Single click to edit key
-                keySpan.onclick = (e) => { e.stopPropagation(); handleEditKey(keySpan, path, key); };
+                keySpan.onclick = (e) => { e.stopPropagation(); const p = livePath(); handleEditKey(keySpan, p, p[p.length - 1]); };
 
                 contentBox.appendChild(keySpan);
 
@@ -2426,6 +2446,16 @@
             // Actions (Copy Val etc)
             const actions = document.createElement('div');
             actions.className = 'action-group';
+            // Keep the pressed button in place until click dispatch: blurring on
+            // mousedown replaces the wide inline textarea and can move the button
+            // away from the pointer before mouseup, silently losing the click.
+            actions.addEventListener('mousedown', (event) => {
+                if (outputDiv.querySelector('.edit-input')) event.preventDefault();
+            });
+            actions.addEventListener('click', () => {
+                const editor = outputDiv.querySelector('.edit-input');
+                if (editor) editor.blur();
+            }, true);
 
             if (key !== null) {
                 const btnKey = document.createElement('button');
@@ -2433,7 +2463,8 @@
                 btnKey.textContent = '复制键';
                 btnKey.onclick = (e) => {
                     e.stopPropagation();
-                    copyText(key);
+                    const p = livePath();
+                    copyText(p[p.length - 1]);
                 };
                 actions.appendChild(btnKey);
             }
@@ -2443,7 +2474,8 @@
             btnVal.textContent = '复制值';
             btnVal.onclick = (e) => {
                 e.stopPropagation();
-                copyText(typeof data === 'string' ? data : JSON.stringify(data, null, 2));
+                const value = liveValue();
+                copyText(typeof value === 'string' ? value : JSON.stringify(value, null, 2));
             };
             actions.appendChild(btnVal);
 
@@ -2454,19 +2486,19 @@
                 btnExpandString.title = '展开这个 JSON 字符串字段';
                 btnExpandString.onclick = (e) => {
                     e.stopPropagation();
-                    expandJsonStringFieldAtPath(path);
+                    expandJsonStringFieldAtPath(livePath());
                 };
                 actions.appendChild(btnExpandString);
             }
 
-            if (isObj && path.length > 0 && isExpandedJsonStringFieldPath(path)) {
+            if (isObj && isExpandedJsonStringFieldPath(path)) {
                 const btnRestoreString = document.createElement('button');
                 btnRestoreString.className = 'tiny-btn';
                 btnRestoreString.textContent = '恢复 JSON 字符串';
                 btnRestoreString.title = '恢复这个 JSON 字符串字段';
                 btnRestoreString.onclick = (e) => {
                     e.stopPropagation();
-                    restoreJsonStringFieldAtPath(path);
+                    restoreJsonStringFieldAtPath(livePath());
                 };
                 actions.appendChild(btnRestoreString);
             }
@@ -2477,8 +2509,9 @@
                 btnPair.textContent = '复制键值对';
                 btnPair.onclick = (e) => {
                     e.stopPropagation();
-                    const valStr = JSON.stringify(data, null, 2);
-                    const pairStr = `"${key}": ${valStr}`;
+                    const valStr = JSON.stringify(liveValue(), null, 2);
+                    const p = livePath();
+                    const pairStr = `${JSON.stringify(p[p.length - 1])}: ${valStr}`;
                     copyText(pairStr);
                 };
                 actions.appendChild(btnPair);
@@ -2489,7 +2522,7 @@
                 const btnAdd = document.createElement('button');
                 btnAdd.className = 'tiny-btn';
                 btnAdd.textContent = '新增属性';
-                btnAdd.onclick = (e) => { e.stopPropagation(); handleAddProperty(path, Array.isArray(data)); };
+                btnAdd.onclick = (e) => { e.stopPropagation(); handleAddProperty(livePath(), Array.isArray(liveValue())); };
                 actions.appendChild(btnAdd);
 
                 const btnFold = document.createElement('button');
@@ -2507,7 +2540,7 @@
                 const btnEdit = document.createElement('button');
                 btnEdit.className = 'tiny-btn';
                 btnEdit.textContent = '编辑值';
-                btnEdit.onclick = (e) => { e.stopPropagation(); handleEditSubtree(container, path, data); };
+                btnEdit.onclick = (e) => { e.stopPropagation(); handleEditSubtree(container, livePath(), liveValue()); };
                 actions.appendChild(btnEdit);
             }
 
@@ -2518,7 +2551,7 @@
                 btnDelete.textContent = key !== null ? '删除键值对' : '删除值';
                 btnDelete.onclick = (e) => {
                     e.stopPropagation();
-                    handleDelete(path);
+                    handleDelete(livePath());
                 };
                 actions.appendChild(btnDelete);
             }
@@ -2876,9 +2909,19 @@
             return lineCount < 1000;
         }
 
+        function refreshTreeWhenIdle() {
+            setTimeout(() => {
+                if (isTreeMode && !outputDiv.querySelector('.edit-input, .subtree-editor-container')) {
+                    reRenderTree();
+                }
+            }, 50);
+        }
+
         // --- Editing Logic ---
 
         function handleEditKey(element, path, oldKey) {
+            document.getElementById('path-tooltip').style.display = 'none';
+            const node = element.closest('.json-node');
             const input = document.createElement('textarea');
             input.value = oldKey;
             input.className = 'edit-input';
@@ -2888,13 +2931,18 @@
 
             function commit() {
                 // 动态获取最新路径
-                const node = element.closest('.json-node');
                 const currentPath = node ? JSON.parse(node.dataset.path) : path;
 
-                const newKey = input.value.trim();
-                if (newKey && newKey !== oldKey) {
+                const newKey = input.value;
+                if (newKey !== oldKey) {
                     const parentPath = currentPath.slice(0, -1);
-                    renameKeyWithoutRerender(parentPath, oldKey, newKey);
+                    try {
+                        renameKeyWithoutRerender(parentPath, oldKey, newKey);
+                    } catch (error) {
+                        showToast(error.message);
+                        input.replaceWith(element);
+                        return;
+                    }
 
                     // 同步更新 DOM 路径（关键！）
                     const newPath = [...parentPath, newKey];
@@ -2903,13 +2951,13 @@
                     }
 
                     showToast("键名已更新 (局部更新) ✅");
-                    element.textContent = `"${newKey}"`;
+                    element.textContent = JSON.stringify(newKey);
                     // Update key edit handler for the modified element
-                    element.onclick = (e) => { e.stopPropagation(); handleEditKey(element, path, newKey); };
+                    element.onclick = (e) => { e.stopPropagation(); handleEditKey(element, newPath, newKey); };
 
                     // 智能格式化：小文件自动刷新
                     if (shouldAutoFormat()) {
-                        setTimeout(() => reRenderTree(), 50);
+                        refreshTreeWhenIdle();
                     }
                 }
                 input.replaceWith(element);
@@ -2932,6 +2980,10 @@
         }
 
         function handleEditValue(element, path, oldVal) {
+            document.getElementById('path-tooltip').style.display = 'none';
+            const node = element.closest('.json-node');
+            if (node) path = JSON.parse(node.dataset.path);
+            oldVal = JsonPathEditor.getValueAtPath(currentObj, path);
             const wasString = typeof oldVal === 'string';
             const valStr = wasString ? oldVal : JSON.stringify(oldVal);
             const input = document.createElement('textarea');
@@ -2943,7 +2995,6 @@
 
             function commit() {
                 // 动态获取最新路径（防止键已被修改）
-                const node = element.closest('.json-node');
                 const currentPath = node ? JSON.parse(node.dataset.path) : path;
 
                 const raw = input.value;
@@ -2970,7 +3021,7 @@
                         const newElement = createValueSpan(newVal, path);
                         input.replaceWith(newElement);
                         showToast("值已更新 (局部更新) ✅");
-                        setTimeout(() => reRenderTree(), 50);
+                        refreshTreeWhenIdle();
                     } else {
                         // 大文件且值是对象/数组：显示预览
                         if (typeof newVal === 'object' && newVal !== null) {
@@ -3038,6 +3089,12 @@
 
         function renameKeyWithoutRerender(parentPath, oldKey, newKey) {
             currentObj = JsonPathEditor.renameKeyAtPath(currentObj, parentPath, oldKey, newKey);
+            expandedStringFieldPaths = expandedStringFieldPaths.map((path) => {
+                if (path.length > parentPath.length && parentPath.every((part, i) => part === path[i]) && path[parentPath.length] === oldKey) {
+                    return [...parentPath, newKey, ...path.slice(parentPath.length + 1)];
+                }
+                return path;
+            });
             hasCurrentValue = true;
             sourceDirty = true;
         }
@@ -3053,7 +3110,7 @@
                 target.push("新值");
             } else {
                 let i = 1;
-                while (target.hasOwnProperty("新属性" + i)) {
+                while (Object.prototype.hasOwnProperty.call(target, "新属性" + i)) {
                     i++;
                 }
                 target["新属性" + i] = "新值";
@@ -3102,7 +3159,7 @@
                         if (shouldAutoFormat()) {
                             showToast("值已更新 (自动同步) ✅");
                             editorDiv.replaceWith(container);
-                            setTimeout(() => reRenderTree(), 50);
+                            refreshTreeWhenIdle();
                             return;
                         }
 
@@ -3188,7 +3245,7 @@
                     if (shouldAutoFormat()) {
                         showToast("值已更新 (自动同步) ✅");
                         editorDiv.replaceWith(container);
-                        setTimeout(() => reRenderTree(), 50);
+                        refreshTreeWhenIdle();
                         return;
                     }
 
@@ -3286,6 +3343,32 @@
             }
 
             sourceDirty = true;
+
+            // Array deletion shifts all subsequent indices. Rebuild their handlers
+            // and move saved fold/expanded-string paths to the same logical items.
+            const parentPath = path.slice(0, -1);
+            const remap = (candidate) => {
+                if (!parentPath.every((part, i) => String(part) === String(candidate[i])) || candidate.length <= parentPath.length) return candidate;
+                const segment = candidate[parentPath.length];
+                if (String(segment) === String(lastKey)) return null;
+                if (Array.isArray(parent) && Number(segment) > Number(lastKey)) {
+                    const next = [...candidate];
+                    next[parentPath.length] = typeof segment === 'number' ? Number(segment) - 1 : String(Number(segment) - 1);
+                    return next;
+                }
+                return candidate;
+            };
+            expandedStringFieldPaths = expandedStringFieldPaths.map(remap).filter(Boolean);
+            if (Array.isArray(parent)) {
+                const collapsed = getCollapsedPaths().map((p) => remap(JSON.parse(p))).filter(Boolean).map((p) => JSON.stringify(p));
+                syncToInput();
+                saveState();
+                outputDiv.innerHTML = '';
+                outputDiv.appendChild(buildTree(currentObj, 0, null, true, []));
+                restoreCollapsedPaths(collapsed);
+                showToast("删除成功 ✅");
+                return;
+            }
 
             // Check if there are any collapsed nodes (user has folded something)
             const hasCollapsedNodes = document.querySelector('.json-node.collapsed') !== null;

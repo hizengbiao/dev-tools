@@ -18,11 +18,7 @@
                 keys.reverse();
             }
 
-            const sorted = {};
-            keys.forEach((key) => {
-                sorted[key] = sortObjectKeys(value[key], asc);
-            });
-            return sorted;
+            return Object.fromEntries(keys.map((key) => [key, sortObjectKeys(value[key], asc)]));
         }
 
         return value;

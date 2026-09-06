@@ -70,4 +70,10 @@ assert.deepStrictEqual(stringFields.collectStringifiedJsonFields([{ data: '{"ok"
     },
 ]);
 
+const rootExpanded = stringFields.expandStringifiedJsonFieldAtPath('{"ok":true}', []);
+assert.deepStrictEqual(rootExpanded.value, { ok: true });
+assert.strictEqual(stringFields.restoreStringifiedJsonFieldAtPath(rootExpanded.value, []).value, '{"ok":true}');
+const specialField = JSON.parse('{"__proto__":"{\\"ok\\":true}"}');
+assert.strictEqual(JSON.stringify(stringFields.expandStringifiedJsonFieldAtPath(specialField, ['__proto__']).value), '{"__proto__":{"ok":true}}');
+
 console.log('json string fields behavior passed');

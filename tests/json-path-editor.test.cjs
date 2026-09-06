@@ -40,6 +40,18 @@ assert.strictEqual(editor.renameKeyAtPath(arrayParent, ['items'], 'oldKey', 'new
 assert.deepStrictEqual(arrayParent.items, [{ oldKey: 1 }]);
 
 const page = fs.readFileSync(path.resolve(__dirname, '../json-parser.html'), 'utf8');
+const collision = { a: 1, b: 2 };
+assert.throws(() => editor.renameKeyAtPath(collision, [], 'a', 'b'), /已存在/);
+assert.deepStrictEqual(collision, { a: 1, b: 2 });
+const special = editor.renameKeyAtPath({ original: 1 }, [], 'original', '__proto__');
+assert.strictEqual(JSON.stringify(special), '{"__proto__":1}');
+editor.setValueAtPath(special, ['__proto__'], { kept: true });
+assert.strictEqual(JSON.stringify(special), '{"__proto__":{"kept":true}}');
+assert.throws(() => editor.setValueAtPath({}, ['__proto__', 'polluted'], true), /路径/);
+assert.strictEqual({}.polluted, undefined);
+const nestedSpecial = { child: { original: 1 } };
+editor.renameKeyAtPath(nestedSpecial, ['child'], 'original', '__proto__');
+assert.strictEqual(JSON.stringify(nestedSpecial), '{"child":{"__proto__":1}}');
 assert.match(page, /<script src="json-path-editor\.js"><\/script>/);
 assert.match(page, /JsonPathEditor\.setValueAtPath\(currentObj, path, value\)/);
 assert.match(page, /JsonPathEditor\.renameKeyAtPath\(currentObj, parentPath, oldKey, newKey\)/);

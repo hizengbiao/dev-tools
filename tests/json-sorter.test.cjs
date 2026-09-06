@@ -31,6 +31,9 @@ assert.notStrictEqual(asc, source);
 assert.deepStrictEqual(Object.keys(source), ['zebra', 'alpha', 'middle']);
 
 const page = fs.readFileSync(path.resolve(__dirname, '../json-parser.html'), 'utf8');
+const specialKeys = JSON.parse('{"z":0,"__proto__":{"keep":true},"hasOwnProperty":1}');
+assert.deepStrictEqual(sorter.sortObjectKeys(specialKeys), specialKeys);
+assert.strictEqual(Object.getPrototypeOf(sorter.sortObjectKeys(specialKeys)), Object.prototype);
 assert.match(page, /<script src="json-sorter\.js"><\/script>/);
 assert.match(page, /JsonSorter\.sortObjectKeys\(currentObj, asc\)/);
 assert.doesNotMatch(page, /function sortObject\(obj, asc\)/);
