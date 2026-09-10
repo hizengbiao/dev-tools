@@ -774,7 +774,7 @@
         <div class="tool-title">
             <h1>文本智能拆分</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.18</span>
+                <span>V1.19</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -847,6 +847,11 @@
                 <button class="close-modal changelog-close" type="button" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body changelog-body">
+                <div class="changelog-date">2026年9月11日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.19</div>
+                    <div>导出脱敏配置时优先打开系统保存位置选择器，可在写入文件前确认目录和文件名；取消选择不会生成文件，不支持该能力的浏览器仍使用原有下载方式。</div>
+                </div>
                 <div class="changelog-date">2026年8月17日</div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.18</div>
@@ -1396,20 +1401,44 @@
             }
         }
 
-        function exportMaskConfig() {
+        function downloadMaskConfig(content) {
+            const url = URL.createObjectURL(new Blob([content], { type: 'application/json;charset=utf-8' }));
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'text-splitter-mask-config.json';
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(url), 0);
+        }
+
+        async function exportMaskConfig() {
             try {
                 const content = TextMasker.stringifyConfig({
                     enabled: maskingEnabled.checked,
                     mappings: readMaskMappings(),
                 });
-                const url = URL.createObjectURL(new Blob([content], { type: 'application/json;charset=utf-8' }));
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = 'text-splitter-mask-config.json';
-                link.click();
-                URL.revokeObjectURL(url);
+
+                if (typeof window.showSaveFilePicker !== 'function') {
+                    downloadMaskConfig(content);
+                    showToast('当前浏览器不支持选择保存位置，已使用浏览器下载方式');
+                    return;
+                }
+
+                const fileHandle = await window.showSaveFilePicker({
+                    suggestedName: 'text-splitter-mask-config.json',
+                    types: [{
+                        description: 'JSON 配置文件',
+                        accept: { 'application/json': ['.json'] },
+                    }],
+                });
+                const writable = await fileHandle.createWritable();
+                await writable.write(new Blob([content], { type: 'application/json;charset=utf-8' }));
+                await writable.close();
                 showToast('脱敏配置已导出');
             } catch (error) {
+                if (error && error.name === 'AbortError') {
+                    showToast('已取消导出');
+                    return;
+                }
                 showMaskMappingError(error);
             }
         }
