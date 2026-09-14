@@ -159,9 +159,10 @@
 
     function stripJsonLogTags(raw) {
         const source = String(raw || '');
-        const leadingTag = /^\s*(?:\[\[[A-Za-z_][A-Za-z0-9_]*\]\]|\[[A-Za-z_][A-Za-z0-9_]*\])\s*/;
-        const trailingTag = /\s*(?:\[\[\/?[A-Za-z_][A-Za-z0-9_]*\]\]|\[\/?[A-Za-z_][A-Za-z0-9_]*\])\s*([,，.。;；]*)\s*$/;
-        const loneTag = /^(?:\[\[[A-Za-z_][A-Za-z0-9_]*\]\]|\[[A-Za-z_][A-Za-z0-9_]*\])$/;
+        const tagName = '(?=[A-Za-z0-9_.:-]*[A-Za-z_])[A-Za-z0-9_][A-Za-z0-9_.:-]*';
+        const leadingTag = new RegExp('^\\s*(?:\\[\\[' + tagName + '\\]\\]|\\[' + tagName + '\\])\\s*');
+        const trailingTag = new RegExp('\\s*(?:\\[\\[\\/?' + tagName + '\\]\\]|\\[\\/?' + tagName + '\\])\\s*([,，.。;；]*)\\s*$');
+        const loneTag = new RegExp('^(?:\\[\\[' + tagName + '\\]\\]|\\[' + tagName + '\\])$');
 
         function hasIndependentPayload(candidate) {
             const value = candidate.trim().replace(/[,，.。;；]+\s*$/, '').trim();
@@ -215,6 +216,44 @@
         }
 
         return source;
+    }
+
+    function normalizeJsonStringContent(raw) {
+        const source = String(raw || '');
+        let result = '';
+        let quote = '';
+
+        for (let i = 0; i < source.length; i += 1) {
+            const char = source[i];
+            const nextChar = source[i + 1];
+
+            if (!quote) {
+                if (char === '"' || char === "'") quote = char;
+                result += char;
+                continue;
+            }
+
+            if (char === '\\' && nextChar !== undefined) {
+                if (nextChar === '_' || nextChar === '@') {
+                    result += nextChar;
+                } else {
+                    result += char + nextChar;
+                }
+                i += 1;
+                continue;
+            }
+
+            if (char === '\r' || char === '\n') {
+                if (char === '\r' && nextChar === '\n') i += 1;
+                result += '\\n';
+                continue;
+            }
+
+            if (char === quote) quote = '';
+            result += char;
+        }
+
+        return result;
     }
 
     function isCommasSeparatedNumbers(value) {
@@ -432,6 +471,7 @@
         fixChineseColons,
         stripLeadingLabelBeforeJson,
         stripJsonLogTags,
+        normalizeJsonStringContent,
         isCommasSeparatedNumbers,
         isJsonPrimitive,
         addMissingCommas,

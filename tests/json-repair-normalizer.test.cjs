@@ -5,7 +5,7 @@ const path = require('node:path');
 const normalizer = require('../json-repair-normalizer.js');
 const page = fs.readFileSync(path.resolve(__dirname, '../json-parser.html'), 'utf8');
 
-assert.match(page, /<script src="json-repair-normalizer\.js\?v=2\.00"><\/script>/);
+assert.match(page, /<script src="json-repair-normalizer\.js\?v=2\.01"><\/script>/);
 
 const escapedRoutes = String.raw`[{\\"hosts\\":[\\"imgcache-uat.alb-uat.cmbchina.cn\\"],\\"methods\\":[],\\"paths\\":[\\"/api\\"],\\"regex\_priority\\":0,\\"preserve\_host\\":false,\\"protocols\\":[\\"http\\",\\"https\\"],\\"strip\_path\\":false}]`;
 const normalizedEscapedRoutes = normalizer.normalizeEscapedJsonContainer(escapedRoutes);
@@ -58,6 +58,7 @@ for (const array of ['[alpha]', '[[alpha]]', '[[1,2]]', '[["x"]]']) {
 }
 assert.strictEqual(normalizer.stripJsonLogTags('[TAG]{"ok":true}[/TAG]'), '{"ok":true}');
 assert.strictEqual(normalizer.stripJsonLogTags('[[tag]]{"ok":true}[[/tag]]'), '{"ok":true}');
+assert.strictEqual(normalizer.stripJsonLogTags('[[34dcg45-event]] {"ok":true} [[34dcg45-event]]'), '{"ok":true}');
 assert.strictEqual(normalizer.stripJsonLogTags('[TAG]{"ok":true}'), '{"ok":true}');
 assert.strictEqual(normalizer.stripJsonLogTags('{"ok":true}[TAG]'), '{"ok":true}');
 assert.strictEqual(normalizer.stripJsonLogTags('[TAG][[1,2]][/TAG];'), '[[1,2]];');
@@ -66,6 +67,10 @@ assert.strictEqual(normalizer.stripJsonLogTags('[trace][TAG]{"text":"[tag]"}[/TA
 assert.strictEqual(normalizer.stripJsonLogTags('[TAG][OTHER]'), '[TAG][OTHER]');
 assert.strictEqual(normalizer.stripJsonLogTags('[TAG]'), '[TAG]');
 assert.strictEqual(normalizer.stripJsonLogTags('{"text":"unfinished [TAG]'), '{"text":"unfinished [TAG]');
+assert.strictEqual(
+    normalizer.normalizeJsonStringContent('{"db":"DESCRIPTION\\_LIST","name":"user\\@host","sql":"DELETE\nFROM TASK"}'),
+    '{"db":"DESCRIPTION_LIST","name":"user@host","sql":"DELETE\\nFROM TASK"}'
+);
 
 assert.strictEqual(
     normalizer.addMissingCommas('{\n  "name": "demo"\n  "age": 18\n  "active": true\n}'),

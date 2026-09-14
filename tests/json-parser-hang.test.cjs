@@ -9,7 +9,7 @@ const script = [...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>
     .map((match) => match[1])
     .join('\n');
 
-assert.match(page, /<span>V2\.00<\/span>/);
+assert.match(page, /<span>V2\.01<\/span>/);
 assert.match(page, /<div class="changelog-date">2026年9月7日<\/div>[\s\S]*?<div class="changelog-version">V1\.99<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年8月31日<\/div>[\s\S]*?<div class="changelog-version">V1\.98<\/div>[\s\S]*?<div class="changelog-version">V1\.97<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年8月31日<\/div>[\s\S]*?<div class="changelog-version">V1\.97<\/div>/);
@@ -35,7 +35,7 @@ assert.match(page, /<div class="changelog-date">2026年6月11日<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.80<\/div>/);
 assert.match(page, /<script src="json-repair-guards\.js"><\/script>/);
 assert.match(page, /<script src="json-assignment-extractor\.js\?v=2\.00"><\/script>/);
-assert.match(page, /<script src="json-repair-normalizer\.js\?v=2\.00"><\/script>/);
+assert.match(page, /<script src="json-repair-normalizer\.js\?v=2\.01"><\/script>/);
 assert.match(page, /<script src="json-java-style-normalizer\.js\?v=2\.00"><\/script>/);
 assert.match(page, /!JsonJavaStyleNormalizer\.looksLikeJavaStyleObject\(raw\)/);
 assert.match(page, /<script src="json-path-query\.js"><\/script>/);
@@ -416,6 +416,20 @@ assert.deepStrictEqual(JSON.parse(bracketPrefixHarness.elements.get('json-input'
     appName: 'cta',
     artifactId: 'cmata',
     serviceUuid: 'L.03@cata_UAT_UAT',
+});
+
+const repeatedHyphenTagHarness = createHarness();
+repeatedHyphenTagHarness.elements.get('json-input').value = '[[34dcg45-event]] {"version":"v1.0","eventInfo":{"dbInfo":"DESCRIPTION\\_LIST","sql":"DELETE\nFROM BP\\_CONTROLTASK\\_TB","errorMessage":"ORA-00942\n"}} [[34dcg45-event]]';
+repeatedHyphenTagHarness.context.fixJson();
+
+assert.equal(repeatedHyphenTagHarness.elements.get('error-msg').style.display, 'none');
+assert.deepStrictEqual(JSON.parse(repeatedHyphenTagHarness.elements.get('json-input').value), {
+    version: 'v1.0',
+    eventInfo: {
+        dbInfo: 'DESCRIPTION_LIST',
+        sql: 'DELETE\nFROM BP_CONTROLTASK_TB',
+        errorMessage: 'ORA-00942\n',
+    },
 });
 
 const descriptivePrefixHarness = createHarness();

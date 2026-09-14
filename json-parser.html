@@ -789,7 +789,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V2.00</span>
+            <span>V2.01</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -822,6 +822,13 @@
                 <button class="close-modal changelog-close" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body changelog-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年9月15日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V2.01</div>
+                        <div class="changelog-desc">修复数字开头、包含连字符的单双括号日志标签无法剥离的问题；兼容 JSON 字符串中的 <code>\_</code>、<code>\@</code> 和未转义换行。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年9月7日</div>
                     <div class="changelog-entry">
@@ -1316,7 +1323,7 @@
     <script src="clipboard-utils.js"></script>
     <script src="json-repair-guards.js"></script>
     <script src="json-assignment-extractor.js?v=2.00"></script>
-    <script src="json-repair-normalizer.js?v=2.00"></script>
+    <script src="json-repair-normalizer.js?v=2.01"></script>
     <script src="json-java-style-normalizer.js?v=2.00"></script>
     <script src="json-sorter.js?v=2.00"></script>
     <script src="json-path-editor.js?v=2.00"></script>
@@ -1622,6 +1629,10 @@
 
                 // Only remove log tags when a separate structured payload remains.
                 raw = JsonRepairNormalizer.stripJsonLogTags(raw);
+
+                // Preserve JSON-like log values while repairing Java-style escapes
+                // and literal line breaks that JSON strings cannot contain.
+                raw = JsonRepairNormalizer.normalizeJsonStringContent(raw);
 
                 // 0d. Check again for outer quotes after tag removal
                 raw = raw.trim();

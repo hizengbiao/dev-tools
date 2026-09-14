@@ -97,6 +97,16 @@ async (page) => {
         ['[[1,2]];', [[1, 2]]],
         ['[["x"]],', [['x']]],
         ['[TAG]{"ok":1}[/TAG]', { ok: 1 }],
+        [String.raw`[[34dcg45-event]] {"version":"v1.0","eventInfo":{"dbInfo":"DESCRIPTION\_LIST","sql":"DELETE
+FROM BP\_CONTROLTASK\_TB","errorMessage":"ORA-00942
+"}} [[34dcg45-event]]`, {
+            version: 'v1.0',
+            eventInfo: {
+                dbInfo: 'DESCRIPTION_LIST',
+                sql: 'DELETE\nFROM BP_CONTROLTASK_TB',
+                errorMessage: 'ORA-00942\n',
+            },
+        }],
     ]) {
         await input.fill(raw);
         await page.getByRole('button', { name: '⚡ 格式化', exact: true }).click();
