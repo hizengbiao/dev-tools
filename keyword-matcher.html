@@ -17,8 +17,8 @@
             --bg-color: #f6f8fa;
             --panel-bg: #ffffff;
             --border-color: #d0d7de;
-            --text-primary: #1f2328;
-            --text-secondary: #57606a;
+            --page-text-primary: #1f2328;
+            --page-text-secondary: #57606a;
             --accent-color: #0969da;
             --accent-hover: #0758b7;
             --success-color: #1a7f37;
@@ -36,7 +36,7 @@
         body {
             margin: 0;
             background: var(--bg-color);
-            color: var(--text-primary);
+            color: var(--page-text-primary);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
         }
 
@@ -82,7 +82,7 @@
             border: 1px solid var(--border-color);
             border-radius: 999px;
             background: #fff;
-            color: var(--text-secondary);
+            color: var(--page-text-secondary);
             font-size: 12px;
             cursor: pointer;
             user-select: none;
@@ -96,7 +96,7 @@
 
         .intro {
             margin: -4px 0 18px;
-            color: var(--text-secondary);
+            color: var(--page-text-secondary);
             font-size: 14px;
             line-height: 1.6;
         }
@@ -135,13 +135,13 @@
 
         .field-meta {
             gap: 8px;
-            color: var(--text-secondary);
+            color: var(--page-text-secondary);
             font-size: 12px;
         }
 
         .hint {
             margin: 0 0 10px;
-            color: var(--text-secondary);
+            color: var(--page-text-secondary);
             font-size: 12px;
             line-height: 1.5;
         }
@@ -182,7 +182,7 @@
             border: 0;
             padding: 12px;
             outline: none;
-            color: var(--text-primary);
+            color: var(--page-text-primary);
             font: 13px/1.65 "SFMono-Regular", Consolas, monospace;
             white-space: pre;
             overflow: auto;
@@ -194,7 +194,7 @@
             border-radius: 6px;
             padding: 8px 14px;
             background: #f6f8fa;
-            color: var(--text-primary);
+            color: var(--page-text-primary);
             font-weight: 600;
             cursor: pointer;
         }
@@ -253,7 +253,7 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            color: var(--text-secondary);
+            color: var(--page-text-secondary);
             font-size: 13px;
             font-weight: 600;
         }
@@ -264,7 +264,7 @@
             border-radius: 6px;
             padding: 6px 30px 6px 10px;
             background: #fff;
-            color: var(--text-primary);
+            color: var(--page-text-primary);
         }
 
         .toggle {
@@ -276,7 +276,7 @@
             border-radius: 999px;
             padding: 6px 11px;
             background: #f6f8fa;
-            color: var(--text-primary);
+            color: var(--page-text-primary);
             font-size: 13px;
             cursor: pointer;
             user-select: none;
@@ -330,7 +330,7 @@
 
         .stat-label {
             overflow: hidden;
-            color: var(--text-secondary);
+            color: var(--page-text-secondary);
             font-size: 12px;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -381,7 +381,7 @@
 
         .row-index {
             padding-top: 1px;
-            color: var(--text-secondary);
+            color: var(--page-text-secondary);
             font: 12px/1.6 "SFMono-Regular", Consolas, monospace;
             text-align: right;
         }
@@ -397,7 +397,7 @@
             border-radius: 999px;
             padding: 3px 8px;
             background: rgba(255, 255, 255, 0.72);
-            color: var(--text-secondary);
+            color: var(--page-text-secondary);
             font-size: 11px;
             white-space: nowrap;
         }
@@ -414,14 +414,14 @@
             border: 1px dashed var(--border-color);
             border-radius: 8px;
             padding: 28px 16px;
-            color: var(--text-secondary);
+            color: var(--page-text-secondary);
             text-align: center;
         }
 
         .legend {
             display: flex;
             gap: 12px;
-            color: var(--text-secondary);
+            color: var(--page-text-secondary);
             font-size: 12px;
         }
 
@@ -479,7 +479,7 @@
         .close-modal {
             border: 0;
             background: transparent;
-            color: var(--text-secondary);
+            color: var(--page-text-secondary);
             font-size: 22px;
             cursor: pointer;
         }
@@ -591,7 +591,7 @@
         <div class="tool-title">
             <h1>关键词批量匹配</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.00</span>
+                <span>V1.01</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -697,6 +697,11 @@
                 <button class="close-modal changelog-close" type="button" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body changelog-body">
+                <div class="changelog-date">2026年9月20日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.01</div>
+                    <div>修复页面文字颜色变量覆盖共享导航变量的问题，使导航背景、普通文字和当前工具高亮颜色与其他页面保持一致。</div>
+                </div>
                 <div class="changelog-date">2026年9月19日</div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.00</div>

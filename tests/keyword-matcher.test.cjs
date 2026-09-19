@@ -88,7 +88,14 @@ assert.match(page, /id="keywordResults"/);
 assert.match(page, /id="contentResults"/);
 assert.match(page, /function renderHighlightedText/);
 assert.match(page, /document\.createElement\('mark'\)/);
-assert.match(page, /<span>V1\.00<\/span>/);
+assert.match(page, /--page-text-primary:\s*#1f2328/);
+assert.match(page, /--page-text-secondary:\s*#57606a/);
+assert.doesNotMatch(page, /--text-primary\s*:/);
+assert.doesNotMatch(page, /--text-secondary\s*:/);
+assert.doesNotMatch(page, /var\(--text-primary\)/);
+assert.doesNotMatch(page, /var\(--text-secondary\)/);
+assert.match(page, /<span>V1\.01<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年9月20日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年9月19日<\/div>[\s\S]*?<div class="changelog-version">V1\.00<\/div>/);
 for (const match of page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>/g)) {
     new vm.Script(match[1]);
