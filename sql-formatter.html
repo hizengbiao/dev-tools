@@ -13,6 +13,7 @@
     <script src="editor-lines.js"></script>
     <script src="sample-data.js"></script>
     <script src="sql-formatter.js"></script>
+    <script src="sql-visualizer.js"></script>
     <style>
         :root {
             --bg-color: #f4f6f8;
@@ -377,6 +378,280 @@
             font-weight: 700;
         }
 
+        .sql-visual-dialog {
+            width: min(1500px, calc(100vw - 32px));
+            height: min(900px, calc(100vh - 32px));
+            max-height: calc(100vh - 32px);
+        }
+
+        .sql-visual-body {
+            min-height: 0;
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .visual-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border-color);
+            background: #fff;
+            flex-wrap: wrap;
+        }
+
+        .visual-toolbar .btn {
+            padding: 6px 10px;
+            font-size: 13px;
+        }
+
+        .visual-toolbar-status {
+            min-width: 180px;
+            margin-right: auto;
+            color: var(--muted-color);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .visual-animation-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--muted-color);
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .visual-error {
+            display: none;
+            margin: 12px 14px 0;
+            padding: 12px 14px;
+            border: 1px solid #ff8182;
+            border-radius: 8px;
+            background: #ffebe9;
+            color: #82071e;
+            line-height: 1.55;
+            white-space: pre-wrap;
+        }
+
+        .visual-layout {
+            min-height: 0;
+            display: grid;
+            flex: 1;
+            grid-template-columns: minmax(0, 1fr) 310px;
+        }
+
+        .visual-viewport {
+            position: relative;
+            min-width: 0;
+            min-height: 420px;
+            overflow: auto;
+            background-color: #f8fafc;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
+            overscroll-behavior: contain;
+        }
+
+        .visual-stage {
+            position: relative;
+            min-width: 100%;
+            min-height: 100%;
+        }
+
+        .visual-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform-origin: 0 0;
+        }
+
+        .visual-edges {
+            position: absolute;
+            inset: 0;
+            overflow: visible;
+            pointer-events: none;
+        }
+
+        .visual-edge-line {
+            fill: none;
+            stroke: #64748b;
+            stroke-width: 2;
+            marker-end: url(#visual-arrow);
+        }
+
+        .visual-edge-label {
+            fill: #475569;
+            paint-order: stroke;
+            stroke: #f8fafc;
+            stroke-width: 5px;
+            stroke-linejoin: round;
+            font-size: 12px;
+            font-weight: 700;
+            text-anchor: middle;
+        }
+
+        .visual-node {
+            position: absolute;
+            min-height: 112px;
+            overflow: hidden;
+            border: 2px solid #60a5fa;
+            border-radius: 12px;
+            background: #eff6ff;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+            cursor: grab;
+            user-select: none;
+            transition: box-shadow 0.16s, border-color 0.16s, transform 0.16s;
+        }
+
+        .visual-node:active {
+            cursor: grabbing;
+        }
+
+        .visual-node.selected {
+            border-color: #0969da;
+            box-shadow: 0 0 0 4px rgba(9, 105, 218, 0.2), 0 12px 28px rgba(15, 23, 42, 0.18);
+            transform: translateY(-2px);
+        }
+
+        .visual-node-title {
+            padding: 9px 12px;
+            background: rgba(59, 130, 246, 0.13);
+            font-size: 13px;
+            font-weight: 800;
+            line-height: 1.35;
+        }
+
+        .visual-node-items {
+            display: grid;
+            gap: 4px;
+            padding: 9px 12px 11px;
+            color: #334155;
+            font: 12px/1.4 "SFMono-Regular", Consolas, monospace;
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+
+        .visual-node[data-type="select"],
+        .visual-node[data-type="result"],
+        .visual-node[data-type="branch-result"] {
+            border-color: #4ade80;
+            background: #f0fdf4;
+        }
+
+        .visual-node[data-type="select"] .visual-node-title,
+        .visual-node[data-type="result"] .visual-node-title,
+        .visual-node[data-type="branch-result"] .visual-node-title {
+            background: rgba(34, 197, 94, 0.14);
+        }
+
+        .visual-node[data-type="where"] {
+            border-color: #fb923c;
+            background: #fff7ed;
+        }
+
+        .visual-node[data-type="where"] .visual-node-title {
+            background: rgba(249, 115, 22, 0.14);
+        }
+
+        .visual-node[data-type="group"],
+        .visual-node[data-type="having"] {
+            border-color: #eab308;
+            background: #fefce8;
+        }
+
+        .visual-node[data-type="group"] .visual-node-title,
+        .visual-node[data-type="having"] .visual-node-title {
+            background: rgba(234, 179, 8, 0.15);
+        }
+
+        .visual-node[data-type="order"],
+        .visual-node[data-type="limit"] {
+            border-color: #94a3b8;
+            background: #f8fafc;
+        }
+
+        .visual-node[data-type="cte"],
+        .visual-node[data-type="cte-source"],
+        .visual-node[data-type="subquery"] {
+            border-color: #22d3ee;
+            background: #ecfeff;
+            outline: 2px dashed rgba(8, 145, 178, 0.3);
+            outline-offset: 4px;
+        }
+
+        .visual-node[data-type="union"] {
+            border-color: #a78bfa;
+            background: #f5f3ff;
+        }
+
+        .visual-node[data-type="union"] .visual-node-title {
+            background: rgba(139, 92, 246, 0.14);
+        }
+
+        .visual-layer.animate .visual-node {
+            animation: visual-node-enter 0.32s both;
+            animation-delay: calc(var(--node-index) * 45ms);
+        }
+
+        @keyframes visual-node-enter {
+            from { opacity: 0; transform: translateY(12px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .visual-detail {
+            min-width: 0;
+            overflow-y: auto;
+            border-left: 1px solid var(--border-color);
+            background: #fff;
+        }
+
+        .visual-detail-section {
+            padding: 14px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .visual-detail-section h4 {
+            margin: 0 0 10px;
+            font-size: 14px;
+        }
+
+        .visual-detail-empty,
+        .visual-detail-list {
+            color: var(--muted-color);
+            font-size: 12px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .visual-detail-list dt {
+            margin-top: 8px;
+            color: var(--text-color);
+            font-weight: 700;
+        }
+
+        .visual-detail-list dd {
+            margin: 2px 0 0;
+        }
+
+        .visual-sql-preview {
+            width: 100%;
+            height: 210px;
+            padding: 10px;
+            resize: vertical;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--code-bg);
+            font: 11px/1.5 "SFMono-Regular", Consolas, monospace;
+        }
+
+        .sql-selection-active {
+            box-shadow: inset 0 0 0 2px rgba(9, 105, 218, 0.25);
+        }
+
         @media (max-width: 960px) {
             .workspace,
             .details {
@@ -392,6 +667,23 @@
                 align-items: flex-start;
                 flex-wrap: wrap;
             }
+
+            .sql-visual-dialog {
+                width: calc(100vw - 16px);
+                height: calc(100vh - 16px);
+                max-height: calc(100vh - 16px);
+            }
+
+            .visual-layout {
+                grid-template-columns: 1fr;
+                grid-template-rows: minmax(360px, 1fr) auto;
+            }
+
+            .visual-detail {
+                max-height: 280px;
+                border-top: 1px solid var(--border-color);
+                border-left: 0;
+            }
         }
     </style>
 </head>
@@ -401,7 +693,7 @@
         <div class="tool-title">
             <h1>SQL 格式化/压缩工具</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新说明">
-                <span>V1.05</span>
+                <span>V1.06</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -412,7 +704,8 @@
                     <h2>输入 SQL</h2>
                     <div class="input-actions">
                         <button class="btn" type="button" data-clipboard-paste-target="sql-input" data-clipboard-paste-action="format-btn">📋 粘贴并格式化</button>
-                        <button class="btn btn-primary" id="format-btn">格式化</button>
+                        <button class="btn" id="format-btn">格式化</button>
+                        <button class="btn btn-primary" id="visualize-btn">生成可视化</button>
                         <button class="btn" id="compress-btn">压缩单行</button>
                         <button class="btn btn-danger" id="clear-btn">清空</button>
                     </div>
@@ -421,7 +714,7 @@
                     <div class="line-numbers" id="input-lines" aria-hidden="true">1</div>
                     <textarea id="sql-input" wrap="off" spellcheck="false"></textarea>
                 </div>
-                <div class="hint">支持常见 SELECT / INSERT / UPDATE / DELETE / CREATE TABLE，以及包含 if、foreach 等动态标签的 MyBatis SQL。格式化模式会自动识别。</div>
+                <div class="hint">格式化支持常见 SELECT / INSERT / UPDATE / DELETE / CREATE TABLE，以及包含 if、foreach 等动态标签的 MyBatis SQL；生成可视化优先支持 MySQL SELECT / WITH 查询。</div>
             </div>
 
             <div class="panel">
@@ -473,6 +766,44 @@
         </section>
     </main>
 
+    <div id="sql-visual-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="sql-visual-title">
+        <div class="modal-content sql-visual-dialog">
+            <div class="modal-header">
+                <h3 id="sql-visual-title">SQL 数据流可视化</h3>
+                <button class="close-modal" id="close-visual-modal" type="button" aria-label="关闭 SQL 可视化">&times;</button>
+            </div>
+            <div class="sql-visual-body">
+                <div class="visual-toolbar">
+                    <div class="visual-toolbar-status" id="visual-status">等待解析 SQL</div>
+                    <button class="btn" id="visual-zoom-out" type="button" aria-label="缩小可视化">− 缩小</button>
+                    <button class="btn" id="visual-zoom-in" type="button" aria-label="放大可视化">＋ 放大</button>
+                    <button class="btn" id="visual-reset" type="button">恢复默认</button>
+                    <button class="btn" id="visual-fit" type="button">适应画布</button>
+                    <label class="visual-animation-toggle"><input id="visual-animation" type="checkbox" checked> 动画</label>
+                </div>
+                <div class="visual-error" id="visual-error" role="alert"></div>
+                <div class="visual-layout">
+                    <div class="visual-viewport" id="sql-visual-canvas" tabindex="0" aria-label="SQL 可视化画布">
+                        <div class="visual-stage" id="visual-stage">
+                            <div class="visual-layer" id="visual-layer"></div>
+                        </div>
+                    </div>
+                    <aside class="visual-detail" aria-label="节点详情">
+                        <div class="visual-detail-section">
+                            <h4>节点详情</h4>
+                            <div class="visual-detail-empty" id="visual-detail">点击表或处理节点查看字段、条件和对应 SQL。</div>
+                        </div>
+                        <div class="visual-detail-section">
+                            <h4>SQL 联动</h4>
+                            <textarea class="visual-sql-preview" id="visual-sql-preview" readonly spellcheck="false" aria-label="可视化 SQL 预览"></textarea>
+                            <div class="hint">点击节点会选中对应 SQL；在这里点击 SQL 片段也会反向定位关系图节点。</div>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="changelog-modal" class="modal-overlay changelog-overlay">
         <div class="modal-content changelog-dialog">
             <div class="modal-header changelog-header">
@@ -480,6 +811,13 @@
                 <button class="close-modal changelog-close" type="button" onclick="closeChangelog()" aria-label="关闭版本更新说明">&times;</button>
             </div>
             <div class="modal-body changelog-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年9月20日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.06</div>
+                        <div class="changelog-description">新增 SQL 数据流可视化：解析表、字段、JOIN、WHERE、GROUP BY、HAVING、SELECT、ORDER BY、LIMIT、子查询、UNION 和 CTE，并支持节点拖拽、缩放、详情及 SQL 双向联动。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月23日</div>
                     <div class="changelog-entry">
@@ -527,6 +865,23 @@
         const tableCount = document.getElementById('table-count');
         const placeholderCount = document.getElementById('placeholder-count');
         const charCount = document.getElementById('char-count');
+        const visualModal = document.getElementById('sql-visual-modal');
+        const visualCanvas = document.getElementById('sql-visual-canvas');
+        const visualStage = document.getElementById('visual-stage');
+        const visualLayer = document.getElementById('visual-layer');
+        const visualStatus = document.getElementById('visual-status');
+        const visualError = document.getElementById('visual-error');
+        const visualDetail = document.getElementById('visual-detail');
+        const visualSqlPreview = document.getElementById('visual-sql-preview');
+        const visualAnimation = document.getElementById('visual-animation');
+        const visualState = {
+            model: null,
+            graph: null,
+            scale: 1,
+            selectedId: '',
+            inputOffset: 0,
+            previousBodyOverflow: ''
+        };
 
         function copyText(text) {
             if (window.ClipboardUtils && ClipboardUtils.copyText) {
@@ -559,7 +914,239 @@
             refreshMeta();
         }
 
+        function svgElement(name, attributes = {}) {
+            const element = document.createElementNS('http://www.w3.org/2000/svg', name);
+            Object.entries(attributes).forEach(([key, value]) => element.setAttribute(key, String(value)));
+            return element;
+        }
+
+        function openVisualModal() {
+            visualState.previousBodyOverflow = document.body.style.overflow;
+            document.body.style.overflow = 'hidden';
+            visualModal.style.display = 'flex';
+        }
+
+        function closeVisualModal() {
+            visualModal.style.display = 'none';
+            document.body.style.overflow = visualState.previousBodyOverflow;
+            inputEl.classList.remove('sql-selection-active');
+            document.getElementById('visualize-btn').focus();
+        }
+
+        function setVisualScale(nextScale) {
+            if (!visualState.graph) return;
+            visualState.scale = Math.max(0.35, Math.min(1.8, nextScale));
+            visualLayer.style.transform = `scale(${visualState.scale})`;
+            visualStage.style.width = `${Math.ceil(visualState.graph.width * visualState.scale)}px`;
+            visualStage.style.height = `${Math.ceil(visualState.graph.height * visualState.scale)}px`;
+            visualStatus.textContent = `${visualState.graph.nodes.length} 个节点 · ${visualState.graph.edges.length} 条连线 · ${Math.round(visualState.scale * 100)}%`;
+        }
+
+        function drawVisualEdges() {
+            if (!visualState.graph) return;
+            const oldSvg = visualLayer.querySelector('.visual-edges');
+            if (oldSvg) oldSvg.remove();
+            const svg = svgElement('svg', {
+                class: 'visual-edges', width: visualState.graph.width, height: visualState.graph.height,
+                viewBox: `0 0 ${visualState.graph.width} ${visualState.graph.height}`
+            });
+            const defs = svgElement('defs');
+            const marker = svgElement('marker', {
+                id: 'visual-arrow', markerWidth: 9, markerHeight: 9, refX: 8, refY: 4.5,
+                orient: 'auto', markerUnits: 'strokeWidth'
+            });
+            marker.appendChild(svgElement('path', { d: 'M 0 0 L 9 4.5 L 0 9 z', fill: '#64748b' }));
+            defs.appendChild(marker);
+            svg.appendChild(defs);
+            const nodeMap = new Map(visualState.graph.nodes.map(node => [node.id, node]));
+            visualState.graph.edges.forEach((edge) => {
+                const from = nodeMap.get(edge.from);
+                const to = nodeMap.get(edge.to);
+                if (!from || !to) return;
+                const sameRow = Math.abs(from.y - to.y) < 80;
+                const movingRight = to.x >= from.x;
+                const startX = sameRow ? from.x + (movingRight ? from.width : 0) : from.x + from.width / 2;
+                const startY = sameRow ? from.y + from.height / 2 : from.y + from.height;
+                const endX = sameRow ? to.x + (movingRight ? 0 : to.width) : to.x + to.width / 2;
+                const endY = sameRow ? to.y + to.height / 2 : to.y;
+                const bend = Math.max(24, Math.abs(sameRow ? endX - startX : endY - startY) / 2);
+                const pathData = sameRow
+                    ? `M ${startX} ${startY} C ${startX + (movingRight ? bend : -bend)} ${startY}, ${endX + (movingRight ? -bend : bend)} ${endY}, ${endX} ${endY}`
+                    : `M ${startX} ${startY} C ${startX} ${startY + bend}, ${endX} ${endY - bend}, ${endX} ${endY}`;
+                const path = svgElement('path', {
+                    class: 'visual-edge-line',
+                    d: pathData
+                });
+                svg.appendChild(path);
+                if (edge.label) {
+                    const label = svgElement('text', {
+                        class: 'visual-edge-label', x: (startX + endX) / 2, y: (startY + endY) / 2 - (sameRow ? 10 : 0)
+                    });
+                    edge.label.split('\n').forEach((line, index) => {
+                        const tspan = svgElement('tspan', {
+                            x: (startX + endX) / 2,
+                            dy: index === 0 ? 0 : 15
+                        });
+                        tspan.textContent = line.length > 42 ? `${line.slice(0, 39)}…` : line;
+                        label.appendChild(tspan);
+                    });
+                    svg.appendChild(label);
+                }
+            });
+            visualLayer.prepend(svg);
+        }
+
+        function updateVisualDetail(node) {
+            visualDetail.replaceChildren();
+            const title = document.createElement('strong');
+            title.textContent = node.title;
+            visualDetail.appendChild(title);
+            const list = document.createElement('dl');
+            list.className = 'visual-detail-list';
+            Object.entries(node.detail || {}).forEach(([key, value]) => {
+                const term = document.createElement('dt');
+                term.textContent = key;
+                const description = document.createElement('dd');
+                description.textContent = String(value || '无');
+                list.append(term, description);
+            });
+            visualDetail.appendChild(list);
+        }
+
+        function selectVisualNode(nodeId, highlightSql = true) {
+            if (!visualState.graph) return;
+            const node = visualState.graph.nodes.find(item => item.id === nodeId);
+            if (!node) return;
+            visualState.selectedId = nodeId;
+            visualLayer.querySelectorAll('.visual-node').forEach((element) => {
+                element.classList.toggle('selected', element.dataset.nodeId === nodeId);
+            });
+            updateVisualDetail(node);
+            if (highlightSql && node.range && Number.isFinite(node.range.start) && Number.isFinite(node.range.end)) {
+                visualSqlPreview.focus({ preventScroll: true });
+                visualSqlPreview.setSelectionRange(node.range.start, node.range.end);
+                const start = visualState.inputOffset + node.range.start;
+                const end = visualState.inputOffset + node.range.end;
+                inputEl.setSelectionRange(start, end);
+                inputEl.classList.add('sql-selection-active');
+            }
+        }
+
+        function bindVisualNodeDrag(element, node) {
+            let drag = null;
+            element.addEventListener('pointerdown', (event) => {
+                if (event.button !== 0) return;
+                drag = {
+                    startX: event.clientX,
+                    startY: event.clientY,
+                    nodeX: node.x,
+                    nodeY: node.y,
+                    moved: false
+                };
+                element.setPointerCapture(event.pointerId);
+                event.preventDefault();
+            });
+            element.addEventListener('pointermove', (event) => {
+                if (!drag) return;
+                const deltaX = (event.clientX - drag.startX) / visualState.scale;
+                const deltaY = (event.clientY - drag.startY) / visualState.scale;
+                if (Math.abs(deltaX) + Math.abs(deltaY) > 3) drag.moved = true;
+                node.x = Math.max(10, drag.nodeX + deltaX);
+                node.y = Math.max(10, drag.nodeY + deltaY);
+                element.style.left = `${node.x}px`;
+                element.style.top = `${node.y}px`;
+                drawVisualEdges();
+            });
+            element.addEventListener('pointerup', (event) => {
+                if (!drag) return;
+                const wasMoved = drag.moved;
+                drag = null;
+                if (element.hasPointerCapture(event.pointerId)) element.releasePointerCapture(event.pointerId);
+                if (!wasMoved) selectVisualNode(node.id);
+            });
+        }
+
+        function renderVisualGraph() {
+            const graph = visualState.graph;
+            visualLayer.replaceChildren();
+            visualLayer.classList.toggle('animate', visualAnimation.checked);
+            visualLayer.style.width = `${graph.width}px`;
+            visualLayer.style.height = `${graph.height}px`;
+            graph.nodes.forEach((node, index) => {
+                const element = document.createElement('article');
+                element.className = 'visual-node';
+                element.dataset.nodeId = node.id;
+                element.dataset.type = node.type;
+                element.style.left = `${node.x}px`;
+                element.style.top = `${node.y}px`;
+                element.style.width = `${node.width}px`;
+                element.style.minHeight = `${node.height}px`;
+                element.style.setProperty('--node-index', String(index));
+                const heading = document.createElement('div');
+                heading.className = 'visual-node-title';
+                heading.textContent = node.title;
+                const items = document.createElement('div');
+                items.className = 'visual-node-items';
+                (node.items || []).forEach((item) => {
+                    const line = document.createElement('div');
+                    line.textContent = item;
+                    items.appendChild(line);
+                });
+                element.append(heading, items);
+                bindVisualNodeDrag(element, node);
+                visualLayer.appendChild(element);
+            });
+            drawVisualEdges();
+            setVisualScale(1);
+        }
+
+        function fitVisualGraph() {
+            if (!visualState.graph) return;
+            const availableWidth = Math.max(240, visualCanvas.clientWidth - 40);
+            const availableHeight = Math.max(240, visualCanvas.clientHeight - 40);
+            setVisualScale(Math.min(1.2, availableWidth / visualState.graph.width, availableHeight / visualState.graph.height));
+            visualCanvas.scrollTo({ left: 0, top: 0 });
+        }
+
+        function showVisualParseError(error) {
+            const detail = SqlVisualizer.formatError(error, inputEl.value);
+            visualState.model = null;
+            visualState.graph = null;
+            visualLayer.replaceChildren();
+            visualStage.style.width = '100%';
+            visualStage.style.height = '100%';
+            visualStatus.textContent = 'SQL 解析失败';
+            visualError.style.display = 'block';
+            visualError.textContent = `第 ${detail.line} 行附近：${detail.message}${detail.suggestion ? `\n建议：${detail.suggestion}` : ''}`;
+            visualDetail.textContent = '修正 SQL 后再次点击“生成可视化”。原始输入不会被修改。';
+            visualSqlPreview.value = inputEl.value;
+            const selectionEnd = Math.min(inputEl.value.length, detail.position + 1);
+            inputEl.setSelectionRange(detail.position, selectionEnd);
+            inputEl.classList.add('sql-selection-active');
+            openVisualModal();
+        }
+
+        function generateVisualization() {
+            try {
+                const rawSql = inputEl.value;
+                visualState.inputOffset = Math.max(0, rawSql.search(/\S|$/));
+                visualState.model = SqlVisualizer.parseSql(rawSql);
+                visualState.graph = SqlVisualizer.buildGraph(visualState.model);
+                visualState.selectedId = '';
+                visualError.style.display = 'none';
+                visualError.textContent = '';
+                visualDetail.textContent = '点击表或处理节点查看字段、条件和对应 SQL。';
+                visualSqlPreview.value = visualState.model.sql;
+                openVisualModal();
+                renderVisualGraph();
+                requestAnimationFrame(fitVisualGraph);
+            } catch (error) {
+                showVisualParseError(error);
+            }
+        }
+
         document.getElementById('format-btn').addEventListener('click', runFormat);
+        document.getElementById('visualize-btn').addEventListener('click', generateVisualization);
         document.getElementById('compress-btn').addEventListener('click', runCompress);
         document.getElementById('clear-btn').addEventListener('click', () => {
             inputEl.value = '';
@@ -573,6 +1160,35 @@
         document.getElementById('copy-output-btn').addEventListener('click', () => copyText(outputEl.value));
         document.getElementById('copy-tables-btn').addEventListener('click', () => copyText(tableOutput.textContent));
         document.getElementById('copy-placeholders-btn').addEventListener('click', () => copyText(placeholderOutput.textContent));
+        document.getElementById('close-visual-modal').addEventListener('click', closeVisualModal);
+        document.getElementById('visual-zoom-in').addEventListener('click', () => setVisualScale(visualState.scale + 0.15));
+        document.getElementById('visual-zoom-out').addEventListener('click', () => setVisualScale(visualState.scale - 0.15));
+        document.getElementById('visual-fit').addEventListener('click', fitVisualGraph);
+        document.getElementById('visual-reset').addEventListener('click', () => {
+            if (!visualState.model) return;
+            visualState.graph = SqlVisualizer.buildGraph(visualState.model);
+            visualDetail.textContent = '节点位置和缩放比例已恢复。点击节点可查看详情。';
+            renderVisualGraph();
+        });
+        visualAnimation.addEventListener('change', () => {
+            visualLayer.classList.toggle('animate', visualAnimation.checked);
+        });
+        visualCanvas.addEventListener('wheel', (event) => {
+            if (!event.ctrlKey || !visualState.graph) return;
+            event.preventDefault();
+            setVisualScale(visualState.scale + (event.deltaY < 0 ? 0.1 : -0.1));
+        }, { passive: false });
+        visualSqlPreview.addEventListener('click', () => {
+            if (!visualState.graph) return;
+            const position = visualSqlPreview.selectionStart;
+            const candidates = visualState.graph.nodes
+                .filter(node => node.range && position >= node.range.start && position <= node.range.end)
+                .sort((left, right) => (left.range.end - left.range.start) - (right.range.end - right.range.start));
+            if (candidates[0]) selectVisualNode(candidates[0].id, false);
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && visualModal.style.display === 'flex') closeVisualModal();
+        });
         inputEl.addEventListener('input', refreshMeta);
         inputEl.addEventListener('scroll', () => EditorLines.syncLineNumberScroll(inputEl, inputLines));
         outputEl.addEventListener('scroll', () => EditorLines.syncLineNumberScroll(outputEl, outputLines));

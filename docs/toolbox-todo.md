@@ -832,6 +832,20 @@
 - 完成记录：2026-07-23 已增加 MyBatis SQL 自动识别与格式化，支持 mapper/select/insert/update/delete/sql 容器以及 if、foreach、choose、when、otherwise、where、set、trim 等动态标签的通用层级缩进，并继续提取标签内 SQL 的表名和占位符；SQL 工具版本更新至 V1.02。
 - 完成记录：2026-07-23 已在 mapper 顶层 select/insert/update/delete/sql 语句之间增加空行；将格式化、压缩和清空按钮移至输入区顶部，固定编辑器高度并扩大桌面端内容宽度；修复版本更新弹窗样式和关闭按钮，SQL 工具版本更新至 V1.03。
 
+### TODO-SQL-001：SQL 查询结构可视化
+
+- 状态：`[x]`
+- 优先级：`P1`
+- 类型：功能增强 / 可视化
+- 目标：将 SELECT 查询中的数据源、表关联、过滤、聚合、投影、排序及最终结果转换为可交互关系图，降低复杂 SQL 阅读成本。
+- 验收标准：
+  - 识别 SELECT 字段、表及别名、JOIN 类型与条件、WHERE、GROUP BY、HAVING、ORDER BY 和 LIMIT。
+  - 支持常见子查询、UNION / UNION ALL 与 WITH CTE，并以独立节点或分支展示层级和数据流。
+  - 表节点仅展示当前 SQL 实际引用字段，并区分 SELECT、JOIN、WHERE 等参与环节。
+  - 支持节点拖拽、画布缩放、恢复默认、适应画布、节点详情和 SQL 双向联动。
+  - SQL 解析失败时保留原输入，提示行号、错误原因和可用修复建议，不生成错误关系图。
+- 完成记录：2026-09-20 已新增独立 `sql-visualizer.js` 解析与建图模块，页面增加大尺寸可视化弹窗及生成入口；支持表/别名/字段、INNER/LEFT/RIGHT/CROSS/FULL JOIN、WHERE、GROUP BY、HAVING、SELECT/DISTINCT、ORDER BY、LIMIT、子查询、UNION / UNION ALL 和 WITH CTE，提供彩色类型节点、JOIN 连线标签、短时入场动画及关闭动画开关、节点拖拽、缩放、恢复、适应、详情和 SQL 双向定位；错误 SQL 显示行号和建议且不修改输入。SQL 工具版本更新至 V1.06。
+
 ### TODO-NEW-006：关键词批量匹配工具
 
 - 状态：`[x]`

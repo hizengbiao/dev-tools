@@ -22,7 +22,7 @@
 | **JWT 解析工具** | `jwt-decoder.html` | 本地解析 JWT Header、Payload 和时间字段，不做签名可信校验。 | Vanilla JS |
 | **UUID / 随机值生成器** | `random-generator.html` | 生成 UUID v4、随机密码和随机数字，支持批量复制。 | Vanilla JS |
 | **Cron 表达式解析与生成工具** | `cron-parser.html` | 解析并说明 Linux、Spring 和 Quartz Cron，也可按结构化执行需求生成多种格式。 | Vanilla JS |
-| **SQL 格式化/压缩工具** | `sql-formatter.html` | 格式化、压缩常见 SQL，并提取表名和参数占位符。 | Vanilla JS |
+| **SQL 格式化/压缩工具** | `sql-formatter.html` | 格式化、压缩常见 SQL，提取表名和参数占位符，并可视化 SELECT 查询的数据源、关联与处理流程。 | Vanilla JS |
 | **命名转换** | `text-case-converter.html` | 大小写、蛇形、驼峰、短横线等变量命名格式互转。 | Vanilla JS |
 | **文本转义转换工具** | `text_escape_formatter_final.html` | 转义文本与可读文本互转、拼接字符串合并和输入输出差异对比。 | Vanilla JS |
 | **文本智能拆分** | `text-splitter.html` | 按指定长度智能拆分文本，优先保留自然边界并支持逐段复制。 | Vanilla JS |
