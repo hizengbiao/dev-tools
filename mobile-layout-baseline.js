@@ -27,6 +27,10 @@
             requiredSnippets: ['@media (max-width: 1200px)', '@media (max-width: 640px)', 'grid-template-columns: 1fr'],
         },
         {
+            path: 'keyword-matcher.html',
+            requiredSnippets: ['@media (max-width: 900px)', '@media (max-width: 640px)', 'grid-template-columns: 1fr'],
+        },
+        {
             path: 'sql-formatter.html',
             requiredSnippets: ['@media (max-width: 960px)', 'grid-template-columns: 1fr', 'min-height: 260px'],
         },

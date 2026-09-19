@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>关键词批量匹配工具</title>
+    <link rel="stylesheet" href="nav.css">
+    <link rel="stylesheet" href="changelog.css">
+    <script src="nav.js" defer></script>
+    <script src="changelog.js"></script>
+    <script src="clipboard-utils.js"></script>
+    <script src="editor-lines.js"></script>
+    <script src="keyword-matcher.js"></script>
+    <style>
+        :root {
+            --bg-color: #f6f8fa;
+            --panel-bg: #ffffff;
+            --border-color: #d0d7de;
+            --text-primary: #1f2328;
+            --text-secondary: #57606a;
+            --accent-color: #0969da;
+            --accent-hover: #0758b7;
+            --success-color: #1a7f37;
+            --success-bg: #dafbe1;
+            --success-border: #82d998;
+            --danger-color: #cf222e;
+            --danger-bg: #ffebe9;
+            --danger-border: #ffb8b0;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+        }
+
+        button,
+        select,
+        textarea,
+        input {
+            font: inherit;
+        }
+
+        .container {
+            width: min(1680px, calc(100% - 40px));
+            margin: 0 auto;
+            padding: 26px 0 48px;
+        }
+
+        .tool-title,
+        .panel-header,
+        .result-header,
+        .actions,
+        .config-bar,
+        .field-meta {
+            display: flex;
+            align-items: center;
+        }
+
+        .tool-title {
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .tool-title h1 {
+            margin: 0;
+            font-size: 26px;
+        }
+
+        .version-info {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 999px;
+            background: #fff;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .version-info:hover {
+            border-color: var(--accent-color);
+            background: #ddf4ff;
+            color: var(--accent-color);
+        }
+
+        .intro {
+            margin: -4px 0 18px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .panel {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: var(--panel-bg);
+            box-shadow: 0 1px 2px rgba(31, 35, 40, 0.04);
+        }
+
+        .input-grid,
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .input-panel {
+            min-width: 0;
+            padding: 16px;
+        }
+
+        .panel-header,
+        .result-header {
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .panel-header h2,
+        .result-header h2 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .field-meta {
+            gap: 8px;
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .hint {
+            margin: 0 0 10px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .editor-shell {
+            display: grid;
+            grid-template-columns: 46px minmax(0, 1fr);
+            height: 340px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            border-radius: 7px;
+            background: #fff;
+        }
+
+        .editor-shell:focus-within {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.18);
+        }
+
+        .line-numbers {
+            margin: 0;
+            padding: 12px 8px;
+            overflow: hidden;
+            border-right: 1px solid var(--border-color);
+            background: #f6f8fa;
+            color: #8c959f;
+            font: 13px/1.65 "SFMono-Regular", Consolas, monospace;
+            text-align: right;
+            white-space: pre;
+            user-select: none;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100%;
+            min-width: 0;
+            resize: none;
+            border: 0;
+            padding: 12px;
+            outline: none;
+            color: var(--text-primary);
+            font: 13px/1.65 "SFMono-Regular", Consolas, monospace;
+            white-space: pre;
+            overflow: auto;
+        }
+
+        .btn {
+            min-height: 38px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px 14px;
+            background: #f6f8fa;
+            color: var(--text-primary);
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: #eef1f4;
+        }
+
+        .btn-primary {
+            border-color: var(--accent-color);
+            background: var(--accent-color);
+            color: #fff;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--accent-hover);
+        }
+
+        .btn-danger {
+            border-color: #ff8182;
+            background: #fff;
+            color: var(--danger-color);
+        }
+
+        .btn-small {
+            min-height: 30px;
+            padding: 5px 9px;
+            font-size: 12px;
+        }
+
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.55;
+        }
+
+        .control-panel {
+            margin-top: 16px;
+            padding: 14px 16px;
+        }
+
+        .config-bar {
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .config-options,
+        .actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .select-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        select {
+            min-height: 36px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 6px 30px 6px 10px;
+            background: #fff;
+            color: var(--text-primary);
+        }
+
+        .toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            min-height: 36px;
+            border: 1px solid var(--border-color);
+            border-radius: 999px;
+            padding: 6px 11px;
+            background: #f6f8fa;
+            color: var(--text-primary);
+            font-size: 13px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .toggle input {
+            margin: 0;
+        }
+
+        .results-section {
+            display: none;
+            margin-top: 16px;
+        }
+
+        .results-section.visible {
+            display: block;
+        }
+
+        .summary-panel {
+            padding: 16px;
+        }
+
+        .summary-title {
+            margin: 0 0 12px;
+            font-size: 16px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .stat-card {
+            min-width: 0;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 11px 12px;
+            background: #f6f8fa;
+        }
+
+        .stat-card.success {
+            border-color: var(--success-border);
+            background: var(--success-bg);
+        }
+
+        .stat-card.danger {
+            border-color: var(--danger-border);
+            background: var(--danger-bg);
+        }
+
+        .stat-label {
+            overflow: hidden;
+            color: var(--text-secondary);
+            font-size: 12px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .stat-value {
+            margin-top: 4px;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .result-grid {
+            margin-top: 16px;
+        }
+
+        .result-panel {
+            min-width: 0;
+            padding: 16px;
+        }
+
+        .result-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 560px;
+            overflow: auto;
+        }
+
+        .result-row {
+            display: grid;
+            grid-template-columns: 34px minmax(0, 1fr) auto;
+            gap: 10px;
+            align-items: start;
+            border: 1px solid;
+            border-radius: 8px;
+            padding: 10px 12px;
+        }
+
+        .result-row.matched {
+            border-color: var(--success-border);
+            background: var(--success-bg);
+        }
+
+        .result-row.unmatched {
+            border-color: var(--danger-border);
+            background: var(--danger-bg);
+        }
+
+        .row-index {
+            padding-top: 1px;
+            color: var(--text-secondary);
+            font: 12px/1.6 "SFMono-Regular", Consolas, monospace;
+            text-align: right;
+        }
+
+        .row-text {
+            min-width: 0;
+            overflow-wrap: anywhere;
+            font: 13px/1.65 "SFMono-Regular", Consolas, monospace;
+            white-space: pre-wrap;
+        }
+
+        .row-meta {
+            border-radius: 999px;
+            padding: 3px 8px;
+            background: rgba(255, 255, 255, 0.72);
+            color: var(--text-secondary);
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        mark.keyword-hit {
+            border-radius: 3px;
+            padding: 1px 2px;
+            background: #2da44e;
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .empty-result {
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 28px 16px;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        .legend {
+            display: flex;
+            gap: 12px;
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .legend span::before {
+            content: "";
+            display: inline-block;
+            width: 9px;
+            height: 9px;
+            margin-right: 5px;
+            border-radius: 50%;
+        }
+
+        .legend .matched-label::before {
+            background: var(--success-color);
+        }
+
+        .legend .unmatched-label::before {
+            background: var(--danger-color);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1300;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(27, 31, 36, 0.45);
+        }
+
+        .modal-content {
+            width: min(640px, 100%);
+            overflow: hidden;
+            border-radius: 8px;
+            background: #fff;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #eaeef2;
+            padding: 16px 20px;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .close-modal {
+            border: 0;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        #toast {
+            position: fixed;
+            left: 50%;
+            bottom: 28px;
+            z-index: 2600;
+            transform: translate(-50%, 14px);
+            border-radius: 7px;
+            padding: 10px 16px;
+            background: #24292f;
+            color: #fff;
+            font-size: 13px;
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.2s;
+        }
+
+        #toast.show {
+            transform: translate(-50%, 0);
+            opacity: 1;
+        }
+
+        #toast.error {
+            background: var(--danger-color);
+        }
+
+        @media (max-width: 1100px) {
+            .stats-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 900px) {
+            .input-grid,
+            .result-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .editor-shell {
+                height: 280px;
+            }
+
+            .result-list {
+                max-height: 440px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                width: min(100% - 24px, 1680px);
+                padding-top: 18px;
+            }
+
+            .tool-title {
+                align-items: flex-start;
+            }
+
+            .tool-title h1 {
+                font-size: 22px;
+            }
+
+            .config-bar,
+            .config-options,
+            .actions {
+                align-items: stretch;
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .select-group,
+            .toggle,
+            .actions .btn {
+                width: 100%;
+            }
+
+            .select-group {
+                justify-content: space-between;
+            }
+
+            .select-group select {
+                flex: 1;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .result-row {
+                grid-template-columns: 28px minmax(0, 1fr);
+            }
+
+            .row-meta {
+                grid-column: 2;
+                justify-self: start;
+            }
+
+            .legend {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="container">
+        <div class="tool-title">
+            <h1>关键词批量匹配</h1>
+            <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
+                <span>V1.00</span>
+                <span>ℹ️</span>
+            </div>
+        </div>
+        <p class="intro">按行批量比较关键词与原始内容。默认忽略大小写并使用包含匹配；所有数据只在当前浏览器中处理。</p>
+
+        <section class="input-grid" aria-label="匹配输入">
+            <article class="panel input-panel">
+                <div class="panel-header">
+                    <h2>匹配关键词</h2>
+                    <div class="field-meta">
+                        <span id="keywordInputCount">有效 0 条</span>
+                        <button class="btn btn-small" type="button" data-clipboard-paste-target="keywordInput">📋 粘贴</button>
+                    </div>
+                </div>
+                <p class="hint">一行一个关键词；纯空行会忽略，每行首尾空格会自动去除。</p>
+                <div class="editor-shell">
+                    <pre class="line-numbers" id="keywordLineNumbers" aria-hidden="true">1</pre>
+                    <textarea id="keywordInput" wrap="off" spellcheck="false" placeholder="apple&#10;banana&#10;Java&#10;192.168.1.1&#10;/user/login"></textarea>
+                </div>
+            </article>
+
+            <article class="panel input-panel">
+                <div class="panel-header">
+                    <h2>原始内容</h2>
+                    <div class="field-meta">
+                        <span id="contentInputCount">有效 0 条</span>
+                        <button class="btn btn-small" type="button" data-clipboard-paste-target="contentInput">📋 粘贴</button>
+                    </div>
+                </div>
+                <p class="hint">一行一条原始内容；重复内容会保留，并分别显示匹配状态。</p>
+                <div class="editor-shell">
+                    <pre class="line-numbers" id="contentLineNumbers" aria-hidden="true">1</pre>
+                    <textarea id="contentInput" wrap="off" spellcheck="false" placeholder="I like apple very much&#10;Java development&#10;192.168.1.10&#10;hello world"></textarea>
+                </div>
+            </article>
+        </section>
+
+        <section class="panel control-panel" aria-label="匹配设置与操作">
+            <div class="config-bar">
+                <div class="config-options">
+                    <label class="select-group" for="matchMode">
+                        匹配方式
+                        <select id="matchMode">
+                            <option value="contains">包含匹配</option>
+                            <option value="exact">完全匹配</option>
+                        </select>
+                    </label>
+                    <label class="toggle">
+                        <input id="caseSensitive" type="checkbox">
+                        区分大小写
+                    </label>
+                    <label class="toggle">
+                        <input id="deduplicateKeywords" type="checkbox">
+                        关键词自动去重
+                    </label>
+                </div>
+                <div class="actions">
+                    <button class="btn btn-primary" id="matchBtn" type="button">开始匹配</button>
+                    <button class="btn" id="sampleBtn" type="button">加载示例</button>
+                    <button class="btn" id="copyResultBtn" type="button" disabled>复制匹配结果</button>
+                    <button class="btn" id="exportResultBtn" type="button" disabled>导出 CSV</button>
+                    <button class="btn btn-danger" id="clearBtn" type="button">清空</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="results-section" id="resultsSection" aria-live="polite">
+            <div class="panel summary-panel">
+                <h2 class="summary-title">匹配统计</h2>
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-label">关键词总数</div><div class="stat-value" id="keywordTotal">0</div></div>
+                    <div class="stat-card success"><div class="stat-label">已匹配关键词</div><div class="stat-value" id="matchedKeywords">0</div></div>
+                    <div class="stat-card danger"><div class="stat-label">未匹配关键词</div><div class="stat-value" id="unmatchedKeywords">0</div></div>
+                    <div class="stat-card"><div class="stat-label">原始内容总数</div><div class="stat-value" id="contentTotal">0</div></div>
+                    <div class="stat-card success"><div class="stat-label">已匹配内容</div><div class="stat-value" id="matchedContents">0</div></div>
+                    <div class="stat-card danger"><div class="stat-label">未匹配内容</div><div class="stat-value" id="unmatchedContents">0</div></div>
+                </div>
+            </div>
+
+            <div class="result-grid">
+                <article class="panel result-panel">
+                    <div class="result-header">
+                        <h2>关键词结果</h2>
+                        <div class="legend"><span class="matched-label">已匹配</span><span class="unmatched-label">未匹配</span></div>
+                    </div>
+                    <div class="result-list" id="keywordResults"></div>
+                </article>
+                <article class="panel result-panel">
+                    <div class="result-header">
+                        <h2>原始内容结果</h2>
+                        <div class="legend"><span class="matched-label">已匹配</span><span class="unmatched-label">未匹配</span></div>
+                    </div>
+                    <div class="result-list" id="contentResults"></div>
+                </article>
+            </div>
+        </section>
+    </main>
+
+    <div id="changelog-modal" class="modal-overlay changelog-overlay">
+        <div class="modal-content changelog-dialog">
+            <div class="modal-header changelog-header">
+                <h3>🚀 版本更新说明</h3>
+                <button class="close-modal changelog-close" type="button" onclick="closeChangelog()">&times;</button>
+            </div>
+            <div class="modal-body changelog-body">
+                <div class="changelog-date">2026年9月19日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.00</div>
+                    <div>新增关键词与原始内容多对多批量匹配，支持包含/完全匹配、大小写选项、关键词去重、命中高亮、统计、结果复制及 CSV 导出。</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <script>
+        const keywordInput = document.getElementById('keywordInput');
+        const contentInput = document.getElementById('contentInput');
+        const keywordLineNumbers = document.getElementById('keywordLineNumbers');
+        const contentLineNumbers = document.getElementById('contentLineNumbers');
+        const matchMode = document.getElementById('matchMode');
+        const caseSensitive = document.getElementById('caseSensitive');
+        const deduplicateKeywords = document.getElementById('deduplicateKeywords');
+        const resultsSection = document.getElementById('resultsSection');
+        const keywordResults = document.getElementById('keywordResults');
+        const contentResults = document.getElementById('contentResults');
+        const copyResultBtn = document.getElementById('copyResultBtn');
+        const exportResultBtn = document.getElementById('exportResultBtn');
+        const toast = document.getElementById('toast');
+        let currentResult = null;
+
+        function getOptions() {
+            return {
+                matchMode: matchMode.value,
+                caseSensitive: caseSensitive.checked,
+                deduplicateKeywords: deduplicateKeywords.checked,
+            };
+        }
+
+        function refreshEditor(textarea, lineNumbers) {
+            EditorLines.refreshLineNumbers(textarea, lineNumbers);
+        }
+
+        function refreshInputCounts() {
+            const options = getOptions();
+            const keywordCount = KeywordMatcher.parseLines(keywordInput.value, options).length;
+            const contentCount = KeywordMatcher.parseLines(contentInput.value).length;
+            document.getElementById('keywordInputCount').textContent = `有效 ${keywordCount} 条`;
+            document.getElementById('contentInputCount').textContent = `有效 ${contentCount} 条`;
+        }
+
+        function createResultRow(text, index, matched, metaText, ranges = []) {
+            const row = document.createElement('div');
+            row.className = `result-row ${matched ? 'matched' : 'unmatched'}`;
+            row.dataset.status = matched ? 'matched' : 'unmatched';
+
+            const number = document.createElement('span');
+            number.className = 'row-index';
+            number.textContent = String(index + 1);
+
+            const textElement = document.createElement('div');
+            textElement.className = 'row-text';
+            renderHighlightedText(textElement, text, ranges);
+
+            const meta = document.createElement('span');
+            meta.className = 'row-meta';
+            meta.textContent = metaText;
+            row.append(number, textElement, meta);
+            return row;
+        }
+
+        function renderHighlightedText(container, text, ranges) {
+            if (!ranges.length) {
+                container.textContent = text;
+                return;
+            }
+            let cursor = 0;
+            ranges.forEach((range) => {
+                if (range.start > cursor) {
+                    container.appendChild(document.createTextNode(text.slice(cursor, range.start)));
+                }
+                const mark = document.createElement('mark');
+                mark.className = 'keyword-hit';
+                mark.textContent = text.slice(range.start, range.end);
+                container.appendChild(mark);
+                cursor = range.end;
+            });
+            if (cursor < text.length) {
+                container.appendChild(document.createTextNode(text.slice(cursor)));
+            }
+        }
+
+        function renderEmpty(container, message) {
+            const empty = document.createElement('div');
+            empty.className = 'empty-result';
+            empty.textContent = message;
+            container.replaceChildren(empty);
+        }
+
+        function renderStats(stats) {
+            Object.entries(stats).forEach(([key, value]) => {
+                const element = document.getElementById(key);
+                if (element) element.textContent = String(value);
+            });
+        }
+
+        function renderResults(result) {
+            renderStats(result.stats);
+            if (result.keywordResults.length) {
+                keywordResults.replaceChildren(...result.keywordResults.map((item, index) =>
+                    createResultRow(
+                        item.text,
+                        index,
+                        item.matched,
+                        item.matched ? `命中 ${item.contentIndexes.length} 条` : '未命中'
+                    )
+                ));
+            } else {
+                renderEmpty(keywordResults, '没有有效关键词');
+            }
+
+            if (result.contentResults.length) {
+                contentResults.replaceChildren(...result.contentResults.map((item, index) =>
+                    createResultRow(
+                        item.text,
+                        index,
+                        item.matched,
+                        item.matched ? `命中 ${item.keywordIndexes.length} 个` : '未命中',
+                        item.ranges
+                    )
+                ));
+            } else {
+                renderEmpty(contentResults, '没有有效原始内容');
+            }
+            resultsSection.classList.add('visible');
+            copyResultBtn.disabled = false;
+            exportResultBtn.disabled = false;
+        }
+
+        function runMatch() {
+            const keywordCount = KeywordMatcher.parseLines(keywordInput.value, getOptions()).length;
+            const contentCount = KeywordMatcher.parseLines(contentInput.value).length;
+            if (keywordCount === 0 && contentCount === 0) {
+                showToast('请输入匹配关键词或原始内容', true);
+                keywordInput.focus();
+                return;
+            }
+            currentResult = KeywordMatcher.matchBatch(keywordInput.value, contentInput.value, getOptions());
+            renderResults(currentResult);
+            const matchedPairCount = currentResult.keywordResults.reduce(
+                (total, item) => total + item.contentIndexes.length,
+                0
+            );
+            showToast(`匹配完成，共发现 ${matchedPairCount} 组匹配关系`);
+        }
+
+        function loadSample() {
+            keywordInput.value = 'apple\nJava\nPython\nSpring\n192.168.1.1\n/user/login';
+            contentInput.value = 'I like apple\nJava Spring Boot\n192.168.1.10\nhello world\nPOST /user/login success';
+            refreshEditor(keywordInput, keywordLineNumbers);
+            refreshEditor(contentInput, contentLineNumbers);
+            refreshInputCounts();
+            runMatch();
+        }
+
+        function clearAll() {
+            keywordInput.value = '';
+            contentInput.value = '';
+            currentResult = null;
+            refreshEditor(keywordInput, keywordLineNumbers);
+            refreshEditor(contentInput, contentLineNumbers);
+            refreshInputCounts();
+            resultsSection.classList.remove('visible');
+            keywordResults.replaceChildren();
+            contentResults.replaceChildren();
+            copyResultBtn.disabled = true;
+            exportResultBtn.disabled = true;
+            keywordInput.focus();
+            showToast('已清空');
+        }
+
+        function copyResults() {
+            if (!currentResult) return;
+            ClipboardUtils.copyText(KeywordMatcher.formatResults(currentResult), {
+                toastElement: toast,
+                successMessage: '匹配结果已复制',
+                errorMessage: '复制失败，请手动复制',
+            });
+        }
+
+        function exportResults() {
+            if (!currentResult) return;
+            const blob = new Blob([KeywordMatcher.buildCsv(currentResult)], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'keyword-match-results.csv';
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(url), 0);
+            showToast('CSV 已导出');
+        }
+
+        function showToast(message, isError = false) {
+            ClipboardUtils.showToast(message, { toastElement: toast, isError });
+        }
+
+        function bindEditor(textarea, lineNumbers) {
+            textarea.addEventListener('input', () => {
+                refreshEditor(textarea, lineNumbers);
+                refreshInputCounts();
+            });
+            textarea.addEventListener('scroll', () => {
+                EditorLines.syncLineNumberScroll(textarea, lineNumbers);
+            });
+            refreshEditor(textarea, lineNumbers);
+        }
+
+        bindEditor(keywordInput, keywordLineNumbers);
+        bindEditor(contentInput, contentLineNumbers);
+        document.getElementById('matchBtn').addEventListener('click', runMatch);
+        document.getElementById('sampleBtn').addEventListener('click', loadSample);
+        document.getElementById('clearBtn').addEventListener('click', clearAll);
+        copyResultBtn.addEventListener('click', copyResults);
+        exportResultBtn.addEventListener('click', exportResults);
+        [matchMode, caseSensitive, deduplicateKeywords].forEach(control => {
+            control.addEventListener('change', refreshInputCounts);
+        });
+        refreshInputCounts();
+    </script>
+</body>
+
+</html>

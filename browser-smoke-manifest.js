@@ -85,6 +85,12 @@
             selectors: ['#testText', '#patternInput'],
         },
         {
+            path: 'keyword-matcher.html',
+            title: '关键词批量匹配工具',
+            markers: ['keywordInput', 'contentInput', 'matchBtn'],
+            selectors: ['#keywordInput', '#contentInput', '#matchBtn'],
+        },
+        {
             path: 'html-formatter.html',
             title: 'HTML 元素格式化工具',
             markers: ['html-input', 'format-btn'],

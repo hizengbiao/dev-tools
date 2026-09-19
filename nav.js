@@ -5,6 +5,7 @@
         { name: 'JSON 格式化', path: 'json-parser.html', icon: '📑' },
         { name: '命名转换', path: 'text-case-converter.html', icon: '🔤' },
         { name: '正则测试', path: 'regex-tester.html', icon: '🔎' },
+        { name: '关键词匹配', path: 'keyword-matcher.html', icon: '🎯' },
         { name: '文本转义', path: 'text_escape_formatter_final.html', icon: '↔️' },
         { name: '文本拆分', path: 'text-splitter.html', icon: '✂️' },
         { name: 'Cron 解析', path: 'cron-parser.html', icon: '🕒' },

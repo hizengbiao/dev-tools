@@ -27,9 +27,9 @@
 - 导出时工作区：干净
 - 工程形态：以独立静态 HTML 工具页为主，公共 JavaScript/CSS 模块复用，无统一后端
 - 测试目录：`tests/*.test.cjs`
-- 导出时测试文件数量：50
+- 当前测试文件数量：51
 - 主 TODO：`docs/toolbox-todo.md`
-- TODO 状态：50 个正式条目均为 `[x]`，当前没有未开始或进行中的正式条目
+- TODO 状态：51 个正式条目均为 `[x]`，当前没有未开始或进行中的正式条目
 
 ## 长期协作约定
 
@@ -54,19 +54,20 @@
 2. JSON 格式化：`json-parser.html`
 3. 命名转换：`text-case-converter.html`
 4. 正则测试：`regex-tester.html`
-5. 文本转义：`text_escape_formatter_final.html`
-6. 文本拆分：`text-splitter.html`
-7. Cron 解析：`cron-parser.html`
-8. HTML 格式化：`html-formatter.html`
-9. Nginx 格式化：`nginx-formatter.html`
-10. 时间戳转换：`timestamp-converter.html`
-11. URL 编解码：`url-encoder.html`
-12. Base64：`base64-encoder.html`
-13. 哈希摘要：`hash-generator.html`
-14. JWT 解析：`jwt-decoder.html`
-15. 随机生成：`random-generator.html`
-16. SQL 格式化：`sql-formatter.html`
-17. Neon Timer：`neon-timer/dist/index.html`
+5. 关键词匹配：`keyword-matcher.html`
+6. 文本转义：`text_escape_formatter_final.html`
+7. 文本拆分：`text-splitter.html`
+8. Cron 解析：`cron-parser.html`
+9. HTML 格式化：`html-formatter.html`
+10. Nginx 格式化：`nginx-formatter.html`
+11. SQL 格式化：`sql-formatter.html`
+12. 时间戳转换：`timestamp-converter.html`
+13. URL 编解码：`url-encoder.html`
+14. Base64：`base64-encoder.html`
+15. 哈希摘要：`hash-generator.html`
+16. JWT 解析：`jwt-decoder.html`
+17. 随机生成：`random-generator.html`
+18. Neon Timer：`neon-timer/dist/index.html`
 
 顶部导航支持用户自定义显示项和拖动排序，配置保存在浏览器中。新增工具时，即使用户已有自定义配置，也应默认把新工具追加到其导航。首页顺序不受用户自定义导航影响，但默认工具顺序变更时通常需要同步首页。
 
@@ -109,6 +110,12 @@ JSON 宽松修复中，根节点为对象或数组且包含反斜杠转义引号
 - 支持 Java 风格内联标志，例如 `(?i)`，浏览器执行前由运行时工具转换。
 - 正则可视化需保持连续字面量合并、转义后显示、字符组纵向排列和否定字符组语义。
 - 大文本粘贴后页面应保持原滚动位置，尤其在页面顶部粘贴时不能跳到底部。
+
+### 关键词批量匹配
+
+- `keyword-matcher.html` 提供按行输入的关键词和原始内容多对多匹配，核心逻辑位于 `keyword-matcher.js`。
+- 默认不区分大小写并使用普通文本包含匹配；另支持完全匹配、区分大小写和关键词自动去重，特殊字符不会被解释为正则表达式。
+- 双侧结果分别使用绿色和红色表示已匹配、未匹配，原始内容会安全高亮具体命中片段；同时提供统计、结果复制和 CSV 导出。
 
 ### 文本转义
 
@@ -195,7 +202,7 @@ f7691b1 2026-07-15 增加Nginx收起匹配括号
 ## TODO 使用规则
 
 - 正式清单位于 `docs/toolbox-todo.md`。
-- 导出时 50 个条目均标记完成，没有剩余正式 TODO。
+- 当前 51 个条目均标记完成，没有剩余正式 TODO。
 - 后续识别到新功能时，应先按现有规范新增一个粒度适中的 TODO，再实现并标记完成。
 - 不要为了推进清单而反复拆分微小细节；用户已明确表示不要一直抠细节。
 - 完成记录要写真实日期，并附实现范围和测试结果。
