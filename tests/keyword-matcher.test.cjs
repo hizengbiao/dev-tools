@@ -103,7 +103,11 @@ assert.ok(page.indexOf('<textarea id="contentInput"') < page.indexOf('<textarea 
 assert.ok(page.indexOf('id="contentResults"') < page.indexOf('id="keywordResults"'), 'original content results should be on the left before keyword results');
 assert.ok(page.indexOf('id="contentTotal"') < page.indexOf('id="keywordTotal"'), 'original content statistics should be shown before keyword statistics');
 assert.match(page, /contentInput\.focus\(\);/);
-assert.match(page, /<span>V1\.03<\/span>/);
+assert.match(page, /body:not\(\.nav-expanded\)\s*\{[^}]*padding-top:\s*68px\s*!important;/s);
+assert.match(page, /\.container\s*\{[^}]*padding:\s*8px 0 36px;/s);
+assert.match(page, /\.input-panel\s*\{[^}]*padding:\s*10px 16px 16px;/s);
+assert.match(page, /<span>V1\.04<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年9月20日<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年9月20日<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年9月20日<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年9月20日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);

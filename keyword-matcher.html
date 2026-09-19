@@ -40,6 +40,10 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
         }
 
+        body:not(.nav-expanded) {
+            padding-top: 68px !important;
+        }
+
         button,
         select,
         textarea,
@@ -50,7 +54,7 @@
         .container {
             width: min(1680px, calc(100% - 40px));
             margin: 0 auto;
-            padding: 26px 0 48px;
+            padding: 8px 0 36px;
         }
 
         .tool-title,
@@ -66,7 +70,7 @@
         .tool-title {
             justify-content: space-between;
             gap: 16px;
-            margin-bottom: 16px;
+            margin-bottom: 10px;
         }
 
         .tool-title h1 {
@@ -95,7 +99,7 @@
         }
 
         .intro {
-            margin: -4px 0 18px;
+            margin: -4px 0 12px;
             color: var(--page-text-secondary);
             font-size: 14px;
             line-height: 1.6;
@@ -117,7 +121,7 @@
 
         .input-panel {
             min-width: 0;
-            padding: 16px;
+            padding: 10px 16px 16px;
         }
 
         .panel-header,
@@ -591,7 +595,7 @@
         <div class="tool-title">
             <h1>关键词批量匹配</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.03</span>
+                <span>V1.04</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -698,6 +702,10 @@
             </div>
             <div class="modal-body changelog-body">
                 <div class="changelog-date">2026年9月20日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.04</div>
+                    <div>压缩导航下方、标题说明区及输入卡片顶部的多余留白，在保持编辑器高度不变的情况下提高首屏空间利用率。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.03</div>
                     <div>交换输入区和结果区的左右顺序，原始内容统一显示在左侧，匹配关键词统一显示在右侧。</div>
