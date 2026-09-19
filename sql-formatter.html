@@ -652,6 +652,155 @@
             box-shadow: inset 0 0 0 2px rgba(9, 105, 218, 0.25);
         }
 
+        .sql-order-dialog {
+            width: min(1240px, calc(100vw - 32px));
+            height: min(880px, calc(100vh - 32px));
+            max-height: calc(100vh - 32px);
+        }
+
+        .sql-order-body {
+            min-height: 0;
+            padding: 18px 20px 24px;
+            overflow: auto;
+            overscroll-behavior: contain;
+        }
+
+        .sql-order-intro {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(320px, 0.75fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .sql-order-summary,
+        .sql-order-note {
+            padding: 12px 14px;
+            border-radius: 9px;
+            font-size: 13px;
+            line-height: 1.65;
+        }
+
+        .sql-order-summary {
+            border: 1px solid #80ccff;
+            border-left: 4px solid var(--accent-color);
+            background: #ddf4ff;
+            color: #0a3069;
+        }
+
+        .sql-order-note {
+            border: 1px solid #d4a72c;
+            border-left: 4px solid #bf8700;
+            background: #fff8c5;
+            color: #633c01;
+        }
+
+        .sql-order-columns {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .sql-order-panel {
+            min-width: 0;
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: #f8fafc;
+        }
+
+        .sql-order-panel h4 { margin: 0 0 4px; font-size: 17px; }
+
+        .sql-order-panel > p {
+            margin: 0 0 14px;
+            color: var(--muted-color);
+            font-size: 12px;
+            line-height: 1.55;
+        }
+
+        .sql-order-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+
+        .sql-order-step {
+            position: relative;
+            display: grid;
+            grid-template-columns: 32px minmax(105px, 0.38fr) minmax(0, 1fr);
+            align-items: center;
+            gap: 10px;
+            min-height: 56px;
+            padding: 9px 11px;
+            border: 1px solid #d8dee4;
+            border-radius: 9px;
+            background: #fff;
+            transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+        }
+
+        .sql-order-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 25px;
+            bottom: -9px;
+            width: 2px;
+            height: 8px;
+            background: #afb8c1;
+        }
+
+        .sql-order-step.is-present {
+            border-color: #54aeff;
+            box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.12);
+            transform: translateX(2px);
+        }
+
+        .sql-order-number {
+            width: 30px;
+            height: 30px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: #eaeef2;
+            color: #57606a;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .sql-order-step.is-present .sql-order-number { background: var(--accent-color); color: #fff; }
+
+        .sql-order-keyword {
+            color: #8250df;
+            font: 700 13px/1.35 "SFMono-Regular", Consolas, monospace;
+            overflow-wrap: anywhere;
+        }
+
+        .sql-order-meaning { color: #24292f; font-size: 12px; line-height: 1.5; }
+
+        .sql-order-reference {
+            margin-top: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: #fff;
+            overflow: hidden;
+        }
+
+        .sql-order-reference h4 { margin: 0; padding: 14px 16px 8px; font-size: 16px; }
+        .sql-order-table-wrap { overflow-x: auto; }
+
+        .sql-order-table {
+            width: 100%;
+            min-width: 760px;
+            border-collapse: collapse;
+            font-size: 13px;
+            line-height: 1.55;
+        }
+
+        .sql-order-table th,
+        .sql-order-table td {
+            padding: 9px 14px;
+            border-top: 1px solid var(--border-color);
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .sql-order-table th { background: var(--code-bg); color: #24292f; white-space: nowrap; }
+        .sql-order-table code { color: #8250df; font-weight: 700; }
+
         @media (max-width: 960px) {
             .workspace,
             .details {
@@ -674,6 +823,17 @@
                 max-height: calc(100vh - 16px);
             }
 
+            .sql-order-dialog {
+                width: calc(100vw - 16px);
+                height: calc(100vh - 16px);
+                max-height: calc(100vh - 16px);
+            }
+
+            .sql-order-intro,
+            .sql-order-columns { grid-template-columns: 1fr; }
+
+            .sql-order-body { padding: 14px; }
+
             .visual-layout {
                 grid-template-columns: 1fr;
                 grid-template-rows: minmax(360px, 1fr) auto;
@@ -693,7 +853,7 @@
         <div class="tool-title">
             <h1>SQL 格式化/压缩工具</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新说明">
-                <span>V1.06</span>
+                <span>V1.07</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -706,6 +866,7 @@
                         <button class="btn" type="button" data-clipboard-paste-target="sql-input" data-clipboard-paste-action="format-btn">📋 粘贴并格式化</button>
                         <button class="btn" id="format-btn">格式化</button>
                         <button class="btn btn-primary" id="visualize-btn">生成可视化</button>
+                        <button class="btn" id="execution-order-btn">执行顺序手册</button>
                         <button class="btn" id="compress-btn">压缩单行</button>
                         <button class="btn btn-danger" id="clear-btn">清空</button>
                     </div>
@@ -804,6 +965,78 @@
         </div>
     </div>
 
+    <div id="sql-order-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="sql-order-title">
+        <div class="modal-content sql-order-dialog">
+            <div class="modal-header">
+                <h3 id="sql-order-title">SQL 书写顺序与逻辑执行顺序</h3>
+                <button class="close-modal" id="close-sql-order-modal" type="button" aria-label="关闭 SQL 执行顺序手册">&times;</button>
+            </div>
+            <div class="sql-order-body">
+                <div class="sql-order-intro">
+                    <div class="sql-order-summary" id="sql-order-current-summary">输入 SQL 后打开手册，将高亮这条 SQL 实际使用的环节。</div>
+                    <div class="sql-order-note"><strong>“真正执行”指逻辑处理顺序：</strong>数据库优化器可能重排 JOIN、下推过滤条件或合并子查询。要确认某次查询的物理执行计划，请使用 <code>EXPLAIN</code> / <code>EXPLAIN ANALYZE</code>。</div>
+                </div>
+
+                <div class="sql-order-columns">
+                    <section class="sql-order-panel" aria-labelledby="sql-writing-order-title">
+                        <h4 id="sql-writing-order-title">① SQL 书写顺序</h4>
+                        <p>从上到下阅读 SQL 时，各子句通常按这个语法顺序出现。</p>
+                        <ol class="sql-order-list">
+                            <li class="sql-order-step" data-clause="WITH"><span class="sql-order-number">1</span><span class="sql-order-keyword">WITH / CTE</span><span class="sql-order-meaning">先声明公共表表达式</span></li>
+                            <li class="sql-order-step" data-clause="SELECT"><span class="sql-order-number">2</span><span class="sql-order-keyword">SELECT</span><span class="sql-order-meaning">写出最终需要返回的列或表达式</span></li>
+                            <li class="sql-order-step" data-clause="DISTINCT"><span class="sql-order-number">3</span><span class="sql-order-keyword">DISTINCT</span><span class="sql-order-meaning">紧跟 SELECT，声明结果去重</span></li>
+                            <li class="sql-order-step" data-clause="FROM"><span class="sql-order-number">4</span><span class="sql-order-keyword">FROM</span><span class="sql-order-meaning">指定主数据源</span></li>
+                            <li class="sql-order-step" data-clause="JOIN"><span class="sql-order-number">5</span><span class="sql-order-keyword">JOIN</span><span class="sql-order-meaning">追加要关联的数据源</span></li>
+                            <li class="sql-order-step" data-clause="ON"><span class="sql-order-number">6</span><span class="sql-order-keyword">ON</span><span class="sql-order-meaning">书写表之间的关联条件</span></li>
+                            <li class="sql-order-step" data-clause="WHERE"><span class="sql-order-number">7</span><span class="sql-order-keyword">WHERE</span><span class="sql-order-meaning">过滤原始行</span></li>
+                            <li class="sql-order-step" data-clause="GROUP BY"><span class="sql-order-number">8</span><span class="sql-order-keyword">GROUP BY</span><span class="sql-order-meaning">指定分组字段</span></li>
+                            <li class="sql-order-step" data-clause="HAVING"><span class="sql-order-number">9</span><span class="sql-order-keyword">HAVING</span><span class="sql-order-meaning">过滤分组后的结果</span></li>
+                            <li class="sql-order-step" data-clause="UNION"><span class="sql-order-number">10</span><span class="sql-order-keyword">UNION</span><span class="sql-order-meaning">组合多个查询的结果集</span></li>
+                            <li class="sql-order-step" data-clause="ORDER BY"><span class="sql-order-number">11</span><span class="sql-order-keyword">ORDER BY</span><span class="sql-order-meaning">指定最终结果排序</span></li>
+                            <li class="sql-order-step" data-clause="LIMIT"><span class="sql-order-number">12</span><span class="sql-order-keyword">LIMIT / OFFSET</span><span class="sql-order-meaning">限制或跳过最终返回行</span></li>
+                        </ol>
+                    </section>
+
+                    <section class="sql-order-panel" aria-labelledby="sql-logical-order-title">
+                        <h4 id="sql-logical-order-title">② 逻辑执行顺序</h4>
+                        <p>可理解为每个阶段接收上一步结果并继续处理的顺序。</p>
+                        <ol class="sql-order-list">
+                            <li class="sql-order-step" data-clause="WITH"><span class="sql-order-number">1</span><span class="sql-order-keyword">WITH / CTE</span><span class="sql-order-meaning">建立可供主查询引用的命名查询</span></li>
+                            <li class="sql-order-step" data-clause="FROM"><span class="sql-order-number">2</span><span class="sql-order-keyword">FROM</span><span class="sql-order-meaning">读取查询的基础数据源</span></li>
+                            <li class="sql-order-step" data-clause="JOIN"><span class="sql-order-number">3</span><span class="sql-order-keyword">JOIN</span><span class="sql-order-meaning">引入另一数据源并准备组合行</span></li>
+                            <li class="sql-order-step" data-clause="ON"><span class="sql-order-number">4</span><span class="sql-order-keyword">ON</span><span class="sql-order-meaning">保留满足关联条件的组合</span></li>
+                            <li class="sql-order-step" data-clause="WHERE"><span class="sql-order-number">5</span><span class="sql-order-keyword">WHERE</span><span class="sql-order-meaning">在分组前剔除不符合条件的行</span></li>
+                            <li class="sql-order-step" data-clause="GROUP BY"><span class="sql-order-number">6</span><span class="sql-order-keyword">GROUP BY</span><span class="sql-order-meaning">将剩余行按键归入各个分组</span></li>
+                            <li class="sql-order-step" data-clause="HAVING"><span class="sql-order-number">7</span><span class="sql-order-keyword">HAVING</span><span class="sql-order-meaning">依据聚合结果筛选分组</span></li>
+                            <li class="sql-order-step" data-clause="SELECT"><span class="sql-order-number">8</span><span class="sql-order-keyword">SELECT</span><span class="sql-order-meaning">计算并投影最终输出列</span></li>
+                            <li class="sql-order-step" data-clause="DISTINCT"><span class="sql-order-number">9</span><span class="sql-order-keyword">DISTINCT</span><span class="sql-order-meaning">删除重复的输出行</span></li>
+                            <li class="sql-order-step" data-clause="UNION"><span class="sql-order-number">10</span><span class="sql-order-keyword">UNION</span><span class="sql-order-meaning">合并分支结果；UNION 会额外去重</span></li>
+                            <li class="sql-order-step" data-clause="ORDER BY"><span class="sql-order-number">11</span><span class="sql-order-keyword">ORDER BY</span><span class="sql-order-meaning">对完整输出结果排序</span></li>
+                            <li class="sql-order-step" data-clause="LIMIT"><span class="sql-order-number">12</span><span class="sql-order-keyword">LIMIT / OFFSET</span><span class="sql-order-meaning">最后截取需要返回的结果窗口</span></li>
+                        </ol>
+                    </section>
+                </div>
+
+                <section class="sql-order-reference" aria-labelledby="sql-order-reference-title">
+                    <h4 id="sql-order-reference-title">关键字速查与常见误区</h4>
+                    <div class="sql-order-table-wrap">
+                        <table class="sql-order-table">
+                            <thead><tr><th>阶段</th><th>这一阶段做什么</th><th>实用提醒</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>FROM / JOIN / ON</code></td><td>建立初始行集并完成表关联。</td><td>外连接中，把条件放在 ON 还是 WHERE 可能改变结果；优化器也可能调整物理 JOIN 顺序。</td></tr>
+                                <tr><td><code>WHERE</code></td><td>聚合前按行过滤，减少后续要处理的数据。</td><td>因为 SELECT 尚未逻辑执行，通常不能在 WHERE 中引用 SELECT 别名。</td></tr>
+                                <tr><td><code>GROUP BY / HAVING</code></td><td>先分组和计算聚合，再由 HAVING 过滤分组。</td><td>能在 WHERE 提前过滤的条件不要全部放入 HAVING；部分数据库允许 HAVING 使用 SELECT 别名，但可移植性不同。</td></tr>
+                                <tr><td><code>SELECT / DISTINCT</code></td><td>生成输出列，再按需对整行结果去重。</td><td>此时产生的列别名可供后面的 ORDER BY 使用。</td></tr>
+                                <tr><td><code>UNION</code></td><td>纵向合并各查询分支，UNION ALL 保留重复行。</td><td>最终 ORDER BY / LIMIT 通常写在整个组合查询末尾。</td></tr>
+                                <tr><td><code>ORDER BY / LIMIT</code></td><td>先排序，再截取最终结果窗口。</td><td>没有稳定 ORDER BY 时，LIMIT 返回的具体行并无可靠顺序保证。</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
     <div id="changelog-modal" class="modal-overlay changelog-overlay">
         <div class="modal-content changelog-dialog">
             <div class="modal-header changelog-header">
@@ -813,6 +1046,10 @@
             <div class="modal-body changelog-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年9月20日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.07</div>
+                        <div class="changelog-description">新增 SQL 执行顺序手册弹窗，对照展示关键字书写顺序和逻辑执行顺序，自动高亮当前 SQL 已使用的环节，并说明逻辑顺序与数据库物理执行计划的区别。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.06</div>
                         <div class="changelog-description">新增 SQL 数据流可视化：解析表、字段、JOIN、WHERE、GROUP BY、HAVING、SELECT、ORDER BY、LIMIT、子查询、UNION 和 CTE，并支持节点拖拽、缩放、详情及 SQL 双向联动。</div>
@@ -866,6 +1103,8 @@
         const placeholderCount = document.getElementById('placeholder-count');
         const charCount = document.getElementById('char-count');
         const visualModal = document.getElementById('sql-visual-modal');
+        const sqlOrderModal = document.getElementById('sql-order-modal');
+        const sqlOrderSummary = document.getElementById('sql-order-current-summary');
         const visualCanvas = document.getElementById('sql-visual-canvas');
         const visualStage = document.getElementById('visual-stage');
         const visualLayer = document.getElementById('visual-layer');
@@ -882,6 +1121,21 @@
             inputOffset: 0,
             previousBodyOverflow: ''
         };
+        let sqlOrderPreviousBodyOverflow = '';
+        const sqlOrderMatchers = [
+            ['WITH', /\bWITH\b/i],
+            ['SELECT', /\bSELECT\b/i],
+            ['DISTINCT', /\bDISTINCT\b/i],
+            ['FROM', /\bFROM\b/i],
+            ['JOIN', /\bJOIN\b/i],
+            ['ON', /\bON\b/i],
+            ['WHERE', /\bWHERE\b/i],
+            ['GROUP BY', /\bGROUP\s+BY\b/i],
+            ['HAVING', /\bHAVING\b/i],
+            ['UNION', /\bUNION(?:\s+ALL)?\b/i],
+            ['ORDER BY', /\bORDER\s+BY\b/i],
+            ['LIMIT', /\b(?:LIMIT|OFFSET|FETCH)\b/i]
+        ];
 
         function copyText(text) {
             if (window.ClipboardUtils && ClipboardUtils.copyText) {
@@ -931,6 +1185,39 @@
             document.body.style.overflow = visualState.previousBodyOverflow;
             inputEl.classList.remove('sql-selection-active');
             document.getElementById('visualize-btn').focus();
+        }
+
+        function refreshSqlOrderGuide() {
+            const sql = inputEl.value
+                .replace(/--.*$/gm, ' ')
+                .replace(/\/\*[\s\S]*?\*\//g, ' ')
+                .replace(/'(?:''|\\.|[^'])*'/g, ' ')
+                .replace(/"(?:""|\\.|[^"])*"/g, ' ')
+                .replace(/`(?:``|[^`])*`/g, ' ');
+            const presentClauses = sqlOrderMatchers
+                .filter(([, matcher]) => matcher.test(sql))
+                .map(([clause]) => clause);
+            const presentSet = new Set(presentClauses);
+            document.querySelectorAll('.sql-order-step[data-clause]').forEach((step) => {
+                step.classList.toggle('is-present', presentSet.has(step.dataset.clause));
+            });
+            sqlOrderSummary.textContent = presentClauses.length
+                ? `当前 SQL 使用了 ${presentClauses.length} 个环节：${presentClauses.join(' → ')}。蓝色步骤表示已在输入中识别到。`
+                : '当前输入为空或尚未识别到查询关键字；下面仍展示完整的通用顺序。';
+        }
+
+        function openSqlOrderModal() {
+            refreshSqlOrderGuide();
+            sqlOrderPreviousBodyOverflow = document.body.style.overflow;
+            document.body.style.overflow = 'hidden';
+            sqlOrderModal.style.display = 'flex';
+            document.getElementById('close-sql-order-modal').focus();
+        }
+
+        function closeSqlOrderModal() {
+            sqlOrderModal.style.display = 'none';
+            document.body.style.overflow = sqlOrderPreviousBodyOverflow;
+            document.getElementById('execution-order-btn').focus();
         }
 
         function setVisualScale(nextScale) {
@@ -1147,6 +1434,7 @@
 
         document.getElementById('format-btn').addEventListener('click', runFormat);
         document.getElementById('visualize-btn').addEventListener('click', generateVisualization);
+        document.getElementById('execution-order-btn').addEventListener('click', openSqlOrderModal);
         document.getElementById('compress-btn').addEventListener('click', runCompress);
         document.getElementById('clear-btn').addEventListener('click', () => {
             inputEl.value = '';
@@ -1161,6 +1449,7 @@
         document.getElementById('copy-tables-btn').addEventListener('click', () => copyText(tableOutput.textContent));
         document.getElementById('copy-placeholders-btn').addEventListener('click', () => copyText(placeholderOutput.textContent));
         document.getElementById('close-visual-modal').addEventListener('click', closeVisualModal);
+        document.getElementById('close-sql-order-modal').addEventListener('click', closeSqlOrderModal);
         document.getElementById('visual-zoom-in').addEventListener('click', () => setVisualScale(visualState.scale + 0.15));
         document.getElementById('visual-zoom-out').addEventListener('click', () => setVisualScale(visualState.scale - 0.15));
         document.getElementById('visual-fit').addEventListener('click', fitVisualGraph);
@@ -1187,7 +1476,12 @@
             if (candidates[0]) selectVisualNode(candidates[0].id, false);
         });
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && visualModal.style.display === 'flex') closeVisualModal();
+            if (event.key !== 'Escape') return;
+            if (sqlOrderModal.style.display === 'flex') {
+                closeSqlOrderModal();
+            } else if (visualModal.style.display === 'flex') {
+                closeVisualModal();
+            }
         });
         inputEl.addEventListener('input', refreshMeta);
         inputEl.addEventListener('scroll', () => EditorLines.syncLineNumberScroll(inputEl, inputLines));
