@@ -591,7 +591,7 @@
         <div class="tool-title">
             <h1>关键词批量匹配</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.01</span>
+                <span>V1.02</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -699,6 +699,10 @@
             <div class="modal-body changelog-body">
                 <div class="changelog-date">2026年9月20日</div>
                 <div class="changelog-entry">
+                    <div class="changelog-version">V1.02</div>
+                    <div>初始进入页面且两个输入区都为空时，点击“开始匹配”会自动填入默认示例并立即完成匹配。</div>
+                </div>
+                <div class="changelog-entry">
                     <div class="changelog-version">V1.01</div>
                     <div>修复页面文字颜色变量覆盖共享导航变量的问题，使导航背景、普通文字和当前工具高亮颜色与其他页面保持一致。</div>
                 </div>
@@ -727,6 +731,8 @@
         const copyResultBtn = document.getElementById('copyResultBtn');
         const exportResultBtn = document.getElementById('exportResultBtn');
         const toast = document.getElementById('toast');
+        const DEFAULT_KEYWORD_SAMPLE = 'apple\nJava\nPython\nSpring\n192.168.1.1\n/user/login';
+        const DEFAULT_CONTENT_SAMPLE = 'I like apple\nJava Spring Boot\n192.168.1.10\nhello world\nPOST /user/login success';
         let currentResult = null;
 
         function getOptions() {
@@ -841,9 +847,7 @@
             const keywordCount = KeywordMatcher.parseLines(keywordInput.value, getOptions()).length;
             const contentCount = KeywordMatcher.parseLines(contentInput.value).length;
             if (keywordCount === 0 && contentCount === 0) {
-                showToast('请输入匹配关键词或原始内容', true);
-                keywordInput.focus();
-                return;
+                fillSampleInputs();
             }
             currentResult = KeywordMatcher.matchBatch(keywordInput.value, contentInput.value, getOptions());
             renderResults(currentResult);
@@ -854,12 +858,16 @@
             showToast(`匹配完成，共发现 ${matchedPairCount} 组匹配关系`);
         }
 
-        function loadSample() {
-            keywordInput.value = 'apple\nJava\nPython\nSpring\n192.168.1.1\n/user/login';
-            contentInput.value = 'I like apple\nJava Spring Boot\n192.168.1.10\nhello world\nPOST /user/login success';
+        function fillSampleInputs() {
+            keywordInput.value = DEFAULT_KEYWORD_SAMPLE;
+            contentInput.value = DEFAULT_CONTENT_SAMPLE;
             refreshEditor(keywordInput, keywordLineNumbers);
             refreshEditor(contentInput, contentLineNumbers);
             refreshInputCounts();
+        }
+
+        function loadSample() {
+            fillSampleInputs();
             runMatch();
         }
 

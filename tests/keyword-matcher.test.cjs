@@ -94,7 +94,13 @@ assert.doesNotMatch(page, /--text-primary\s*:/);
 assert.doesNotMatch(page, /--text-secondary\s*:/);
 assert.doesNotMatch(page, /var\(--text-primary\)/);
 assert.doesNotMatch(page, /var\(--text-secondary\)/);
-assert.match(page, /<span>V1\.01<\/span>/);
+assert.match(page, /const DEFAULT_KEYWORD_SAMPLE = 'apple\\nJava\\nPython/);
+assert.match(page, /const DEFAULT_CONTENT_SAMPLE = 'I like apple\\nJava Spring Boot/);
+assert.match(page, /function fillSampleInputs\(\)/);
+assert.match(page, /if \(keywordCount === 0 && contentCount === 0\) \{\s*fillSampleInputs\(\);/);
+assert.match(page, /function loadSample\(\) \{\s*fillSampleInputs\(\);\s*runMatch\(\);/);
+assert.match(page, /<span>V1\.02<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年9月20日<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年9月20日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年9月19日<\/div>[\s\S]*?<div class="changelog-version">V1\.00<\/div>/);
 for (const match of page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>/g)) {
