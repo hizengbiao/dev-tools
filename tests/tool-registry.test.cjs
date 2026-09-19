@@ -48,6 +48,7 @@ assert.match(nav, /navScript\?\.dataset\.registryOnly === 'true'/);
 assert.match(nav, /iconElement\.textContent = tool\.icon/);
 assert.match(nav, /a\.append\(iconElement, labelElement\)/);
 assert.match(navCss, /\.nav-link-icon\s*\{/);
+assert.match(navCss, /#shared-nav\s*,\s*#shared-nav \*\s*\{[^}]*box-sizing:\s*border-box;/s);
 assert.match(navCss, /\.nav-container\s*\{[^}]*max-width:\s*none;/s);
 assert.doesNotMatch(navCss, /\.nav-container\s*\{[^}]*max-width:\s*1380px;/s);
 assert.match(nav, /aria-expanded/);

@@ -28,11 +28,27 @@ async function runRealBrowserSmoke() {
 
     const browser = await chromium.launch();
     const page = await browser.newPage();
+    let expectedNavLogoX = null;
     try {
         for (const item of BROWSER_SMOKE_PAGES) {
             await page.goto(`file://${path.join(root, item.path).replace(/\\/g, '/')}`);
             await page.locator('body').waitFor({ state: 'visible', timeout: 5000 });
             await page.locator('#shared-nav').waitFor({ state: 'visible', timeout: 5000 });
+            const navLayout = await page.locator('#shared-nav .nav-logo').evaluate((logo) => ({
+                x: logo.getBoundingClientRect().x,
+                boxSizing: getComputedStyle(logo).boxSizing,
+                containerBoxSizing: getComputedStyle(logo.closest('.nav-container')).boxSizing,
+            }));
+            assert.strictEqual(navLayout.boxSizing, 'border-box', `${item.path} nav logo should use border-box`);
+            assert.strictEqual(navLayout.containerBoxSizing, 'border-box', `${item.path} nav container should use border-box`);
+            if (expectedNavLogoX === null) {
+                expectedNavLogoX = navLayout.x;
+            } else {
+                assert.ok(
+                    Math.abs(navLayout.x - expectedNavLogoX) < 0.5,
+                    `${item.path} nav logo should keep the same horizontal position`
+                );
+            }
             for (const selector of item.selectors) {
                 await page.locator(selector).first().waitFor({ state: 'visible', timeout: 5000 });
             }
