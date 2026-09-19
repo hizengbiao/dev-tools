@@ -123,6 +123,8 @@ JSON 宽松修复中，根节点为对象或数组且包含反斜杠转义引号
 
 ### SQL 格式化与可视化
 
+- 常用 SQL 示例入口使用 `sql-examples.js` 集中维护虚构 MySQL 示例，`sql-examples-ui.js` 提供分类、搜索、复制和回填格式化弹窗；不连接数据库执行。CHANGE 支持重命名及修改定义，MODIFY 仅修改定义；示例不保存真实业务标识、账号或密码。
+
 - `sql-formatter.js` 继续负责普通 SQL、DDL 和 MyBatis XML 的格式化、压缩及元数据提取；不要把查询可视化解析逻辑并回格式化器。
 - `sql-visualizer.js` 独立解析 SELECT / WITH 查询并生成可视化模型，覆盖表与别名、实际引用字段、JOIN、WHERE、GROUP BY、HAVING、ORDER BY、LIMIT、子查询、UNION 和 CTE。
 - 可视化弹窗支持类型配色、JOIN 条件连线、节点拖拽、缩放、恢复默认、适应画布、动画开关、节点详情和 SQL 双向定位；解析错误保留原输入并显示行号、原因及建议。
