@@ -591,28 +591,13 @@
         <div class="tool-title">
             <h1>关键词批量匹配</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.02</span>
+                <span>V1.03</span>
                 <span>ℹ️</span>
             </div>
         </div>
         <p class="intro">按行批量比较关键词与原始内容。默认忽略大小写并使用包含匹配；所有数据只在当前浏览器中处理。</p>
 
         <section class="input-grid" aria-label="匹配输入">
-            <article class="panel input-panel">
-                <div class="panel-header">
-                    <h2>匹配关键词</h2>
-                    <div class="field-meta">
-                        <span id="keywordInputCount">有效 0 条</span>
-                        <button class="btn btn-small" type="button" data-clipboard-paste-target="keywordInput">📋 粘贴</button>
-                    </div>
-                </div>
-                <p class="hint">一行一个关键词；纯空行会忽略，每行首尾空格会自动去除。</p>
-                <div class="editor-shell">
-                    <pre class="line-numbers" id="keywordLineNumbers" aria-hidden="true">1</pre>
-                    <textarea id="keywordInput" wrap="off" spellcheck="false" placeholder="apple&#10;banana&#10;Java&#10;192.168.1.1&#10;/user/login"></textarea>
-                </div>
-            </article>
-
             <article class="panel input-panel">
                 <div class="panel-header">
                     <h2>原始内容</h2>
@@ -625,6 +610,21 @@
                 <div class="editor-shell">
                     <pre class="line-numbers" id="contentLineNumbers" aria-hidden="true">1</pre>
                     <textarea id="contentInput" wrap="off" spellcheck="false" placeholder="I like apple very much&#10;Java development&#10;192.168.1.10&#10;hello world"></textarea>
+                </div>
+            </article>
+
+            <article class="panel input-panel">
+                <div class="panel-header">
+                    <h2>匹配关键词</h2>
+                    <div class="field-meta">
+                        <span id="keywordInputCount">有效 0 条</span>
+                        <button class="btn btn-small" type="button" data-clipboard-paste-target="keywordInput">📋 粘贴</button>
+                    </div>
+                </div>
+                <p class="hint">一行一个关键词；纯空行会忽略，每行首尾空格会自动去除。</p>
+                <div class="editor-shell">
+                    <pre class="line-numbers" id="keywordLineNumbers" aria-hidden="true">1</pre>
+                    <textarea id="keywordInput" wrap="off" spellcheck="false" placeholder="apple&#10;banana&#10;Java&#10;192.168.1.1&#10;/user/login"></textarea>
                 </div>
             </article>
         </section>
@@ -662,29 +662,29 @@
             <div class="panel summary-panel">
                 <h2 class="summary-title">匹配统计</h2>
                 <div class="stats-grid">
-                    <div class="stat-card"><div class="stat-label">关键词总数</div><div class="stat-value" id="keywordTotal">0</div></div>
-                    <div class="stat-card success"><div class="stat-label">已匹配关键词</div><div class="stat-value" id="matchedKeywords">0</div></div>
-                    <div class="stat-card danger"><div class="stat-label">未匹配关键词</div><div class="stat-value" id="unmatchedKeywords">0</div></div>
                     <div class="stat-card"><div class="stat-label">原始内容总数</div><div class="stat-value" id="contentTotal">0</div></div>
                     <div class="stat-card success"><div class="stat-label">已匹配内容</div><div class="stat-value" id="matchedContents">0</div></div>
                     <div class="stat-card danger"><div class="stat-label">未匹配内容</div><div class="stat-value" id="unmatchedContents">0</div></div>
+                    <div class="stat-card"><div class="stat-label">关键词总数</div><div class="stat-value" id="keywordTotal">0</div></div>
+                    <div class="stat-card success"><div class="stat-label">已匹配关键词</div><div class="stat-value" id="matchedKeywords">0</div></div>
+                    <div class="stat-card danger"><div class="stat-label">未匹配关键词</div><div class="stat-value" id="unmatchedKeywords">0</div></div>
                 </div>
             </div>
 
             <div class="result-grid">
                 <article class="panel result-panel">
                     <div class="result-header">
-                        <h2>关键词结果</h2>
-                        <div class="legend"><span class="matched-label">已匹配</span><span class="unmatched-label">未匹配</span></div>
-                    </div>
-                    <div class="result-list" id="keywordResults"></div>
-                </article>
-                <article class="panel result-panel">
-                    <div class="result-header">
                         <h2>原始内容结果</h2>
                         <div class="legend"><span class="matched-label">已匹配</span><span class="unmatched-label">未匹配</span></div>
                     </div>
                     <div class="result-list" id="contentResults"></div>
+                </article>
+                <article class="panel result-panel">
+                    <div class="result-header">
+                        <h2>关键词结果</h2>
+                        <div class="legend"><span class="matched-label">已匹配</span><span class="unmatched-label">未匹配</span></div>
+                    </div>
+                    <div class="result-list" id="keywordResults"></div>
                 </article>
             </div>
         </section>
@@ -698,6 +698,10 @@
             </div>
             <div class="modal-body changelog-body">
                 <div class="changelog-date">2026年9月20日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.03</div>
+                    <div>交换输入区和结果区的左右顺序，原始内容统一显示在左侧，匹配关键词统一显示在右侧。</div>
+                </div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.02</div>
                     <div>初始进入页面且两个输入区都为空时，点击“开始匹配”会自动填入默认示例并立即完成匹配。</div>
@@ -883,7 +887,7 @@
             contentResults.replaceChildren();
             copyResultBtn.disabled = true;
             exportResultBtn.disabled = true;
-            keywordInput.focus();
+            contentInput.focus();
             showToast('已清空');
         }
 

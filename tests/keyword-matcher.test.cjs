@@ -99,7 +99,12 @@ assert.match(page, /const DEFAULT_CONTENT_SAMPLE = 'I like apple\\nJava Spring B
 assert.match(page, /function fillSampleInputs\(\)/);
 assert.match(page, /if \(keywordCount === 0 && contentCount === 0\) \{\s*fillSampleInputs\(\);/);
 assert.match(page, /function loadSample\(\) \{\s*fillSampleInputs\(\);\s*runMatch\(\);/);
-assert.match(page, /<span>V1\.02<\/span>/);
+assert.ok(page.indexOf('<textarea id="contentInput"') < page.indexOf('<textarea id="keywordInput"'), 'original content input should be on the left before keyword input');
+assert.ok(page.indexOf('id="contentResults"') < page.indexOf('id="keywordResults"'), 'original content results should be on the left before keyword results');
+assert.ok(page.indexOf('id="contentTotal"') < page.indexOf('id="keywordTotal"'), 'original content statistics should be shown before keyword statistics');
+assert.match(page, /contentInput\.focus\(\);/);
+assert.match(page, /<span>V1\.03<\/span>/);
+assert.match(page, /<div class="changelog-date">2026年9月20日<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年9月20日<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年9月20日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年9月19日<\/div>[\s\S]*?<div class="changelog-version">V1\.00<\/div>/);
