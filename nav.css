@@ -137,6 +137,11 @@ body.nav-expanded {
     white-space: nowrap;
 }
 
+.nav-expand-toggle {
+    width: calc(4em + 22px);
+    text-align: center;
+}
+
 .nav-expand-toggle:hover,
 .nav-expand-toggle[aria-expanded="true"],
 .nav-manage-toggle:hover {
