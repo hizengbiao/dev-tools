@@ -72,22 +72,27 @@
 
 #changelog-modal .changelog-date {
     display: inline-block;
+    margin: 0;
     padding-bottom: 6px;
     border-bottom: 2px solid #0969da;
     color: #24292f;
     font-weight: 700;
+    font-size: 16px;
 }
 
 #changelog-modal .changelog-entry {
     display: grid;
     grid-template-columns: 64px minmax(0, 1fr);
     gap: 10px;
-    margin-top: 12px;
+    margin: 12px 0 0;
+    padding: 0;
+    font-size: 14px;
     color: #57606a;
     line-height: 1.6;
 }
 
 #changelog-modal .changelog-version {
+    margin: 0;
     align-self: start;
     box-sizing: border-box;
     min-width: 56px;
@@ -99,6 +104,14 @@
     font-weight: 700;
     line-height: 20px;
     text-align: center;
+}
+
+#changelog-modal .changelog-desc,
+#changelog-modal .changelog-description {
+    margin: 0;
+    padding: 0;
+    color: inherit;
+    overflow-wrap: anywhere;
 }
 
 @media (max-width: 640px) {

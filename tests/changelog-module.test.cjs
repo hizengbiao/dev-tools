@@ -23,6 +23,9 @@ assert.match(changelogStyles, /#changelog-modal \.changelog-dialog\s*\{[\s\S]*?m
 assert.match(changelogStyles, /#changelog-modal \.changelog-body\s*\{[\s\S]*?min-height:\s*0;[\s\S]*?overflow-y:\s*auto;/);
 
 const pagesWithChangelog = [];
+assert.match(changelogStyles, /#changelog-modal \.changelog-entry\s*\{[^}]*margin: 12px 0 0;[^}]*padding: 0;[^}]*font-size: 14px;/);
+assert.match(changelogStyles, /#changelog-modal \.changelog-date\s*\{[^}]*margin: 0;/);
+assert.match(changelogStyles, /#changelog-modal \.changelog-version\s*\{[^}]*margin: 0;/);
 
 for (const file of htmlFiles) {
     const html = fs.readFileSync(path.join(rootDir, file), 'utf8');

@@ -401,33 +401,6 @@
             overflow-y: auto;
         }
 
-        .changelog-date-group + .changelog-date-group {
-            margin-top: 22px;
-        }
-
-        .changelog-date {
-            display: inline-block;
-            margin-bottom: 12px;
-            padding-bottom: 6px;
-            border-bottom: 2px solid var(--accent-color);
-            font-size: 16px;
-            font-weight: 700;
-        }
-
-        .changelog-entry {
-            display: grid;
-            grid-template-columns: 62px minmax(0, 1fr);
-            gap: 12px;
-            padding: 9px 0;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        .changelog-version {
-            color: var(--accent-color);
-            font-weight: 700;
-        }
-
         .sql-visual-dialog {
             width: min(1500px, calc(100vw - 32px));
             height: min(900px, calc(100vh - 32px));
@@ -922,7 +895,7 @@
                 <button class="btn" id="sql-examples-btn" type="button">常用 SQL 示例</button>
             </div>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新说明">
-                <span>V1.13</span>
+                <span>V1.14</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -1157,6 +1130,10 @@
             <div class="modal-body changelog-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年9月20日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.14</div>
+                        <div class="changelog-description">统一使用公共版本说明样式，移除旧样式叠加造成的多余留白，统一条目间距、字号和版本标记对齐。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.13</div>
                         <div class="changelog-description">将执行顺序手册和常用 SQL 示例入口移至页面标题栏、版本号左侧，释放输入区操作栏空间。</div>
