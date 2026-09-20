@@ -142,10 +142,10 @@ assert.deepStrictEqual(sql.extractTableNames(myBatisWrites), ['audit_log', 'user
 assert.deepStrictEqual(sql.extractTableNames('<select id="dynamic">select * from ${tableName}</select>'), ['${tableName}']);
 
 const page = fs.readFileSync(path.join(root, 'sql-formatter.html'), 'utf8');
-assert.match(page, /<title>SQL 格式化\/压缩工具<\/title>/);
+assert.match(page, /<title>SQL 工具<\/title>/);
 assert.match(page, /<script src="sql-formatter\.js"><\/script>/);
 assert.match(page, /<script src="sql-visualizer\.js"><\/script>/);
-assert.match(page, /<span>V1\.08<\/span>/);
+assert.match(page, /<span>V1\.09<\/span>/);
 assert.match(page, /<script src="editor-lines\.js"><\/script>/);
 assert.match(page, /id="input-lines"/);
 assert.match(page, /id="output-lines"/);
@@ -189,7 +189,7 @@ const nav = fs.readFileSync(path.join(root, 'nav.js'), 'utf8');
 const home = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
 const development = fs.readFileSync(path.join(root, 'DEVELOPMENT.md'), 'utf8');
-assert.match(nav, /name: 'SQL 格式化', path: 'sql-formatter\.html'/);
+assert.match(nav, /name: 'SQL 工具', path: 'sql-formatter\.html'/);
 assert.match(home, /href="sql-formatter\.html"/);
 assert.match(readme, /sql-formatter\.html/);
 assert.match(development, /sql-formatter\.html/);

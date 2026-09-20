@@ -60,7 +60,7 @@
 8. Cron 解析：`cron-parser.html`
 9. HTML 格式化：`html-formatter.html`
 10. Nginx 格式化：`nginx-formatter.html`
-11. SQL 格式化：`sql-formatter.html`
+11. SQL 工具：`sql-formatter.html`
 12. 时间戳转换：`timestamp-converter.html`
 13. URL 编解码：`url-encoder.html`
 14. Base64：`base64-encoder.html`
@@ -121,7 +121,7 @@ JSON 宽松修复中，根节点为对象或数组且包含反斜杠转义引号
 - 页面输入区、统计区和结果区统一采用“原始内容在左、匹配关键词在右”的顺序；清空后焦点回到左侧原始内容输入框。
 - 页面默认导航收起时采用紧凑顶部间距，标题与输入卡片减少空白但不缩小编辑器；导航展开后必须继续使用公共导航的扩展顶部间距，避免内容被遮挡。
 
-### SQL 格式化与可视化
+### SQL 工具
 
 - 常用 SQL 示例入口使用 `sql-examples.js` 集中维护虚构 MySQL 示例，`sql-examples-ui.js` 提供分类、搜索、复制和回填格式化弹窗；不连接数据库执行。CHANGE 支持重命名及修改定义，MODIFY 仅修改定义；示例不保存真实业务标识、账号或密码。
 

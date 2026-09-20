@@ -56,7 +56,7 @@
         },
         {
             path: 'sql-formatter.html',
-            title: 'SQL 格式化/压缩工具',
+            title: 'SQL 工具',
             markers: ['sql-input', 'format-btn', 'visualize-btn', 'sql-visual-modal', 'execution-order-btn', 'sql-order-modal'],
             selectors: ['#sql-input', '#format-btn', '#visualize-btn', '#execution-order-btn'],
         },
