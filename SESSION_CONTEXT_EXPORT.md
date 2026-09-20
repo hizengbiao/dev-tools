@@ -89,6 +89,7 @@ JSON 宽松修复中，根节点为对象或数组且包含反斜杠转义引号
 
 ### JSON 格式化
 
+- `json-source-editor.js` / `json-source-editor.css` 为源码编辑提供同步行号和错误行高亮；定位必须基于原始输入，不能沿用自动修复后的偏移。源码赋值后通过 `refresh()` 同步，输入修改后清除旧错误标记。
 - 支持格式化、压缩、修复、编辑、撤销/重做、排序、JSON/Java 互转、加载示例。
 - 修复日志前缀加 JSON 时，应提取真正的 JSON 值，不要把前缀包装成 key。
 - 例如 `消费到...异常信号：{"objectType":"K8sWorker"}` 应得到从 `objectType` 开始的对象。

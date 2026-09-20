@@ -7,6 +7,7 @@
     <title>JSON 格式化工具</title>
     <link rel="stylesheet" href="nav.css">
     <link rel="stylesheet" href="changelog.css">
+    <link rel="stylesheet" href="json-source-editor.css?v=2.02">
     <script src="nav.js" defer></script>
     <style>
         :root {
@@ -789,7 +790,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V2.01</span>
+            <span>V2.02</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -801,7 +802,7 @@
         <div class="editor-content">
             <!-- View 1: Source Input -->
             <div id="view-source" class="view-panel active">
-                <textarea id="json-input" placeholder="请在此粘贴 JSON..."></textarea>
+                <textarea id="json-input" wrap="off" spellcheck="false" aria-label="JSON 源码编辑器" aria-describedby="error-msg" placeholder="请在此粘贴 JSON..."></textarea>
             </div>
 
             <!-- View 2: Tree Output -->
@@ -822,6 +823,13 @@
                 <button class="close-modal changelog-close" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body changelog-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年9月20日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V2.02</div>
+                        <div class="changelog-desc">源码编辑区增加同步行号；格式化失败时定位原文行列、高亮错误行并选中出错字符，修改后清除旧标记。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年9月15日</div>
                     <div class="changelog-entry">
@@ -1332,8 +1340,10 @@
     <script src="json-dom-path-utils.js"></script>
     <script src="json-bracket-matcher.js"></script>
     <script src="json-java-converter.js"></script>
+    <script src="json-source-editor.js?v=2.02"></script>
     <script>
         const inputArea = document.getElementById('json-input');
+        const sourceEditor = JsonSourceEditor.mount(inputArea);
         const outputDiv = document.getElementById('json-output');
         const errorMsg = document.getElementById('error-msg');
 
@@ -1355,6 +1365,8 @@
         saveState();
 
         inputArea.addEventListener('input', () => {
+            errorMsg.style.display = 'none';
+            errorMsg.textContent = '';
             if (!isTreeMode) {
                 currentObj = null;
                 hasCurrentValue = false;
@@ -1395,6 +1407,7 @@
         tooltipEl.onmouseleave = () => tooltipEl.style.display = 'none';
 
         function saveState() {
+            sourceEditor.refresh();
             const state = {
                 text: sourceDirty && hasCurrentValue ? JSON.stringify(currentObj, null, 4) : inputArea.value,
                 expandedPaths: expandedStringFieldPaths.map((path) => [...path]),
@@ -1437,6 +1450,7 @@
         function restoreHistoryState(index) {
             const state = historyStack[index];
             inputArea.value = state.text;
+            sourceEditor.refresh();
             expandedStringFieldPaths = state.expandedPaths.map((path) => [...path]);
             sourceDirty = false;
             try {
@@ -1454,6 +1468,8 @@
 
         // --- View Switching Logic ---
         function switchMode(mode) {
+            sourceEditor.refresh();
+            if (mode !== 'source') sourceEditor.clear();
             const treeBtns = document.querySelectorAll('.tree-only');
 
             if (mode === 'source') {
@@ -2097,6 +2113,9 @@
         function showError(e) {
             errorMsg.textContent = "JSON 错误: " + e.message;
             errorMsg.style.display = 'block';
+            switchMode('source');
+            const location = sourceEditor.markError();
+            if (location) errorMsg.textContent = `JSON 错误：原文第 ${location.line} 行，第 ${location.column} 列（已高亮）。${e.message}`;
         }
 
         function copyCurrentContent() {
