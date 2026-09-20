@@ -7,6 +7,7 @@
     <title>SQL 工具</title>
     <link rel="stylesheet" href="nav.css">
     <link rel="stylesheet" href="changelog.css">
+    <link rel="stylesheet" href="sql-flow.css?v=1.10">
     <script src="nav.js" defer></script>
     <script src="changelog.js"></script>
     <script src="clipboard-utils.js"></script>
@@ -14,6 +15,8 @@
     <script src="sample-data.js"></script>
     <script src="sql-formatter.js"></script>
     <script src="sql-visualizer.js"></script>
+    <script src="sql-flow-demo.js?v=1.10"></script>
+    <script src="sql-flow-ui.js?v=1.10" defer></script>
     <script src="sql-examples.js?v=1.08"></script>
     <script src="sql-examples-ui.js?v=1.08" defer></script>
     <style>
@@ -870,7 +873,7 @@
         <div class="tool-title">
             <h1>SQL 工具</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新说明">
-                <span>V1.09</span>
+                <span>V1.10</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -953,6 +956,8 @@
             </div>
             <div class="sql-visual-body">
                 <div class="visual-toolbar">
+                    <button class="btn" id="visual-data-view" type="button" aria-pressed="true">数据流演示</button>
+                    <button class="btn" id="visual-structure-view" type="button" aria-pressed="false">SQL 结构图</button>
                     <div class="visual-toolbar-status" id="visual-status">等待解析 SQL</div>
                     <button class="btn" id="visual-zoom-out" type="button" aria-label="缩小可视化">− 缩小</button>
                     <button class="btn" id="visual-zoom-in" type="button" aria-label="放大可视化">＋ 放大</button>
@@ -961,6 +966,29 @@
                     <label class="visual-animation-toggle"><input id="visual-animation" type="checkbox" checked> 动画</label>
                 </div>
                 <div class="visual-error" id="visual-error" role="alert"></div>
+                <div id="flow-view">
+                    <div class="flow-notice"><strong>示例数据演算</strong> · 表格展示每一步的变化，悬停行可追踪来源。真实 SQL 关系请切换“SQL 结构图”。</div>
+                    <div class="flow-controls">
+                        <button class="btn" id="flow-sample" type="button">销售聚合示例</button>
+                        <button class="btn" id="flow-current" type="button">使用输入框 SQL</button>
+                        <button class="btn" id="flow-prev" type="button">上一步</button>
+                        <button class="btn btn-primary" id="flow-play" type="button">▶ 播放</button>
+                        <button class="btn" id="flow-next" type="button">下一步</button>
+                        <span id="flow-progress" role="status"></span>
+                    </div>
+                    <details class="flow-source">
+                        <summary id="flow-origin">编辑演示 SQL 与示例数据</summary>
+                        <p class="flow-legend">支持单表 SELECT、比较条件、AND / OR、分组、SUM / COUNT / AVG / MIN / MAX、HAVING、DISTINCT、排序和分页。仅在本地使用示例数据，不代表真实数据库结果或物理执行计划；不模拟字符集排序及隐式类型转换。JOIN、CTE 和子查询可在结构图查看。</p>
+                        <div class="flow-editors">
+                            <label>演示 SQL（可修改，不影响主输入框）<textarea id="flow-sql" spellcheck="false"></textarea></label>
+                            <label>示例数据 JSON（表名 → 行数组，最多 200 行）<textarea id="flow-data" spellcheck="false"></textarea></label>
+                        </div>
+                        <div class="flow-controls"><button class="btn" id="flow-rebuild" type="button">重新演算</button></div>
+                    </details>
+                    <div id="flow-message" role="status"></div>
+                    <nav id="flow-steps" aria-label="SQL 数据处理阶段"></nav>
+                    <div id="flow-detail"></div>
+                </div>
                 <div class="visual-layout">
                     <div class="visual-viewport" id="sql-visual-canvas" tabindex="0" aria-label="SQL 可视化画布">
                         <div class="visual-stage" id="visual-stage">
@@ -1082,6 +1110,10 @@
             <div class="modal-body changelog-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年9月20日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.10</div>
+                        <div class="changelog-description">新增逐阶段数据流演示：用输入/输出表格、来源行号、过滤标记和箭头展示 SQL 逻辑处理；支持播放、阶段跳转、销售聚合示例及自定义示例数据，保留原有结构图。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.09</div>
                         <div class="changelog-description">工具统一更名为“SQL 工具”，同步首页、顶部导航和页面标题。</div>
@@ -1225,6 +1257,7 @@
         }
 
         function closeVisualModal() {
+            SqlFlowUI.stop();
             visualModal.style.display = 'none';
             document.body.style.overflow = visualState.previousBodyOverflow;
             inputEl.classList.remove('sql-selection-active');
@@ -1440,6 +1473,7 @@
         }
 
         function showVisualParseError(error) {
+            SqlFlowUI.error();
             const detail = SqlVisualizer.formatError(error, inputEl.value);
             visualState.model = null;
             visualState.graph = null;
@@ -1471,6 +1505,7 @@
                 openVisualModal();
                 renderVisualGraph();
                 requestAnimationFrame(fitVisualGraph);
+                SqlFlowUI.open(visualState.model);
             } catch (error) {
                 showVisualParseError(error);
             }

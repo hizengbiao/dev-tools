@@ -18,7 +18,7 @@
 | [JWT 解析工具](jwt-decoder.html) | 本地解析 JWT Header、Payload 和时间字段，明确不做签名可信校验。 |
 | [UUID / 随机值生成器](random-generator.html) | 生成 UUID v4、随机密码和随机数字，支持批量复制。 |
 | [Cron 表达式解析与生成工具](cron-parser.html) | 解析并说明 Linux、Spring 和 Quartz Cron，也可按执行需求逆向生成多种格式。 |
-| [SQL 工具](sql-formatter.html) | 格式化、压缩常见 SQL，提取表名和参数占位符，可视化查询结构，并提供 SQL 书写顺序与逻辑执行顺序手册。 |
+| [SQL 工具](sql-formatter.html) | 格式化、压缩 SQL，提取表名和占位符，展示查询结构及逐阶段数据演示，提供执行顺序手册和常用 SQL 示例。 |
 | [命名转换](text-case-converter.html) | 支持变量名大小写、蛇形、驼峰、短横线等格式互转。 |
 | [文本转义转换工具](text_escape_formatter_final.html) | 支持转义文本、可读文本、拼接字符串合并和输入输出差异对比。 |
 | [文本智能拆分](text-splitter.html) | 按指定长度智能拆分长文本，优先保留自然语义边界并支持逐段复制。 |
