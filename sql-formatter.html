@@ -69,6 +69,22 @@
             justify-content: space-between;
             gap: 12px;
             margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+
+        .tool-reference-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+            flex-wrap: wrap;
+        }
+
+        .tool-reference-actions .btn {
+            padding: 5px 8px;
+            font-size: 14px;
+            line-height: 1.5;
+            white-space: nowrap;
         }
 
         h1 {
@@ -901,8 +917,12 @@
     <main class="container">
         <div class="tool-title">
             <h1>SQL 工具</h1>
+            <div class="tool-reference-actions" aria-label="SQL 参考文档">
+                <button class="btn" id="execution-order-btn" type="button">执行顺序手册</button>
+                <button class="btn" id="sql-examples-btn" type="button">常用 SQL 示例</button>
+            </div>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新说明">
-                <span>V1.12</span>
+                <span>V1.13</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -915,8 +935,6 @@
                         <button class="btn" type="button" data-clipboard-paste-target="sql-input" data-clipboard-paste-action="format-btn">📋 粘贴并格式化</button>
                         <button class="btn" id="format-btn">格式化</button>
                         <button class="btn btn-primary" id="visualize-btn">生成可视化</button>
-                        <button class="btn" id="execution-order-btn">执行顺序手册</button>
-                        <button class="btn" id="sql-examples-btn" type="button">常用 SQL 示例</button>
                         <button class="btn" id="compress-btn">压缩单行</button>
                         <button class="btn btn-danger" id="clear-btn">清空</button>
                     </div>
@@ -1139,6 +1157,10 @@
             <div class="modal-body changelog-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年9月20日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.13</div>
+                        <div class="changelog-description">将执行顺序手册和常用 SQL 示例入口移至页面标题栏、版本号左侧，释放输入区操作栏空间。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.12</div>
                         <div class="changelog-description">输入与结果区统一标题、按钮字号和高度，按钮文字增大至 14px，保持操作栏单行及两侧编辑器顶部对齐。</div>
