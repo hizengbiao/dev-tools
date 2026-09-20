@@ -145,7 +145,7 @@ const page = fs.readFileSync(path.join(root, 'sql-formatter.html'), 'utf8');
 assert.match(page, /<title>SQL 工具<\/title>/);
 assert.match(page, /<script src="sql-formatter\.js"><\/script>/);
 assert.match(page, /<script src="sql-visualizer\.js"><\/script>/);
-assert.match(page, /<span>V1\.11<\/span>/);
+assert.match(page, /<span>V1\.12<\/span>/);
 assert.match(page, /<script src="editor-lines\.js"><\/script>/);
 assert.match(page, /id="input-lines"/);
 assert.match(page, /id="output-lines"/);

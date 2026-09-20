@@ -198,19 +198,20 @@
             flex-wrap: wrap;
         }
 
-        .panel-header.sql-input-header {
+        .workspace .panel-header {
             flex-wrap: nowrap;
             align-items: center;
             gap: 10px;
         }
 
-        .sql-input-header h2 {
+        .workspace .panel-header h2 {
             flex: 0 0 auto;
             white-space: nowrap;
-            font-size: 14px;
+            font-size: 15px;
         }
 
-        .sql-input-header .input-actions {
+        .workspace .input-actions,
+        .workspace .panel-actions {
             min-width: 0;
             flex-wrap: nowrap;
             justify-content: flex-start;
@@ -218,10 +219,10 @@
             overflow-x: auto;
         }
 
-        .sql-input-header .btn {
+        .workspace .panel-header .btn {
             flex: 0 0 auto;
             padding: 5px 8px;
-            font-size: 12px;
+            font-size: 14px;
             line-height: 1.5;
             white-space: nowrap;
         }
@@ -901,7 +902,7 @@
         <div class="tool-title">
             <h1>SQL 工具</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新说明">
-                <span>V1.11</span>
+                <span>V1.12</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -1138,6 +1139,10 @@
             <div class="modal-body changelog-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年9月20日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.12</div>
+                        <div class="changelog-description">输入与结果区统一标题、按钮字号和高度，按钮文字增大至 14px，保持操作栏单行及两侧编辑器顶部对齐。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V1.11</div>
                         <div class="changelog-description">缩小输入区标题、按钮字号和间距，操作栏保持单行；窄屏可横向滚动查看全部按钮。</div>
