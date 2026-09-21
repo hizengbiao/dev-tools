@@ -790,7 +790,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V2.05</span>
+            <span>V2.06</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -832,6 +832,10 @@
             <div class="modal-body changelog-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年9月22日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V2.06</div>
+                        <div class="changelog-desc">支持包含多余尾随单引号的 FaultChain/FaultPoint 嵌套对象，提前清理异常引号以保留数组及嵌套类结构，同时保留正常引用字符串的类型。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V2.05</div>
                         <div class="changelog-desc">修复失败时显示产生异常的待解析文本，提供只读行号、高亮和横纵向错误定位；保留原始输入及完整英文异常，输入变化或成功后隐藏旧诊断。</div>
@@ -1354,7 +1358,7 @@
     <script src="json-repair-guards.js"></script>
     <script src="json-assignment-extractor.js?v=2.00"></script>
     <script src="json-repair-normalizer.js?v=2.01"></script>
-    <script src="json-java-style-normalizer.js?v=2.00"></script>
+    <script src="json-java-style-normalizer.js?v=2.06"></script>
     <script src="json-sorter.js?v=2.00"></script>
     <script src="json-path-editor.js?v=2.00"></script>
     <script src="json-path-query.js"></script>

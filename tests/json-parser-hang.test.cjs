@@ -9,7 +9,7 @@ const script = [...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>
     .map((match) => match[1])
     .join('\n');
 
-assert.match(page, /<span>V2\.05<\/span>/);
+assert.match(page, /<span>V2\.06<\/span>/);
 assert.match(page, /<div class="changelog-date">2026年9月7日<\/div>[\s\S]*?<div class="changelog-version">V1\.99<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年8月31日<\/div>[\s\S]*?<div class="changelog-version">V1\.98<\/div>[\s\S]*?<div class="changelog-version">V1\.97<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年8月31日<\/div>[\s\S]*?<div class="changelog-version">V1\.97<\/div>/);
@@ -36,7 +36,7 @@ assert.match(page, /<div class="changelog-version">V1\.80<\/div>/);
 assert.match(page, /<script src="json-repair-guards\.js"><\/script>/);
 assert.match(page, /<script src="json-assignment-extractor\.js\?v=2\.00"><\/script>/);
 assert.match(page, /<script src="json-repair-normalizer\.js\?v=2\.01"><\/script>/);
-assert.match(page, /<script src="json-java-style-normalizer\.js\?v=2\.00"><\/script>/);
+assert.match(page, /<script src="json-java-style-normalizer\.js\?v=2\.06"><\/script>/);
 assert.match(page, /!JsonJavaStyleNormalizer\.looksLikeJavaStyleObject\(raw\)/);
 assert.match(page, /<script src="json-path-query\.js"><\/script>/);
 assert.doesNotMatch(page, /<script src="json-key-paths\.js"><\/script>/);
@@ -301,6 +301,26 @@ const nonJsonRegexSnippet = String.raw`"(jdbc:mysql://[^,\\s]+|jdbc:postgresql:/
                     + "|jdbc:sqlserver://[^,\\s]+)"`;
 
 const { context, elements } = createHarness();
+for (const sample of [require('./fixtures/fault-chain.cjs'), require('./fixtures/fault-chain.cjs').replaceAll('_', '\\_').replaceAll('@', '\\@')]) {
+    const harness = createHarness();
+    harness.elements.get('json-input').value = sample;
+    harness.context.handleFormat();
+    const parsed = JSON.parse(harness.elements.get('json-input').value);
+    assert.equal(parsed.faultPoints.length, 2);
+    assert.equal(parsed.faultPoints[0].name, 'db_server_abnormal_by_db_event');
+    assert.equal(parsed.faultPoints[0].objectName, 'LT81.09@diagdemodev_TDSQL_DEV_DEV');
+    assert.equal(parsed.faultPoints[0].pushOperatorScore, 1);
+    assert.equal(parsed.faultPoints[1].pushOperatorScore, 0.5);
+    assert.equal(parsed.faultPoints[0].maskable, false);
+    assert.equal(parsed.faultPoints[1].threshold, 3);
+    assert.equal(parsed.faultPoints[0].enabled, 'true');
+    assert.equal(parsed.faultPoints[0].apis, '[]');
+    assert.equal(parsed.faultPoints[0].additionalInfo.dbAdditionalInfoKeySlow, '慢');
+    assert.equal(parsed.suggestions, '（1）联系DBA排查');
+    assert.equal(parsed.abnormalDistribution.type, null);
+    assert.equal(parsed.abnormalDistribution.description, 'null');
+    assert.deepStrictEqual(parsed.abnormalDistribution.objects, []);
+}
 const brokenCandidate = '{"a":"\\q"';
 assert.throws(() => context.parseRepairedJson(brokenCandidate), (error) => {
     assert.equal(error.parseText, brokenCandidate);

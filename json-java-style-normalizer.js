@@ -7,10 +7,12 @@
             return raw;
         }
 
-        let result = normalizeJavaObjectParentheses(trimmed);
+        // Stray closing quotes must be removed before any quote-aware structural
+        // scan; otherwise they hide subsequent class names and list boundaries.
+        let result = removeDanglingSingleQuotesOutsideStrings(trimmed);
+        result = normalizeJavaObjectParentheses(result);
         result = normalizeJavaBareEscapesOutsideStrings(result);
         result = stripJavaClassPrefixes(result);
-        result = removeDanglingSingleQuotesOutsideStrings(result);
         result = quoteJavaListValuesOutsideStrings(result);
         result = quoteJavaMapValuesOutsideStrings(result);
         result = replaceEqualsOutsideStrings(result);

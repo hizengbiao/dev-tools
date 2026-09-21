@@ -5,7 +5,7 @@ const path = require('node:path');
 const normalizer = require('../json-java-style-normalizer.js');
 const page = fs.readFileSync(path.resolve(__dirname, '../json-parser.html'), 'utf8');
 
-assert.match(page, /<script src="json-java-style-normalizer\.js\?v=2\.00"><\/script>/);
+assert.match(page, /<script src="json-java-style-normalizer\.js\?v=2\.06"><\/script>/);
 assert.match(page, /JsonJavaStyleNormalizer\.normalizeJavaStyleObject\(raw\)/);
 assert.doesNotMatch(page, /function normalizeJavaStyleObject\(raw\)/);
 assert.doesNotMatch(page, /function quoteJavaMapValuesOutsideStrings\(raw\)/);
