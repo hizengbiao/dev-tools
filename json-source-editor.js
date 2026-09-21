@@ -45,15 +45,28 @@
     function locateError(text) {
         let message;
         try { JSON.parse(text); return null; } catch (error) { message = error.message; }
+        // A copied property fragment is supported by the repair pipeline. Validate
+        // its contents with a virtual wrapper, but map every offset back to source.
+        let inspected = text;
+        let prefixLength = 0;
+        if (/^\s*"(?:[^"\\]|\\.)*"\s*[:：]/.test(text)) {
+            const wrapped = '{' + text + '}';
+            try { JSON.parse(wrapped); } catch (error) {
+                inspected = wrapped;
+                prefixLength = 1;
+                message = error.message;
+            }
+        }
         let offset;
         const position = message.match(/position\s+(\d+)/i);
         const coordinates = message.match(/line\s+(\d+)\s+column\s+(\d+)/i);
         if (position) offset = Number(position[1]);
         else if (coordinates) {
-            const lines = text.split('\n');
+            const lines = inspected.split('\n');
             offset = lines.slice(0, Number(coordinates[1]) - 1).reduce((n, line) => n + line.length + 1, 0) + Number(coordinates[2]) - 1;
-        } else if (/end of|end of data|unterminated/i.test(message)) offset = text.length;
-        else offset = scanError(text);
+        } else if (/end of|end of data|unterminated/i.test(message)) offset = inspected.length;
+        else offset = scanError(inspected);
+        offset -= prefixLength;
         offset = Math.max(0, Math.min(text.length, offset));
         const prefix = text.slice(0, offset).split('\n');
         return { offset, line: prefix.length, column: prefix[prefix.length - 1].length + 1 };

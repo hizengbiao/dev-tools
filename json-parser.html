@@ -790,7 +790,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V2.02</span>
+            <span>V2.03</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -823,6 +823,13 @@
                 <button class="close-modal changelog-close" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body changelog-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年9月22日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V2.03</div>
+                        <div class="changelog-desc">修复缺少外层大括号的键值片段报错定位：临时补全结构后映射回原文，提示与高亮使用同一位置；中文冒号提供明确替换提示。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年9月20日</div>
                     <div class="changelog-entry">
@@ -1340,7 +1347,7 @@
     <script src="json-dom-path-utils.js"></script>
     <script src="json-bracket-matcher.js"></script>
     <script src="json-java-converter.js"></script>
-    <script src="json-source-editor.js?v=2.02"></script>
+    <script src="json-source-editor.js?v=2.03"></script>
     <script>
         const inputArea = document.getElementById('json-input');
         const sourceEditor = JsonSourceEditor.mount(inputArea);
@@ -2115,7 +2122,15 @@
             errorMsg.style.display = 'block';
             switchMode('source');
             const location = sourceEditor.markError();
-            if (location) errorMsg.textContent = `JSON 错误：原文第 ${location.line} 行，第 ${location.column} 列（已高亮）。${e.message}`;
+            if (location) {
+                const character = inputArea.value[location.offset];
+                const hint = character === '：'
+                    ? '此处使用了中文冒号“：”，请改为英文冒号“:”。'
+                    : character === undefined
+                        ? '内容在此结束，请检查是否缺少值、引号或闭合括号。'
+                        : '请检查高亮处及其前方的键值、引号、逗号或括号是否完整。';
+                errorMsg.textContent = `JSON 错误：原文第 ${location.line} 行，第 ${location.column} 列（已高亮）。${hint}`;
+            }
         }
 
         function copyCurrentContent() {
