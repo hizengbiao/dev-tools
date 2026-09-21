@@ -42,17 +42,19 @@
         return i;
     }
     // Always inspect the original source, never offsets from an auto-repair attempt.
-    function locateError(text) {
+    function locateError(text, parserMessage) {
         // DTOs/logs require transformations without a source map. A strict parse
         // stopping at their first character is not a useful source diagnostic.
-        if (!/^\s*(?:[\[{\"]|-?\d|true\b|false\b|null\b)/.test(text)) return null;
-        let message;
-        try { JSON.parse(text); return null; } catch (error) { message = error.message; }
+        if (!parserMessage && !/^\s*(?:[\[{\"]|-?\d|true\b|false\b|null\b)/.test(text)) return null;
+        let message = parserMessage;
+        if (!message) {
+            try { JSON.parse(text); return null; } catch (error) { message = error.message; }
+        }
         // A copied property fragment is supported by the repair pipeline. Validate
         // its contents with a virtual wrapper, but map every offset back to source.
         let inspected = text;
         let prefixLength = 0;
-        if (/^\s*"(?:[^"\\]|\\.)*"\s*[:：]/.test(text)) {
+        if (!parserMessage && /^\s*"(?:[^"\\]|\\.)*"\s*[:：]/.test(text)) {
             const wrapped = '{' + text + '}';
             try { JSON.parse(wrapped); } catch (error) {
                 inspected = wrapped;
@@ -113,10 +115,10 @@
             }
             sync();
         }
-        function markError() {
+        function markError(parserMessage) {
             refresh();
             clear();
-            location = locateError(input.value);
+            location = locateError(input.value, parserMessage);
             if (!location) return null;
             highlight.hidden = false;
             gutter.children[location.line - 1]?.classList.add('is-error');
@@ -125,6 +127,11 @@
             input.setSelectionRange(location.offset, Math.min(input.value.length, location.offset + 1));
             const height = parseFloat(getComputedStyle(input).lineHeight);
             input.scrollTop = Math.max(0, (location.line - 1) * height - input.clientHeight / 2);
+            const context = document.createElement('canvas').getContext('2d');
+            context.font = getComputedStyle(input).font;
+            const lineStart = input.value.lastIndexOf('\n', location.offset - 1) + 1;
+            const beforeError = input.value.slice(lineStart, location.offset).replace(/\t/g, '    ');
+            input.scrollLeft = Math.max(0, context.measureText(beforeError).width - input.clientWidth / 2);
             sync();
             return location;
         }

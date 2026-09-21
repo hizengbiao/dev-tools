@@ -21,3 +21,5 @@ const trailingComma = '"a": {"b": true},';
 assert.equal(locateError(trailingComma).offset, trailingComma.length);
 const url = '{"url":"http://example.test/a：b", "bad": ?}';
 assert.equal(locateError(url).offset, url.indexOf('?'));
+assert.deepEqual(locateError('"a": {broken}', 'Expected property name at position 6 (line 1 column 7)'), { offset: 6, line: 1, column: 7 });
+assert.deepEqual(locateError('{\n"a": "\\q"}', 'Bad escaped character in JSON at position 9 (line 2 column 8)'), { offset: 9, line: 2, column: 8 });

@@ -7,7 +7,7 @@
     <title>JSON 格式化工具</title>
     <link rel="stylesheet" href="nav.css">
     <link rel="stylesheet" href="changelog.css">
-    <link rel="stylesheet" href="json-source-editor.css?v=2.02">
+    <link rel="stylesheet" href="json-source-editor.css?v=2.05">
     <script src="nav.js" defer></script>
     <style>
         :root {
@@ -790,12 +790,19 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V2.04</span>
+            <span>V2.05</span>
             <span>ℹ️</span>
         </div>
     </div>
 
     <div id="error-msg"></div>
+    <details id="repair-preview" hidden open>
+        <summary>修复失败的待解析文本（只读） · <span id="repair-preview-location"></span></summary>
+        <p>以下是产生本次解析异常的实际文本，未再次格式化。原始输入保留在下方，可继续编辑。</p>
+        <div class="repair-preview-editor">
+            <textarea id="repair-preview-input" readonly wrap="off" spellcheck="false" aria-label="修复失败的待解析文本"></textarea>
+        </div>
+    </details>
 
     <div class="container">
         <!-- content -->
@@ -825,6 +832,10 @@
             <div class="modal-body changelog-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年9月22日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V2.05</div>
+                        <div class="changelog-desc">修复失败时显示产生异常的待解析文本，提供只读行号、高亮和横纵向错误定位；保留原始输入及完整英文异常，输入变化或成功后隐藏旧诊断。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V2.04</div>
                         <div class="changelog-desc">恢复完整解析器原始异常，不再以中文概括替换；区分原文定位与修复中间文本坐标，DTO、日志等无法可靠映射的输入不再误标原文首字符。</div>
@@ -1351,10 +1362,19 @@
     <script src="json-dom-path-utils.js"></script>
     <script src="json-bracket-matcher.js"></script>
     <script src="json-java-converter.js"></script>
-    <script src="json-source-editor.js?v=2.04"></script>
+    <script src="json-source-editor.js?v=2.05"></script>
     <script>
         const inputArea = document.getElementById('json-input');
         const sourceEditor = JsonSourceEditor.mount(inputArea);
+        const repairPreview = document.getElementById('repair-preview');
+        const repairPreviewInput = document.getElementById('repair-preview-input');
+        const repairPreviewEditor = JsonSourceEditor.mount(repairPreviewInput);
+        function clearRepairPreview() {
+            repairPreview.hidden = true;
+            repairPreviewInput.value = '';
+            repairPreviewEditor.refresh();
+            repairPreviewEditor.clear();
+        }
         const outputDiv = document.getElementById('json-output');
         const errorMsg = document.getElementById('error-msg');
 
@@ -1376,6 +1396,7 @@
         saveState();
 
         inputArea.addEventListener('input', () => {
+            clearRepairPreview();
             errorMsg.style.display = 'none';
             errorMsg.textContent = '';
             if (!isTreeMode) {
@@ -1479,6 +1500,7 @@
 
         // --- View Switching Logic ---
         function switchMode(mode) {
+            clearRepairPreview();
             sourceEditor.refresh();
             if (mode !== 'source') sourceEditor.clear();
             const treeBtns = document.querySelectorAll('.tree-only');
@@ -1741,7 +1763,7 @@
                 handleFormat(false); // Go to tree view
                 showToast(autoTriggered ? "格式化失败，已自动修复并格式化成功 ✅" : "修复并格式化成功 ✅");
             } catch (e) {
-                showError({ message: "修复失败: " + e.message, repairStage: true });
+                showError({ message: "修复失败: " + e.message, repairStage: true, parseText: e.parseText, parserMessage: e.message });
             }
         }
 
@@ -1754,6 +1776,7 @@
                 try {
                     return JSON.parse("{" + raw + "}");
                 } catch (secondErr) {
+                    firstErr.parseText = raw;
                     throw firstErr;
                 }
             }
@@ -2133,6 +2156,16 @@
                 ? '修复阶段解析器原始错误（其中坐标对应修复后的待解析文本，不代表原文）：'
                 : '原始错误：';
             errorMsg.textContent = `JSON 错误：${sourceNote}\n${stageNote}${e.message}`;
+            if (e.repairStage && typeof e.parseText === 'string') {
+                sourceEditor.clear();
+                repairPreview.hidden = false;
+                repairPreview.open = true;
+                repairPreviewInput.value = e.parseText;
+                const parsedLocation = repairPreviewEditor.markError(e.parserMessage);
+                document.getElementById('repair-preview-location').textContent = parsedLocation
+                    ? `第 ${parsedLocation.line} 行，第 ${parsedLocation.column} 列（已高亮）` : '无法定位';
+                errorMsg.textContent = `JSON 错误：${e.message}\n已在下方待解析文本中标记错误，原始输入未改动。`;
+            }
         }
 
         function copyCurrentContent() {

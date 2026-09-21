@@ -9,7 +9,7 @@ const script = [...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>
     .map((match) => match[1])
     .join('\n');
 
-assert.match(page, /<span>V2\.04<\/span>/);
+assert.match(page, /<span>V2\.05<\/span>/);
 assert.match(page, /<div class="changelog-date">2026年9月7日<\/div>[\s\S]*?<div class="changelog-version">V1\.99<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年8月31日<\/div>[\s\S]*?<div class="changelog-version">V1\.98<\/div>[\s\S]*?<div class="changelog-version">V1\.97<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年8月31日<\/div>[\s\S]*?<div class="changelog-version">V1\.97<\/div>/);
@@ -301,6 +301,17 @@ const nonJsonRegexSnippet = String.raw`"(jdbc:mysql://[^,\\s]+|jdbc:postgresql:/
                     + "|jdbc:sqlserver://[^,\\s]+)"`;
 
 const { context, elements } = createHarness();
+const brokenCandidate = '{"a":"\\q"';
+assert.throws(() => context.parseRepairedJson(brokenCandidate), (error) => {
+    assert.equal(error.parseText, brokenCandidate);
+    assert.match(error.message, /Bad escaped character/);
+    return true;
+});
+context.showError({ repairStage: true, parseText: brokenCandidate, parserMessage: 'Bad escaped character', message: 'Bad escaped character' });
+assert.equal(elements.get('repair-preview').hidden, false);
+assert.equal(elements.get('repair-preview-input').value, brokenCandidate);
+context.clearAll();
+assert.equal(elements.get('repair-preview').hidden, true);
 elements.get('json-input').value = nonJsonRegexSnippet;
 
 const started = Date.now();

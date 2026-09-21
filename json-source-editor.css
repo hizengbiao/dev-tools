@@ -1,5 +1,5 @@
-#view-source { position: relative; overflow: hidden; }
-#view-source textarea#json-input {
+#view-source, .repair-preview-editor { position: relative; overflow: hidden; }
+#view-source textarea#json-input, #repair-preview-input {
     margin-left: 60px;
     width: calc(100% - 60px);
     min-height: 0;
@@ -10,6 +10,11 @@
     z-index: 1;
     tab-size: 4;
 }
+#repair-preview { margin: 0 12px 14px; border: 1px solid #ffcecb; border-radius: 6px; background: #fff; }
+#repair-preview summary { cursor: pointer; padding: 10px 14px; font-weight: 600; }
+#repair-preview p { margin: 0; padding: 0 14px 10px; color: #57606a; font-size: 13px; }
+.repair-preview-editor { height: 220px; display: flex; border-top: 1px solid #d1d5db; }
+#repair-preview-input { padding: 15px; border: 0; resize: none; outline: none; box-sizing: border-box; font: 13px/19.5px 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; }
 .json-source-gutter {
     position: absolute;
     inset: 0 auto 0 0;
