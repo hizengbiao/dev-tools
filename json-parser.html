@@ -790,7 +790,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V2.03</span>
+            <span>V2.04</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -825,6 +825,10 @@
             <div class="modal-body changelog-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年9月22日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V2.04</div>
+                        <div class="changelog-desc">恢复完整解析器原始异常，不再以中文概括替换；区分原文定位与修复中间文本坐标，DTO、日志等无法可靠映射的输入不再误标原文首字符。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V2.03</div>
                         <div class="changelog-desc">修复缺少外层大括号的键值片段报错定位：临时补全结构后映射回原文，提示与高亮使用同一位置；中文冒号提供明确替换提示。</div>
@@ -1347,7 +1351,7 @@
     <script src="json-dom-path-utils.js"></script>
     <script src="json-bracket-matcher.js"></script>
     <script src="json-java-converter.js"></script>
-    <script src="json-source-editor.js?v=2.03"></script>
+    <script src="json-source-editor.js?v=2.04"></script>
     <script>
         const inputArea = document.getElementById('json-input');
         const sourceEditor = JsonSourceEditor.mount(inputArea);
@@ -1737,7 +1741,7 @@
                 handleFormat(false); // Go to tree view
                 showToast(autoTriggered ? "格式化失败，已自动修复并格式化成功 ✅" : "修复并格式化成功 ✅");
             } catch (e) {
-                showError({ message: "修复失败: " + e.message });
+                showError({ message: "修复失败: " + e.message, repairStage: true });
             }
         }
 
@@ -2122,15 +2126,13 @@
             errorMsg.style.display = 'block';
             switchMode('source');
             const location = sourceEditor.markError();
-            if (location) {
-                const character = inputArea.value[location.offset];
-                const hint = character === '：'
-                    ? '此处使用了中文冒号“：”，请改为英文冒号“:”。'
-                    : character === undefined
-                        ? '内容在此结束，请检查是否缺少值、引号或闭合括号。'
-                        : '请检查高亮处及其前方的键值、引号、逗号或括号是否完整。';
-                errorMsg.textContent = `JSON 错误：原文第 ${location.line} 行，第 ${location.column} 列（已高亮）。${hint}`;
-            }
+            const sourceNote = location
+                ? `原文检查：第 ${location.line} 行，第 ${location.column} 列（已高亮）。`
+                : '无法可靠定位到原文，未标记错误位置。';
+            const stageNote = e.repairStage
+                ? '修复阶段解析器原始错误（其中坐标对应修复后的待解析文本，不代表原文）：'
+                : '原始错误：';
+            errorMsg.textContent = `JSON 错误：${sourceNote}\n${stageNote}${e.message}`;
         }
 
         function copyCurrentContent() {

@@ -43,6 +43,9 @@
     }
     // Always inspect the original source, never offsets from an auto-repair attempt.
     function locateError(text) {
+        // DTOs/logs require transformations without a source map. A strict parse
+        // stopping at their first character is not a useful source diagnostic.
+        if (!/^\s*(?:[\[{\"]|-?\d|true\b|false\b|null\b)/.test(text)) return null;
         let message;
         try { JSON.parse(text); return null; } catch (error) { message = error.message; }
         // A copied property fragment is supported by the repair pipeline. Validate

@@ -1,5 +1,7 @@
 const assert = require('node:assert/strict');
 const { locateError } = require('../json-source-editor.js');
+assert.equal(locateError("FaultChain{faultPoints=[FaultPoint{name='test', pushOperatorScore=1.0', maskable=false'}]}"), null);
+assert.equal(locateError('ERROR payload: {"a": ?}'), null);
 assert.equal(locateError('{"ok":true}'), null);
 assert.deepEqual(locateError('{\n  "service": {3\n}'), { offset: 16, line: 2, column: 15 });
 assert.deepEqual(locateError('\n\n {"a": ?}'), { offset: 9, line: 3, column: 8 });
