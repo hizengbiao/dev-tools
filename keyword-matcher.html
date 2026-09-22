@@ -595,7 +595,7 @@
         <div class="tool-title">
             <h1>关键词批量匹配</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.04</span>
+                <span>V1.05</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -607,6 +607,7 @@
                     <h2>原始内容</h2>
                     <div class="field-meta">
                         <span id="contentInputCount">有效 0 条</span>
+                        <button class="btn btn-small" id="copyContentBtn" type="button" aria-label="复制原始内容">📋 复制</button>
                         <button class="btn btn-small" type="button" data-clipboard-paste-target="contentInput">📋 粘贴</button>
                     </div>
                 </div>
@@ -622,6 +623,7 @@
                     <h2>匹配关键词</h2>
                     <div class="field-meta">
                         <span id="keywordInputCount">有效 0 条</span>
+                        <button class="btn btn-small" id="copyKeywordsBtn" type="button" aria-label="复制匹配关键词">📋 复制</button>
                         <button class="btn btn-small" type="button" data-clipboard-paste-target="keywordInput">📋 粘贴</button>
                     </div>
                 </div>
@@ -701,6 +703,11 @@
                 <button class="close-modal changelog-close" type="button" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body changelog-body">
+                <div class="changelog-date">2026年9月23日</div>
+                <div class="changelog-entry">
+                    <div class="changelog-version">V1.05</div>
+                    <div class="changelog-desc">两侧输入区在粘贴按钮左侧增加复制按钮，原样复制对应输入内容，空输入时提示。</div>
+                </div>
                 <div class="changelog-date">2026年9月20日</div>
                 <div class="changelog-entry">
                     <div class="changelog-version">V1.04</div>
@@ -941,6 +948,16 @@
         document.getElementById('sampleBtn').addEventListener('click', loadSample);
         document.getElementById('clearBtn').addEventListener('click', clearAll);
         copyResultBtn.addEventListener('click', copyResults);
+        for (const [buttonId, inputId] of [['copyContentBtn', 'contentInput'], ['copyKeywordsBtn', 'keywordInput']]) {
+            document.getElementById(buttonId).addEventListener('click', () => {
+                ClipboardUtils.copyText(document.getElementById(inputId).value, {
+                    toastElement: toast,
+                    emptyMessage: '输入内容为空，暂无可复制内容',
+                    successMessage: '输入内容已复制',
+                    errorMessage: '复制失败，请手动复制',
+                });
+            });
+        }
         exportResultBtn.addEventListener('click', exportResults);
         [matchMode, caseSensitive, deduplicateKeywords].forEach(control => {
             control.addEventListener('change', refreshInputCounts);
