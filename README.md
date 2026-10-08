@@ -38,7 +38,7 @@
 
 ## Windows 导出包还原
 
-双击根目录的 `restore-dev-tools.cmd`，把按约定导出的 `.txt` 文件拖入控制台窗口并按回车。脚本自动寻找 WinRAR 或 7-Zip，解开文件名加密的外层 RAR 和内层 RAR，在脚本所在目录生成 `<输入文件名哈希>/dev-tools`，保留原文件；已有同名目录时提示并停止，不覆盖已有结果。也可以把文件直接拖到脚本图标上。需要 Windows PowerShell 5.1 及 WinRAR 或 7-Zip，无需管理员权限。
+双击根目录的 `restore-dev-tools.cmd`，把按约定导出的 `.txt` 文件拖入控制台窗口并按回车。脚本自动寻找 WinRAR 或 7-Zip，解开文件名加密的外层 RAR 和内层 RAR，在输入 `.txt` 所在目录生成 `<输入文件名哈希>/dev-tools`，保留原文件；已有同名目录时提示并停止，不覆盖已有结果。也可以把文件直接拖到脚本图标上。需要 Windows PowerShell 5.1 及 WinRAR 或 7-Zip，无需管理员权限。
 
 ## 部署到 GitHub Pages
 

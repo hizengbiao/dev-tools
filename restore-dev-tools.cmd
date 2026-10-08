@@ -57,7 +57,7 @@ try {
         throw '请选择单个导出的 .txt 文件。'
     }
     $script:archiver = Find-Archiver
-    $parent = [IO.Path]::GetDirectoryName($env:DEVTOOLS_RESTORE_SCRIPT)
+    $parent = $inputFile.Directory.FullName
     $result = Join-Path $parent $inputFile.BaseName
     if (Test-Path -LiteralPath $result) {
         throw ('解压目录已存在，请先移动或删除该目录后重试：' + $result)

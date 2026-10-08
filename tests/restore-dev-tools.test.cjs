@@ -11,7 +11,9 @@ if (process.platform !== 'win32') {
 const rar = ['C:\\Program Files\\WinRAR\\Rar.exe', 'C:\\Program Files (x86)\\WinRAR\\Rar.exe'].find(fs.existsSync);
 assert.ok(rar, '需要 WinRAR Rar.exe 创建真实 RAR 测试包');
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'dev-tools-restore-test-'));
-const script = path.join(temp, 'restore-dev-tools.cmd');
+const scriptDirectory = path.join(temp, '脚本目录');
+fs.mkdirSync(scriptDirectory);
+const script = path.join(scriptDirectory, 'restore-dev-tools.cmd');
 fs.copyFileSync(path.resolve(__dirname, '../restore-dev-tools.cmd'), script);
 function archive(args) {
     const result = spawnSync(rar, args, { cwd: temp, encoding: 'utf8', windowsHide: true });
@@ -52,6 +54,7 @@ try {
         assert.equal(fs.readFileSync(path.join(temp, result, 'dev-tools/example.js'), 'utf8'), sample);
     }
     assert.deepEqual(fs.readFileSync(outer), original, '不修改原始导出文件');
+    assert.deepEqual(fs.readdirSync(scriptDirectory), ['restore-dev-tools.cmd'], '输出须与输入文件同级，不能放在脚本目录');
     assert.notEqual(restore(outer).status, 0, '已有同名目录时应停止，不覆盖');
     assert.equal(fs.readFileSync(path.join(temp, results[0], 'dev-tools/example.js'), 'utf8'), sample);
     if (fs.existsSync('C:\\Program Files\\NVIDIA Corporation\\NVIDIA app\\7z.exe')) {
