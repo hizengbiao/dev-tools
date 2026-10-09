@@ -5,7 +5,7 @@ const path = require('node:path');
 const extractor = require('../json-assignment-extractor.js');
 const page = fs.readFileSync(path.resolve(__dirname, '../json-parser.html'), 'utf8');
 
-assert.match(page, /<script src="json-assignment-extractor\.js\?v=2\.00"><\/script>/);
+assert.match(page, /<script src="json-assignment-extractor\.js\?v=2\.07"><\/script>/);
 assert.match(page, /JsonAssignmentExtractor\.extractJsonValueFromAssignmentLog\(raw\)/);
 assert.doesNotMatch(page, /function extractJsonValueFromAssignmentLog\(raw\)/);
 assert.doesNotMatch(page, /function looksLikeBracketPrefixedAssignmentLog\(raw\)/);
@@ -61,3 +61,8 @@ assert.strictEqual(
 );
 
 console.log('json assignment extractor passed');
+const truncatedLog = '[trace][FeignResponse][cost time 5 ms]result={"items":[{"a":1},{"b":"...';
+assert.equal(extractor.extractJsonValueFromAssignmentLog(truncatedLog, { allowIncomplete: true }), '{"items":[{"a":1},{"b":"...');
+assert.equal(extractor.extractJsonValueFromAssignmentLog(truncatedLog), truncatedLog);
+assert.equal(extractor.extractJsonValueFromAssignmentLog('[1,2', { allowIncomplete: true }), '[1,2');
+assert.equal(extractor.extractJsonValueFromAssignmentLog('DTO(a=[1,2', { allowIncomplete: true }), 'DTO(a=[1,2');

@@ -9,7 +9,7 @@ const script = [...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>
     .map((match) => match[1])
     .join('\n');
 
-assert.match(page, /<span>V2\.06<\/span>/);
+assert.match(page, /<span>V2\.07<\/span>/);
 assert.match(page, /<div class="changelog-date">2026年9月7日<\/div>[\s\S]*?<div class="changelog-version">V1\.99<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年8月31日<\/div>[\s\S]*?<div class="changelog-version">V1\.98<\/div>[\s\S]*?<div class="changelog-version">V1\.97<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年8月31日<\/div>[\s\S]*?<div class="changelog-version">V1\.97<\/div>/);
@@ -34,7 +34,7 @@ assert.match(page, /<div class="changelog-date">2026年6月25日<\/div>[\s\S]*?<
 assert.match(page, /<div class="changelog-date">2026年6月11日<\/div>/);
 assert.match(page, /<div class="changelog-version">V1\.80<\/div>/);
 assert.match(page, /<script src="json-repair-guards\.js"><\/script>/);
-assert.match(page, /<script src="json-assignment-extractor\.js\?v=2\.00"><\/script>/);
+assert.match(page, /<script src="json-assignment-extractor\.js\?v=2\.07"><\/script>/);
 assert.match(page, /<script src="json-repair-normalizer\.js\?v=2\.01"><\/script>/);
 assert.match(page, /<script src="json-java-style-normalizer\.js\?v=2\.06"><\/script>/);
 assert.match(page, /!JsonJavaStyleNormalizer\.looksLikeJavaStyleObject\(raw\)/);
@@ -301,6 +301,19 @@ const nonJsonRegexSnippet = String.raw`"(jdbc:mysql://[^,\\s]+|jdbc:postgresql:/
                     + "|jdbc:sqlserver://[^,\\s]+)"`;
 
 const { context, elements } = createHarness();
+const feignHarness = createHarness();
+feignHarness.elements.get('json-input').value = require('./fixtures/feign-truncated.cjs');
+feignHarness.context.handleFormat();
+const feignRecovered = JSON.parse(feignHarness.elements.get('json-input').value);
+assert.equal(feignRecovered.rtnCode, 'SUC000');
+assert.equal(feignRecovered.data.total, 355623);
+assert.equal(feignRecovered.data.data.length, 2);
+assert.equal(feignRecovered.data.data[0].SERVICEUNITV2.developers, '["123456/张三"]');
+assert.equal(feignRecovered.data.data[0].RELEASEUNIT.neo4jVersion, 1);
+assert.equal(feignRecovered.data.data[1].SERVICEUNITV2.name, 'RelationGateway的34dflknls服务单元');
+assert.equal(feignRecovered.data.data[1].SERVICEUNITV2.needArtifactId, false);
+assert.equal(Object.hasOwn(feignRecovered.data.data[1].SERVICEUNITV2, 'importanceLevel'), false);
+assert.equal(feignRecovered.result, undefined);
 for (const sample of [require('./fixtures/fault-chain.cjs'), require('./fixtures/fault-chain.cjs').replaceAll('_', '\\_').replaceAll('@', '\\@')]) {
     const harness = createHarness();
     harness.elements.get('json-input').value = sample;

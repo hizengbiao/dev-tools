@@ -105,7 +105,7 @@
         return -1;
     }
 
-    function extractJsonValueFromAssignmentLog(raw) {
+    function extractJsonValueFromAssignmentLog(raw, options = {}) {
         const trimmed = String(raw || '').trim();
         if (!trimmed || /^[{\[]/.test(trimmed) && !looksLikeBracketPrefixedAssignmentLog(trimmed)) {
             return raw;
@@ -118,6 +118,9 @@
 
         const jsonEnd = findBalancedJsonValueEnd(trimmed, assignmentStart);
         if (jsonEnd === -1) {
+            if (options.allowIncomplete === true && looksLikeBracketPrefixedAssignmentLog(trimmed)) {
+                return trimmed.slice(assignmentStart);
+            }
             return raw;
         }
 

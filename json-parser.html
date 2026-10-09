@@ -790,7 +790,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V2.06</span>
+            <span>V2.07</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -830,6 +830,13 @@
                 <button class="close-modal changelog-close" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body changelog-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年10月9日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V2.07</div>
+                        <div class="changelog-desc">支持带多段日志标签、耗时信息及 result= 的截断 Feign 响应；提前提取未闭合载荷，恢复仍可解析的字段并提示缺失内容无法还原。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年9月22日</div>
                     <div class="changelog-entry">
@@ -1356,7 +1363,7 @@
     <script src="changelog.js"></script>
     <script src="clipboard-utils.js"></script>
     <script src="json-repair-guards.js"></script>
-    <script src="json-assignment-extractor.js?v=2.00"></script>
+    <script src="json-assignment-extractor.js?v=2.07"></script>
     <script src="json-repair-normalizer.js?v=2.01"></script>
     <script src="json-java-style-normalizer.js?v=2.06"></script>
     <script src="json-sorter.js?v=2.00"></script>
@@ -1664,6 +1671,11 @@
 
             try {
                 // Remove single-line and multi-line comments
+                // Extract known assignment logs before interpreting their metadata
+                // or unclosed payload as Java fields, tags, or string escapes.
+                if (!JsonJavaStyleNormalizer.looksLikeJavaClassObject(raw)) {
+                    raw = JsonAssignmentExtractor.extractJsonValueFromAssignmentLog(raw, { allowIncomplete: true });
+                }
                 // DTO URLs are bare values until normalized. Protect them before
                 // interpreting // or /* as comments.
                 if (JsonJavaStyleNormalizer.looksLikeJavaClassObject(raw)) {
@@ -1749,6 +1761,7 @@
                 raw = JsonRepairNormalizer.addQuotesToUnquotedStrings(raw);
 
                 let obj;
+                let recoveredTruncated = false;
                 try {
                     obj = parseRepairedJson(raw);
                 } catch (firstErr) {
@@ -1756,6 +1769,7 @@
                     try {
                         raw = fixTruncatedJson(raw);
                         obj = parseRepairedJson(raw);
+                        recoveredTruncated = true;
                     } catch (secondErr) {
                         throw firstErr; // Throw validation error from first attempt
                     }
@@ -1765,7 +1779,9 @@
 
                 saveState();
                 handleFormat(false); // Go to tree view
-                showToast(autoTriggered ? "格式化失败，已自动修复并格式化成功 ✅" : "修复并格式化成功 ✅");
+                showToast(recoveredTruncated
+                    ? "已恢复截断 JSON 中可解析的内容，缺失部分无法还原"
+                    : autoTriggered ? "格式化失败，已自动修复并格式化成功 ✅" : "修复并格式化成功 ✅");
             } catch (e) {
                 showError({ message: "修复失败: " + e.message, repairStage: true, parseText: e.parseText, parserMessage: e.message });
             }
