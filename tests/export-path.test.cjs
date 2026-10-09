@@ -27,6 +27,18 @@ function run(script, input, interactive = false, persistentConsole = false) {
 function archives(parent) {
     return fs.readdirSync(parent).filter(name => /^[a-f0-9]{64}\.txt$/.test(name));
 }
+function snapshot(directory, prefix = '') {
+    const result = {};
+    for (const name of fs.readdirSync(directory)) {
+        const filename = path.join(directory, name);
+        const key = prefix + name;
+        if (fs.statSync(filename).isDirectory()) {
+            result[key] = null;
+            Object.assign(result, snapshot(filename, key + '/'));
+        } else result[key] = fs.readFileSync(filename);
+    }
+    return result;
+}
 function exportAndRestore(input, expected, interactive, persistentConsole = false) {
     const parent = path.dirname(input);
     const before = archives(parent);
@@ -42,14 +54,11 @@ function exportAndRestore(input, expected, interactive, persistentConsole = fals
     const unpacked = run(restorer, archive, false, persistentConsole);
     assert.equal(unpacked.status, 0, unpacked.stdout + unpacked.stderr);
     const directory = path.join(parent, path.basename(archive, '.txt'), 'dev-tools');
-    assert.deepEqual(fs.readdirSync(directory).sort(), Object.keys(expected).sort());
-    for (const [name, bytes] of Object.entries(expected)) {
-        assert.deepEqual(fs.readFileSync(path.join(directory, name)), bytes, '往返还原内容一致');
-    }
+    assert.deepEqual(snapshot(directory), expected, '往返还原文件内容及完整目录结构一致');
     return archive;
 }
 try {
-    const source = path.join(temp, '代码目录 & 空格');
+    const source = path.join(temp, '任意资料 & 空格');
     fs.mkdirSync(source);
     const expected = {
         '中文 & 页面.html': Buffer.from('<!doctype html>\r\n<title>中文</title>\r\n'),
@@ -58,22 +67,35 @@ try {
     };
     for (const [name, bytes] of Object.entries(expected)) fs.writeFileSync(path.join(source, name), bytes);
     fs.writeFileSync(path.join(source, '说明.md'), '# 文档');
-    fs.writeFileSync(path.join(source, 'sample.test.js'), 'throw new Error("not exported")');
-    fs.writeFileSync(path.join(source, 'sample.spec.ts'), 'throw new Error("not exported")');
+    fs.writeFileSync(path.join(source, 'sample.test.js'), 'test file included');
+    fs.writeFileSync(path.join(source, 'sample.spec.ts'), 'spec file included');
+    fs.writeFileSync(path.join(source, '资料.pdf'), Buffer.from([0, 255, 128, 13, 10, 1]));
+    fs.writeFileSync(path.join(source, '无扩展名'), 'arbitrary file');
+    fs.writeFileSync(path.join(source, '.hidden'), 'hidden file');
+    const hidden = spawnSync('attrib.exe', ['+h', path.join(source, '.hidden')], { windowsHide: true });
+    assert.equal(hidden.status, 0, '设置真实 Windows 隐藏文件属性');
+    fs.mkdirSync(path.join(source, '空目录'));
     fs.mkdirSync(path.join(source, 'neon-timer'));
-    fs.writeFileSync(path.join(source, 'neon-timer', 'nested.js'), 'excluded');
-    exportAndRestore(source, expected, true);
-    const single = path.join(source, '中文 & 页面.html');
-    exportAndRestore(single, { '中文 & 页面.html': expected['中文 & 页面.html'] }, false, true);
+    fs.writeFileSync(path.join(source, 'neon-timer', 'nested.js'), 'nested content included');
+    const original = snapshot(source);
+    const directoryExpected = { [path.basename(source)]: null };
+    for (const [name, bytes] of Object.entries(original)) directoryExpected[path.basename(source) + '/' + name] = bytes;
+    exportAndRestore(source, directoryExpected, true);
+    assert.deepEqual(snapshot(source), original, '目录输入未修改');
+    const single = path.join(source, '资料.pdf');
+    exportAndRestore(single, { '资料.pdf': original['资料.pdf'] }, false, true);
+    const empty = path.join(temp, '空文件夹');
+    fs.mkdirSync(empty);
+    exportAndRestore(empty, { '空文件夹': null }, false);
     const before = archives(source);
-    const invalid = run(exporter, path.join(source, '说明.md'));
-    assert.notEqual(invalid.status, 0, '拒绝无法由原还原逻辑接受的单文件');
+    const invalid = run(exporter, path.join(source, '不存在的文件'));
+    assert.notEqual(invalid.status, 0, '不存在的路径应明确报错');
     assert.deepEqual(archives(source), before, '失败时不发布结果');
     for (const [name, bytes] of Object.entries(expected)) assert.deepEqual(fs.readFileSync(path.join(source, name)), bytes);
     for (const parent of [temp, source]) {
         assert.ok(!fs.readdirSync(parent).some(name => name.startsWith('.dev-tools-pack-') || name.startsWith('.dev-tools-restore-')));
     }
-    console.log('PASS: interactive directory/single-file export, original restore roundtrip, Unicode/space/& paths, filename encryption, filtering, source preservation, cleanup');
+    console.log('PASS: arbitrary directory/binary-file/empty-directory roundtrip, nested/non-code/test/no-extension files, Unicode/space/& paths, filename encryption, success closes console, source preservation, cleanup');
 } finally {
     fs.rmSync(temp, { recursive: true, force: true });
 }

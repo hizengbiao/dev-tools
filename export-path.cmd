@@ -62,7 +62,7 @@ function Invoke-Rar([string[]] $CmdArgs) {
 try {
     Write-Host '文件或文件夹双层 RAR 导出' -ForegroundColor Cyan
     Write-Host '请粘贴一个路径，或将文件、文件夹拖入此窗口，然后按回车。'
-    Write-Host '只导出可由还原脚本接受的代码文件；目录只处理直接包含的代码文件。'
+    Write-Host '完整打包所选文件或文件夹，包括子目录及所有文件类型。'
     Write-Host '原文件保持不变，导出结果保存在输入项的同级目录。'
     Write-Host ''
     $inputPath = $env:DEVTOOLS_PACK_INPUT
@@ -77,21 +77,9 @@ try {
     if ($source.PSIsContainer) {
         if (-not $source.Parent) { throw '请选择具体文件夹，不能直接选择磁盘根目录。' }
         $outputParent = $source.Parent.FullName
-        $items = @(Get-ChildItem -LiteralPath $source.FullName -Force)
     } else {
         $outputParent = $source.Directory.FullName
-        $items = @($source)
     }
-    $extensions = @('.html', '.css', '.js', '.cjs', '.mjs', '.jsx', '.ts', '.tsx')
-    $files = @($items | Where-Object {
-        -not $_.PSIsContainer -and $_.Extension -in $extensions -and $_.Name -notmatch '\.(test|spec)\.'
-    })
-    if ($files.Count -eq 0) {
-        throw '没有可导出的代码文件。还原脚本只支持 HTML/CSS/JS/CJS/MJS/JSX/TS/TSX，并排除测试文件及子目录。'
-    }
-    $skipped = @($items | Where-Object { $_ -notin $files })
-    Write-Host ('已选择 {0} 个代码文件，跳过 {1} 个非代码、测试文件或子目录。' -f $files.Count, $skipped.Count)
-    foreach ($item in $skipped) { Write-Host ('跳过：' + $item.Name) }
     $script:rar = Find-Rar
     $stage = Join-Path $outputParent ('.dev-tools-pack-' + [Guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $stage | Out-Null
@@ -99,9 +87,7 @@ try {
     $container = Join-Path $stage 'dev-tools'
     New-Item -ItemType Directory -Path $container | Out-Null
     Write-Host '[1/4] 正在复制到临时 dev-tools 文件夹……'
-    foreach ($file in $files) {
-        Copy-Item -LiteralPath $file.FullName -Destination $container -Force
-    }
+    Copy-Item -LiteralPath $source.FullName -Destination $container -Recurse -Force
     $innerHash = New-RandomHash
     $innerRar = Join-Path $stage ($innerHash + '.rar')
     $innerTxt = Join-Path $stage ($innerHash + '.txt')

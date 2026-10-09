@@ -86,17 +86,10 @@ try {
     if ($roots.Count -ne 1 -or -not $roots[0].PSIsContainer -or $roots[0].Name -cne 'dev-tools') {
         throw '内层内容不符合约定：应当只有一个 dev-tools 目录。'
     }
-    $restoredFiles = @(Get-ChildItem -LiteralPath $roots[0].FullName -Force)
-    $extensions = @('.html', '.css', '.js', '.cjs', '.mjs', '.jsx', '.ts', '.tsx')
-    if ($restoredFiles.Count -eq 0) { throw 'dev-tools 目录为空。' }
-    foreach ($file in $restoredFiles) {
-        if ($file.PSIsContainer -or $file.Extension -notin $extensions -or $file.Name -match '\.(test|spec)\.') {
-            throw 'dev-tools 目录包含子目录或不符合约定的代码文件。'
-        }
-    }
+    $restoredFiles = @(Get-ChildItem -LiteralPath $roots[0].FullName -File -Recurse -Force)
     Move-Item -LiteralPath $innerContents -Destination $result
     Write-Host ''
-    Write-Host ('完成！已还原 {0} 个代码文件。' -f $restoredFiles.Count) -ForegroundColor Green
+    Write-Host ('完成！已还原 {0} 个文件，保留原有目录结构。' -f $restoredFiles.Count) -ForegroundColor Green
     Write-Host ('输出目录：' + (Join-Path $result 'dev-tools'))
     Write-Host '原始 .txt 文件已保留。'
     $exitCode = 0
