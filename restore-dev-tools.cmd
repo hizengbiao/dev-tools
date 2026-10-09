@@ -6,6 +6,7 @@ set "DEVTOOLS_RESTORE_INPUT=%~1"
 if /i "%~1"=="--no-pause" set "DEVTOOLS_RESTORE_INPUT="
 powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "$text = [IO.File]::ReadAllText($env:DEVTOOLS_RESTORE_SCRIPT, [Text.Encoding]::UTF8); $body = ($text -split '(?m)^# POWERSHELL_PAYLOAD\r?$', 2)[1]; & ([ScriptBlock]::Create($body))"
 set "DEVTOOLS_RESTORE_EXIT=%ERRORLEVEL%"
+if "%DEVTOOLS_RESTORE_EXIT%"=="0" exit 0
 if /i not "%~1"=="--no-pause" if /i not "%~2"=="--no-pause" pause
 exit /b %DEVTOOLS_RESTORE_EXIT%
 # POWERSHELL_PAYLOAD
