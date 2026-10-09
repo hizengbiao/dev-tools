@@ -281,7 +281,7 @@ git push gh main
 
 ## 根目录代码导出及还原约定
 
-- 用户说“导出”时，只打包当前根目录 HTML/CSS/JS/CJS/MJS/JSX/TS/TSX 代码；排除测试、Neon Timer、所有子目录和非代码文件，文件数量随当前代码变化。
+- 用户说“导出”时，只打包当前根目录 HTML/CSS/JS/CJS/MJS/JSX/TS/TSX/CMD 代码；必须包含 `export-path.cmd` 和 `restore-dev-tools.cmd`，排除测试、Neon Timer、所有子目录和非代码文件，文件数量随当前代码变化。
 - 内层 RAR 仅包含 `dev-tools` 目录，改为随机哈希名 `.txt`；将其作为外层 RAR 的唯一内容，使用密码 `982003834` 并加密文件名，外层同样改为另一随机哈希名 `.txt`。两层真实格式均为 RAR。
 - `restore-dev-tools.cmd` 支持双击后拖入文件并回车，或将文件拖到脚本图标；在输入 `.txt` 所在目录生成 `<输入文件名哈希>/dev-tools`，已有同名目录时停止。依赖 Windows PowerShell 5.1 和 WinRAR/7-Zip，不修改原导出文件，不覆盖已有输出。
 - `export-path.cmd` 是通用路径打包脚本，已纳入 Git：完整保留输入文件或文件夹本身的名称、子目录、空目录和所有文件类型，复制到临时 `dev-tools` 后进行两层 RAR 打包，输出到输入项同级。不得套用项目代码筛选规则；用户说“导出”时仍沿用仅项目根目录代码的既有约定。经用户明确授权，`restore-dev-tools.cmd` 允许还原任意文件和目录，保留两层结构校验、同名输出保护；两个脚本成功后自动关闭，失败时保留错误信息。
