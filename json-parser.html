@@ -211,8 +211,8 @@
         .json-row {
             display: flex;
             flex-wrap: nowrap;
-            align-items: center;
-            /* Center items vertically in the header */
+            align-items: flex-start;
+            /* Keep gutter numbers on the first visual line of wrapped values. */
             padding-left: 0;
             /* position: relative; Removed for gutter logic */
         }
@@ -225,6 +225,7 @@
             text-align: right;
             color: #6e7781;
             font-size: 12px;
+            line-height: 19.5px;
             user-select: none;
             cursor: default;
         }
@@ -790,7 +791,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V2.08</span>
+            <span>V2.09</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -832,6 +833,10 @@
             <div class="modal-body changelog-body">
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年10月16日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V2.09</div>
+                        <div class="changelog-desc">修复格式化结果树中长字段换行后行号垂直居中的问题，行号始终与字段首行对齐。</div>
+                    </div>
                     <div class="changelog-entry">
                         <div class="changelog-version">V2.08</div>
                         <div class="changelog-desc">源码编辑及修复诊断文本支持长行自动换行，保留原始内容与逻辑行号；行号、错误高亮及滚动定位随换行和窗口尺寸同步调整。</div>
