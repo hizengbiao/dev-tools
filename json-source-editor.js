@@ -86,12 +86,43 @@
         highlight.className = 'json-source-error-line';
         highlight.hidden = true;
         shell.prepend(gutter, highlight);
+        const mirror = document.createElement('div');
+        mirror.className = 'json-source-mirror';
+        mirror.setAttribute('aria-hidden', 'true');
+        shell.appendChild(mirror);
         let currentText = null;
         let location = null;
+        let paddingTop = 15;
+        let errorTop = 0;
+        function measure() {
+            if (!input.clientWidth) return;
+            const style = getComputedStyle(input);
+            paddingTop = parseFloat(style.paddingTop) || 0;
+            const lineHeight = parseFloat(style.lineHeight);
+            mirror.style.width = Math.max(1, input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)) + 'px';
+            for (const name of ['font', 'lineHeight', 'letterSpacing', 'tabSize']) mirror.style[name] = style[name];
+            gutter.style.paddingTop = paddingTop + 'px';
+            gutter.style.paddingBottom = style.paddingBottom;
+            gutter.style.lineHeight = style.lineHeight;
+            const origin = mirror.getBoundingClientRect().top;
+            const heights = Array.from(mirror.children, row => row.getBoundingClientRect().height);
+            heights.forEach((height, i) => { gutter.children[i].style.height = height + 'px'; });
+            if (location) {
+                const row = mirror.children[location.line - 1];
+                const node = row.firstChild;
+                const range = document.createRange();
+                const start = Math.min(node.length, location.column - 1);
+                range.setStart(node, start);
+                range.setEnd(node, Math.min(node.length, start + 1));
+                const rect = range.getClientRects()[0];
+                errorTop = Math.floor(((rect ? rect.top : row.getBoundingClientRect().top) - origin) / lineHeight) * lineHeight;
+                highlight.style.height = lineHeight + 'px';
+            }
+            sync();
+        }
         function sync() {
-            const lineHeight = parseFloat(getComputedStyle(input).lineHeight);
             gutter.scrollTop = input.scrollTop;
-            if (location) highlight.style.top = (15 + (location.line - 1) * lineHeight - input.scrollTop) + 'px';
+            if (location) highlight.style.top = (input.offsetTop + paddingTop + errorTop - input.scrollTop) + 'px';
         }
         function clear() {
             location = null;
@@ -103,17 +134,23 @@
             if (currentText !== input.value) {
                 currentText = input.value;
                 clear();
-                const count = input.value.split('\n').length;
+                const lines = input.value.split('\n');
                 gutter.textContent = '';
+                mirror.textContent = '';
                 const fragment = document.createDocumentFragment();
-                for (let i = 1; i <= count; i++) {
+                const measuredRows = document.createDocumentFragment();
+                for (let i = 1; i <= lines.length; i++) {
                     const row = document.createElement('div');
                     row.textContent = i;
                     fragment.appendChild(row);
+                    const measuredRow = document.createElement('div');
+                    measuredRow.textContent = lines[i - 1] + '\u200b';
+                    measuredRows.appendChild(measuredRow);
                 }
                 gutter.appendChild(fragment);
+                mirror.appendChild(measuredRows);
             }
-            sync();
+            measure();
         }
         function markError(parserMessage) {
             refresh();
@@ -125,18 +162,15 @@
             input.setAttribute('aria-invalid', 'true');
             input.focus({ preventScroll: true });
             input.setSelectionRange(location.offset, Math.min(input.value.length, location.offset + 1));
-            const height = parseFloat(getComputedStyle(input).lineHeight);
-            input.scrollTop = Math.max(0, (location.line - 1) * height - input.clientHeight / 2);
-            const context = document.createElement('canvas').getContext('2d');
-            context.font = getComputedStyle(input).font;
-            const lineStart = input.value.lastIndexOf('\n', location.offset - 1) + 1;
-            const beforeError = input.value.slice(lineStart, location.offset).replace(/\t/g, '    ');
-            input.scrollLeft = Math.max(0, context.measureText(beforeError).width - input.clientWidth / 2);
+            measure();
+            input.scrollTop = Math.max(0, paddingTop + errorTop - input.clientHeight / 2);
+            input.scrollLeft = 0;
             sync();
             return location;
         }
         input.addEventListener('input', refresh);
         input.addEventListener('scroll', sync);
+        if (typeof ResizeObserver !== 'undefined') new ResizeObserver(measure).observe(input);
         refresh();
         return { refresh, clear, markError };
     }

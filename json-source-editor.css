@@ -3,8 +3,11 @@
     margin-left: 60px;
     width: calc(100% - 60px);
     min-height: 0;
-    white-space: pre;
-    overflow: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    overflow-x: hidden;
+    overflow-y: auto;
     background: transparent;
     position: relative;
     z-index: 1;
@@ -30,6 +33,16 @@
     user-select: none;
 }
 .json-source-gutter .is-error { background: #ffcecb; color: #b42318; font-weight: 700; }
+.json-source-mirror {
+    position: absolute;
+    visibility: hidden;
+    pointer-events: none;
+    top: 0;
+    left: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
 .json-source-error-line {
     position: absolute;
     left: 60px;

@@ -1,5 +1,14 @@
 const assert = require('node:assert/strict');
 const { locateError } = require('../json-source-editor.js');
+const fs = require('node:fs');
+const path = require('node:path');
+const page = fs.readFileSync(path.join(__dirname, '../json-parser.html'), 'utf8');
+const css = fs.readFileSync(path.join(__dirname, '../json-source-editor.css'), 'utf8');
+assert.match(page, /id="json-input" wrap="soft"/);
+assert.match(page, /id="repair-preview-input" readonly wrap="soft"/);
+assert.match(css, /white-space: pre-wrap/);
+assert.match(css, /overflow-wrap: anywhere/);
+assert.match(page, /json-source-editor\.(?:js|css)\?v=2\.08/);
 assert.equal(locateError("FaultChain{faultPoints=[FaultPoint{name='test', pushOperatorScore=1.0', maskable=false'}]}"), null);
 assert.equal(locateError('ERROR payload: {"a": ?}'), null);
 assert.equal(locateError('{"ok":true}'), null);

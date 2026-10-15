@@ -7,7 +7,7 @@
     <title>JSON 格式化工具</title>
     <link rel="stylesheet" href="nav.css">
     <link rel="stylesheet" href="changelog.css">
-    <link rel="stylesheet" href="json-source-editor.css?v=2.05">
+    <link rel="stylesheet" href="json-source-editor.css?v=2.08">
     <script src="nav.js" defer></script>
     <style>
         :root {
@@ -790,7 +790,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V2.07</span>
+            <span>V2.08</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -800,7 +800,7 @@
         <summary>修复失败的待解析文本（只读） · <span id="repair-preview-location"></span></summary>
         <p>以下是产生本次解析异常的实际文本，未再次格式化。原始输入保留在下方，可继续编辑。</p>
         <div class="repair-preview-editor">
-            <textarea id="repair-preview-input" readonly wrap="off" spellcheck="false" aria-label="修复失败的待解析文本"></textarea>
+            <textarea id="repair-preview-input" readonly wrap="soft" spellcheck="false" aria-label="修复失败的待解析文本"></textarea>
         </div>
     </details>
 
@@ -809,7 +809,7 @@
         <div class="editor-content">
             <!-- View 1: Source Input -->
             <div id="view-source" class="view-panel active">
-                <textarea id="json-input" wrap="off" spellcheck="false" aria-label="JSON 源码编辑器" aria-describedby="error-msg" placeholder="请在此粘贴 JSON..."></textarea>
+                <textarea id="json-input" wrap="soft" spellcheck="false" aria-label="JSON 源码编辑器" aria-describedby="error-msg" placeholder="请在此粘贴 JSON..."></textarea>
             </div>
 
             <!-- View 2: Tree Output -->
@@ -830,6 +830,13 @@
                 <button class="close-modal changelog-close" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body changelog-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年10月16日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V2.08</div>
+                        <div class="changelog-desc">源码编辑及修复诊断文本支持长行自动换行，保留原始内容与逻辑行号；行号、错误高亮及滚动定位随换行和窗口尺寸同步调整。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年10月9日</div>
                     <div class="changelog-entry">
@@ -1373,7 +1380,7 @@
     <script src="json-dom-path-utils.js"></script>
     <script src="json-bracket-matcher.js"></script>
     <script src="json-java-converter.js"></script>
-    <script src="json-source-editor.js?v=2.05"></script>
+    <script src="json-source-editor.js?v=2.08"></script>
     <script>
         const inputArea = document.getElementById('json-input');
         const sourceEditor = JsonSourceEditor.mount(inputArea);
