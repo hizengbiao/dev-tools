@@ -37,12 +37,15 @@ assert.throws(() => convertBatch('1\n'.repeat(MAX_LINES + 1), 10, [16]), /最多
 assert.throws(() => convertBatch(' '.repeat(MAX_TEXT + 1), 10, [16]), /字符/);
 assert.throws(() => convertBatch('1', 10, [37]), /进制/);
 const page = fs.readFileSync(path.join(__dirname, '../radix-converter.html'), 'utf8');
-for (const source of ['nav.js', 'changelog.js', 'clipboard-utils.js', 'radix-converter.js?v=1.00', 'radix-converter-ui.js?v=1.01']) assert.ok(page.includes(source));
+for (const source of ['nav.js', 'changelog.js', 'clipboard-utils.js', 'radix-converter.js?v=1.00', 'radix-converter-ui.js?v=1.02']) assert.ok(page.includes(source));
 assert.match(page, /data-clipboard-paste-target="radix-input" data-clipboard-paste-action="convert-btn"/);
-assert.match(page, /<span>V1\.01<\/span>/);
+assert.match(page, /<span>V1\.02<\/span>/);
 assert.doesNotMatch(page, /id="target-base"/);
 const ui = fs.readFileSync(path.join(__dirname, '../radix-converter-ui.js'), 'utf8');
 assert.doesNotMatch(ui, /target-base|自定义进制/);
+assert.match(ui, /input\.addEventListener\('input', scheduleConversion\)/);
+assert.match(ui, /clearTimeout\(conversionTimer\)/);
+assert.match(ui, /compositionend/);
 assert.match(page, /2026年10月30日/);
 assert.doesNotMatch(fs.readFileSync(path.join(__dirname, '../radix-converter.js'), 'utf8'), /parseInt\(/);
 console.log('radix converter precision, validation, batch and integration passed');

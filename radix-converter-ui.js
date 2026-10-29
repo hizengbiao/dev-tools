@@ -6,6 +6,8 @@
     const commonBases = [2, 8, 10, 16];
     const names = ['二进制 BIN', '八进制 OCT', '十进制 DEC', '十六进制 HEX'];
     let currentBases = [];
+    let conversionTimer = null;
+    let composing = false;
     for (let index = 0; index < commonBases.length; index++) {
         const card = document.createElement('section');
         card.className = 'result-card';
@@ -54,6 +56,9 @@
         status.className = 'status' + (kind ? ' ' + kind : '');
     }
     function invalidate() {
+        clearTimeout(conversionTimer);
+        conversionTimer = null;
+        status.setAttribute('aria-busy', 'false');
         byId('custom-source-label').hidden = byId('source-base').value !== 'custom';
         for (const card of resultCards) {
             card.output.value = '';
@@ -62,7 +67,18 @@
         }
         currentBases = [];
         byId('copy-all').disabled = true;
-        setStatus('输入或配置已更改，请点击“开始转换”。');
+        setStatus('输入整数后自动转换。');
+    }
+    function scheduleConversion() {
+        invalidate();
+        if (!input.value.trim() || composing) return;
+        setStatus('正在等待输入完成…');
+        status.setAttribute('aria-busy', 'true');
+        conversionTimer = setTimeout(convert, 150);
+    }
+    function updateOptions() {
+        if (input.value.trim() && !composing) convert();
+        else invalidate();
     }
     function convert() {
         invalidate();
@@ -95,12 +111,14 @@
             setStatus(error.message, 'error');
         }
     }
-    input.addEventListener('input', invalidate);
+    input.addEventListener('input', scheduleConversion);
+    input.addEventListener('compositionstart', () => { composing = true; invalidate(); });
+    input.addEventListener('compositionend', () => { composing = false; scheduleConversion(); });
     input.addEventListener('keydown', event => {
         if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); convert(); }
     });
-    for (const id of ['source-base', 'custom-source', 'uppercase', 'prefix']) byId(id).addEventListener('change', invalidate);
-    byId('custom-source').addEventListener('input', invalidate);
+    for (const id of ['source-base', 'custom-source', 'uppercase', 'prefix']) byId(id).addEventListener('change', updateOptions);
+    byId('custom-source').addEventListener('input', scheduleConversion);
     byId('convert-btn').addEventListener('click', convert);
     byId('clear-btn').addEventListener('click', () => {
         input.value = '';

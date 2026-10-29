@@ -3,7 +3,10 @@ async (page) => {
     await page.goto('http://127.0.0.1:5219/radix-converter.html');
     const input = page.getByRole('textbox', { name: '输入整数', exact: true });
     const convert = page.getByRole('button', { name: '开始转换', exact: true });
-    const read = index => page.locator('#result-' + index).inputValue();
+    const read = async index => {
+        await page.waitForFunction(() => document.querySelector('#status').getAttribute('aria-busy') !== 'true');
+        return page.locator('#result-' + index).inputValue();
+    };
     const expect = (actual, expected) => { if (actual !== expected) throw Error(JSON.stringify({ actual, expected })); };
     await convert.click();
     if (!(await page.locator('#status').innerText()).includes('请输入')) throw Error('Missing empty-input feedback');
@@ -11,11 +14,8 @@ async (page) => {
     expect(await read(3), 'FF\n-400\n20000000000001');
     expect(await read(2), '255\n-1024\n9007199254740993');
     await page.getByLabel('输出进制前缀', { exact: true }).check();
-    expect(await read(3), '');
-    await convert.click();
     expect(await read(3), '0xFF\n-0x400\n0x20000000000001');
     await page.getByLabel('字母大写', { exact: true }).uncheck();
-    await convert.click();
     expect((await read(3)).split('\n')[0], '0xff');
     await page.getByRole('button', { name: '十六进制 HEX回填输入', exact: true }).click();
     expect(await page.getByLabel('输入进制', { exact: true }).inputValue(), '16');
@@ -24,19 +24,16 @@ async (page) => {
     if (!(await page.locator('#custom-source').isVisible())) throw Error('Custom input base hidden');
     await page.locator('#custom-source').fill('36');
     await input.fill('ZZ\n-10');
-    await convert.click();
     expect(await read(2), '1295\n-36');
     expect(await page.locator('.result-card').count(), 4);
     expect(await page.locator('#target-base').count(), 0);
     await page.getByLabel('输入进制', { exact: true }).selectOption('2');
     await input.fill('10\n\n102\n11');
-    await convert.click();
     expect(await read(2), '2\n⚠ 第 3 行无效\n3');
     if (!(await page.getByRole('button', { name: '复制全部结果', exact: true }).isDisabled())) throw Error('Invalid result copy enabled');
     if (!(await page.locator('#status').innerText()).includes('第 3 行')) throw Error('Missing line error');
     await page.getByLabel('输入进制', { exact: true }).selectOption('custom');
     await page.locator('#custom-source').fill('37');
-    await convert.click();
     expect(await read(0), '');
     if (!(await page.locator('#status').innerText()).includes('2–36')) throw Error('Missing base validation');
     await page.getByLabel('输入进制', { exact: true }).selectOption('16');
@@ -48,9 +45,18 @@ async (page) => {
     await page.getByRole('button', { name: '复制十进制 DEC', exact: true }).click();
     await page.waitForFunction(async () => (await navigator.clipboard.readText()).replace(/\r\n/g, '\n') === '255\n16');
     expect((await page.evaluate(() => navigator.clipboard.readText())).replace(/\r\n/g, '\n'), '255\n16');
-    await page.getByRole('button', { name: 'V1.01 ℹ️', exact: true }).click();
+    await page.getByRole('button', { name: 'V1.02 ℹ️', exact: true }).click();
     if (!(await page.getByRole('heading', { name: '🚀 版本更新说明' }).isVisible())) throw Error('Changelog not visible');
     await page.getByRole('button', { name: '关闭版本更新说明', exact: true }).click();
+    await page.getByLabel('输入进制', { exact: true }).selectOption('10');
+    await input.fill('1');
+    await input.fill('256');
+    expect(await read(2), '256');
+    await input.fill('999');
+    await page.getByRole('button', { name: '清空', exact: true }).click();
+    await page.waitForTimeout(250);
+    expect(await read(2), '');
+    if (!(await page.getByRole('button', { name: '复制全部结果', exact: true }).isDisabled())) throw Error('Clear left stale output');
     for (const width of [1440, 768, 375]) {
         await page.setViewportSize({ width, height: 900 });
         await page.evaluate(() => {
