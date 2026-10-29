@@ -26,20 +26,19 @@ async (page) => {
     await input.fill('ZZ\n-10');
     await convert.click();
     expect(await read(2), '1295\n-36');
-    await page.locator('#target-base').fill('3');
-    await convert.click();
-    expect(await read(4), (1295).toString(3) + '\n-' + (36).toString(3));
+    expect(await page.locator('.result-card').count(), 4);
+    expect(await page.locator('#target-base').count(), 0);
     await page.getByLabel('输入进制', { exact: true }).selectOption('2');
     await input.fill('10\n\n102\n11');
     await convert.click();
     expect(await read(2), '2\n⚠ 第 3 行无效\n3');
     if (!(await page.getByRole('button', { name: '复制全部结果', exact: true }).isDisabled())) throw Error('Invalid result copy enabled');
     if (!(await page.locator('#status').innerText()).includes('第 3 行')) throw Error('Missing line error');
-    await page.locator('#target-base').fill('37');
+    await page.getByLabel('输入进制', { exact: true }).selectOption('custom');
+    await page.locator('#custom-source').fill('37');
     await convert.click();
     expect(await read(0), '');
     if (!(await page.locator('#status').innerText()).includes('2–36')) throw Error('Missing base validation');
-    await page.locator('#target-base').fill('36');
     await page.getByLabel('输入进制', { exact: true }).selectOption('16');
     await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.evaluate(() => navigator.clipboard.writeText('FF\n10'));
@@ -49,7 +48,7 @@ async (page) => {
     await page.getByRole('button', { name: '复制十进制 DEC', exact: true }).click();
     await page.waitForFunction(async () => (await navigator.clipboard.readText()).replace(/\r\n/g, '\n') === '255\n16');
     expect((await page.evaluate(() => navigator.clipboard.readText())).replace(/\r\n/g, '\n'), '255\n16');
-    await page.getByRole('button', { name: 'V1.00 ℹ️', exact: true }).click();
+    await page.getByRole('button', { name: 'V1.01 ℹ️', exact: true }).click();
     if (!(await page.getByRole('heading', { name: '🚀 版本更新说明' }).isVisible())) throw Error('Changelog not visible');
     await page.getByRole('button', { name: '关闭版本更新说明', exact: true }).click();
     for (const width of [1440, 768, 375]) {

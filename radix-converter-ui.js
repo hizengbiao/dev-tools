@@ -4,9 +4,9 @@
     const status = byId('status');
     const resultCards = [];
     const commonBases = [2, 8, 10, 16];
-    const names = ['二进制 BIN', '八进制 OCT', '十进制 DEC', '十六进制 HEX', '自定义进制'];
+    const names = ['二进制 BIN', '八进制 OCT', '十进制 DEC', '十六进制 HEX'];
     let currentBases = [];
-    for (let index = 0; index < 5; index++) {
+    for (let index = 0; index < commonBases.length; index++) {
         const card = document.createElement('section');
         card.className = 'result-card';
         const header = document.createElement('div');
@@ -69,8 +69,7 @@
         try {
             const selected = byId('source-base').value;
             const source = Number(selected === 'custom' ? byId('custom-source').value : selected);
-            const target = Number(byId('target-base').value);
-            currentBases = [...commonBases, target];
+            currentBases = [...commonBases];
             const rows = RadixConverter.convertBatch(input.value, source, currentBases, {
                 uppercase: byId('uppercase').checked,
                 prefix: byId('prefix').checked
@@ -81,7 +80,6 @@
                 card.copy.disabled = errors.length > 0;
                 card.reuse.disabled = errors.length > 0;
             });
-            resultCards[4].title.textContent = '自定义进制 (' + target + ')';
             byId('copy-all').disabled = errors.length > 0;
             setStatus('共 ' + rows.length + ' 项，成功 ' + (rows.length - errors.length) + ' 项' + (errors.length ? '，失败 ' + errors.length + ' 项；请修正后复制或回填。' : '。'), errors.length ? 'error' : 'success');
             if (errors.length) {
@@ -101,8 +99,8 @@
     input.addEventListener('keydown', event => {
         if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); convert(); }
     });
-    for (const id of ['source-base', 'custom-source', 'target-base', 'uppercase', 'prefix']) byId(id).addEventListener('change', invalidate);
-    for (const id of ['custom-source', 'target-base']) byId(id).addEventListener('input', invalidate);
+    for (const id of ['source-base', 'custom-source', 'uppercase', 'prefix']) byId(id).addEventListener('change', invalidate);
+    byId('custom-source').addEventListener('input', invalidate);
     byId('convert-btn').addEventListener('click', convert);
     byId('clear-btn').addEventListener('click', () => {
         input.value = '';
