@@ -7,6 +7,10 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
     const MOBILE_LAYOUT_BASELINE_PAGES = [
         {
+            path: 'radix-converter.html',
+            requiredSnippets: ['@media (max-width: 900px)', '@media (max-width: 600px)', 'grid-template-columns: 1fr'],
+        },
+        {
             path: 'timestamp-converter.html',
             requiredSnippets: ['@media (max-width: 600px)', 'flex-direction: column', 'grid-template-columns: 1fr'],
         },

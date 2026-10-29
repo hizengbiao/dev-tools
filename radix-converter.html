@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>进制转换工具</title>
+    <link rel="stylesheet" href="nav.css">
+    <link rel="stylesheet" href="changelog.css">
+    <script src="nav.js" defer></script>
+    <script src="changelog.js"></script>
+    <script src="clipboard-utils.js"></script>
+    <script src="radix-converter.js?v=1.00"></script>
+    <script src="radix-converter-ui.js?v=1.00" defer></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 18px; background: #f4f6f8; color: #24292f; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        .radix-tool { max-width: 1500px; margin: 0 auto; }
+        .radix-tool .title-row, .radix-tool .panel-header, .radix-tool .actions, .radix-tool .settings { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .radix-tool .title-row, .radix-tool .panel-header { justify-content: space-between; }
+        .radix-tool h1 { font-size: 24px; margin: 0; }
+        .radix-tool h2 { font-size: 16px; margin: 0; }
+        .radix-tool .intro, .radix-tool .hint { color: #57606a; font-size: 13px; line-height: 1.7; }
+        .radix-tool .intro { margin: 8px 0 16px; }
+        .radix-tool .workspace { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.4fr); gap: 16px; align-items: start; }
+        .radix-tool .panel { min-width: 0; padding: 16px; border: 1px solid #d0d7de; border-radius: 8px; background: white; box-shadow: 0 1px 3px #1b1f240a; }
+        .radix-tool .panel-header { margin-bottom: 12px; }
+        .radix-tool button, .radix-tool input, .radix-tool select { font: inherit; font-size: 14px; }
+        .radix-tool button { cursor: pointer; padding: 7px 11px; border: 1px solid #d0d7de; border-radius: 6px; background: white; color: #24292f; white-space: nowrap; }
+        .radix-tool button:hover { background: #f3f4f6; }
+        .radix-tool button:disabled { cursor: default; opacity: .5; }
+        .radix-tool .primary { background: #0969da; color: white; border-color: #0969da; }
+        .radix-tool .primary:hover { background: #0550ae; }
+        .radix-tool .danger { color: #cf222e; border-color: #cf222e; }
+        .radix-tool .version-info { padding: 4px 10px; border: 1px solid #d0d7de; border-radius: 20px; font-size: 12px; color: #57606a; cursor: pointer; }
+        .radix-tool input[type=number], .radix-tool select { border: 1px solid #d0d7de; border-radius: 6px; padding: 7px 8px; background: white; }
+        .radix-tool input[type=number] { width: 75px; }
+        .radix-tool .settings { margin: 12px 0; font-size: 14px; }
+        .radix-tool label { display: inline-flex; align-items: center; gap: 6px; }
+        .radix-tool [hidden] { display: none !important; }
+        .radix-tool textarea { display: block; width: 100%; padding: 12px; border: 1px solid #d0d7de; border-radius: 6px; resize: vertical; font: 14px/1.6 Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .radix-tool :is(button, textarea, input, select):focus-visible { outline: 2px solid #0969da; outline-offset: 2px; }
+        #radix-input { min-height: 290px; }
+        .radix-tool .results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .radix-tool .result-card { min-width: 0; background: #f6f8fa; border: 1px solid #d0d7de; padding: 12px; border-radius: 7px; }
+        .radix-tool .result-card:last-child { grid-column: 1 / -1; }
+        .radix-tool .result-card textarea { min-height: 110px; height: 120px; background: white; }
+        .radix-tool .result-card .panel-header { margin-bottom: 8px; }
+        .radix-tool .result-card h3 { font-size: 14px; margin: 0; color: #0969da; }
+        .radix-tool .result-card button { font-size: 12px; padding: 4px 8px; }
+        .radix-tool .status { margin-top: 12px; padding: 10px 12px; border-radius: 6px; background: #f6f8fa; font-size: 13px; overflow-wrap: anywhere; }
+        .radix-tool .status.error { color: #b42318; background: #ffebe9; }
+        .radix-tool .status.success { color: #116329; background: #dafbe1; }
+        .radix-tool .status ul { padding-left: 20px; margin: 8px 0 0; max-height: 180px; overflow-y: auto; }
+        .radix-tool .help { margin-top: 16px; }
+        .radix-tool .help p { margin: 6px 0; }
+        .modal-overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: #0006; }
+        @media (max-width: 900px) { .radix-tool .workspace { grid-template-columns: 1fr; } }
+        @media (max-width: 600px) { body { padding: 12px; } .radix-tool .results { grid-template-columns: 1fr; } .radix-tool .panel { padding: 12px; } }
+    </style>
+</head>
+<body>
+<main class="radix-tool">
+    <div class="title-row">
+        <h1>进制转换</h1>
+        <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.00</span> <span>ℹ️</span></div>
+    </div>
+    <p class="intro">二、八、十、十六进制与任意 2–36 进制互转。使用 BigInt 精确计算大整数，所有数据仅在当前浏览器处理。</p>
+    <div class="workspace">
+        <section class="panel">
+            <div class="panel-header">
+                <h2><label for="radix-input">输入整数</label></h2>
+                <div class="actions">
+                    <button type="button" id="copy-input">复制</button>
+                    <button type="button" data-clipboard-paste-target="radix-input" data-clipboard-paste-action="convert-btn">📋 粘贴并转换</button>
+                </div>
+            </div>
+            <div class="settings">
+                <label for="source-base">输入进制</label>
+                <select id="source-base"><option value="2">二进制 (2)</option><option value="8">八进制 (8)</option><option value="10" selected>十进制 (10)</option><option value="16">十六进制 (16)</option><option value="custom">自定义</option></select>
+                <label id="custom-source-label" hidden>自定义进制 <input id="custom-source" type="number" min="2" max="36" value="36"></label>
+            </div>
+            <textarea id="radix-input" spellcheck="false" wrap="soft" placeholder="一行一个整数，例如：&#10;255&#10;-1024&#10;9007199254740993" aria-describedby="input-hint"></textarea>
+            <p class="hint" id="input-hint">忽略空行和首尾空格，保留数据顺序；支持负数、匹配进制的 0b / 0o / 0x 前缀及数字间的下划线。</p>
+            <div class="settings">
+                <label><input id="uppercase" type="checkbox" checked>字母大写</label>
+                <label><input id="prefix" type="checkbox">输出进制前缀</label>
+            </div>
+            <div class="actions">
+                <button type="button" id="convert-btn" class="primary">开始转换</button>
+                <button type="button" id="sample-btn">加载示例</button>
+                <button type="button" id="clear-btn" class="danger">清空</button>
+            </div>
+            <div class="status" id="status" role="status" aria-live="polite">等待输入，支持 Ctrl / Cmd + Enter 转换。</div>
+        </section>
+        <section class="panel">
+            <div class="panel-header"><h2>转换结果</h2><button type="button" id="copy-all" disabled>复制全部结果</button></div>
+            <div class="settings"><label>自定义输出进制 <input id="target-base" type="number" min="2" max="36" value="36"></label></div>
+            <div class="results" id="results"></div>
+            <p class="hint">每个结果框一行对应一条非空输入；无效项保留位置并标明原始行号，不会静默跳过。</p>
+        </section>
+    </div>
+    <section class="panel help hint" aria-label="进制转换说明">
+        <p><strong>使用说明：</strong>2–10 进制使用数字 0–9 的对应范围；11–36 进制使用字母 A–Z 代表 10–35，输入不区分大小写。</p>
+        <p>本工具转换整数，不支持小数和科学计数法；负数按数学负号表示，不作补码处理。前导零会规范化；十进制的 010 按 10 处理。</p>
+        <p>每次最多 200 个整数、50,000 个字符，每个整数最多 4,096 位。输入进制需手动选择；例如 FF 选择十六进制。前缀识别仅用于二、八、十、十六进制。</p>
+    </section>
+</main>
+<div id="changelog-modal" class="modal-overlay changelog-overlay">
+    <div class="modal-content changelog-dialog">
+        <div class="modal-header changelog-header"><h3>🚀 版本更新说明</h3><button type="button" class="close-modal changelog-close" onclick="closeChangelog()" aria-label="关闭版本更新说明">&times;</button></div>
+        <div class="modal-body changelog-body">
+            <div class="changelog-date">2026年10月30日</div>
+            <div class="changelog-entry"><div class="changelog-version">V1.00</div><div>新增进制转换：支持 2–36 进制、大整数精确计算、批量转换、前缀与大小写设置、逐行错误提示、复制和粘贴并转换。</div></div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

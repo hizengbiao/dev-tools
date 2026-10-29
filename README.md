@@ -14,6 +14,7 @@
 | [时间戳转换](timestamp-converter.html) | Unix 时间戳与日期在线互转，支持动态时钟。 |
 | [URL 编解码](url-encoder.html) | URL Encode/Decode、输入输出差异对比和 URL 参数分析。 |
 | [Base64 编解码](base64-encoder.html) | 支持文本和文件的 Base64 互相转换。 |
+| [进制转换](radix-converter.html) | 2–36 进制整数互转，BigInt 精确处理大整数，支持批量、负数、前缀、复制和粘贴并转换。 |
 | [哈希/摘要工具](hash-generator.html) | 计算文本和文件的 MD5、SHA-1、SHA-256、SHA-512 摘要，并支持摘要比对。 |
 | [JWT 解析工具](jwt-decoder.html) | 本地解析 JWT Header、Payload 和时间字段，明确不做签名可信校验。 |
 | [UUID / 随机值生成器](random-generator.html) | 生成 UUID v4、随机密码和随机数字，支持批量复制。 |

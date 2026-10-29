@@ -64,10 +64,11 @@
 12. 时间戳转换：`timestamp-converter.html`
 13. URL 编解码：`url-encoder.html`
 14. Base64：`base64-encoder.html`
-15. 哈希摘要：`hash-generator.html`
-16. JWT 解析：`jwt-decoder.html`
-17. 随机生成：`random-generator.html`
-18. Neon Timer：`neon-timer/dist/index.html`
+15. 进制转换：`radix-converter.html`
+16. 哈希摘要：`hash-generator.html`
+17. JWT 解析：`jwt-decoder.html`
+18. 随机生成：`random-generator.html`
+19. Neon Timer：`neon-timer/dist/index.html`
 
 顶部导航支持用户自定义显示项和拖动排序，配置保存在浏览器中。新增工具时，即使用户已有自定义配置，也应默认把新工具追加到其导航。首页顺序不受用户自定义导航影响，但默认工具顺序变更时通常需要同步首页。
 
@@ -86,6 +87,12 @@
 JSON 宽松修复中，根节点为对象或数组且包含反斜杠转义引号时，会先最多解码 4 层并仅在可被 `JSON.parse` 验证时接受结果，同时兼容 `\_` 字段名转义。所有字符扫描分支必须保证游标至少前进一位，避免异常输入卡住主线程。
 
 ## 重点工具当前设计
+
+### 进制转换
+
+- `radix-converter.html` / `radix-converter.js` / `radix-converter-ui.js`：2–36 进制整数互转，使用 BigInt 逐位解析，禁止经 Number 读取待转换值，以保持大整数精度。
+- 同时展示二、八、十、十六及自定义进制；支持负号、数字间下划线、匹配输入进制的前缀和大小写选项。负数不解释为补码，不支持小数和科学计数法。
+- 按行批量转换并保留顺序及错误占位，存在无效项时禁止复制/回填结果；输入或设置变更后立即清除旧结果，粘贴可自动转换。单次最多 200 条、50,000 字符，每个整数最多 4,096 位。
 
 ### JSON 格式化
 

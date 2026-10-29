@@ -31,6 +31,12 @@
             selectors: ['#input-text', '#output-text'],
         },
         {
+            path: 'radix-converter.html',
+            title: '进制转换工具',
+            markers: ['radix-input', 'convert-btn', 'results'],
+            selectors: ['#radix-input', '#convert-btn', '#source-base'],
+        },
+        {
             path: 'hash-generator.html',
             title: '哈希/摘要工具',
             markers: ['text-input', 'hash-results'],

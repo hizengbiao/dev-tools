@@ -18,6 +18,7 @@
 | **时间戳转换** | `timestamp-converter.html` | 时间戳与日期互转，支持动态时钟。 | Vanilla JS |
 | **URL 编解码** | `url-encoder.html` | URL Encode/Decode、输入输出差异对比和 URL 参数分析。 | Vanilla JS |
 | **Base64 编解码** | `base64-encoder.html` | 文本与文件的 Base64 转换。 | Vanilla JS |
+| **进制转换** | `radix-converter.html` | 2–36 进制整数互转，核心 `radix-converter.js` 使用 BigInt，UI 独立于 `radix-converter-ui.js`；逐行错误反馈、复制及回填，不支持小数或补码。 | Vanilla JS |
 | **哈希/摘要工具** | `hash-generator.html` | 文本与文件摘要计算，支持 MD5、SHA-1、SHA-256、SHA-512 和摘要比对。 | Vanilla JS |
 | **JWT 解析工具** | `jwt-decoder.html` | 本地解析 JWT Header、Payload 和时间字段，不做签名可信校验。 | Vanilla JS |
 | **UUID / 随机值生成器** | `random-generator.html` | 生成 UUID v4、随机密码和随机数字，支持批量复制。 | Vanilla JS |
