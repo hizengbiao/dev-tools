@@ -21,7 +21,7 @@
         .radix-tool h2 { font-size: 16px; margin: 0; }
         .radix-tool .intro, .radix-tool .hint { color: #57606a; font-size: 13px; line-height: 1.7; }
         .radix-tool .intro { margin: 8px 0 16px; }
-        .radix-tool .workspace { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.4fr); gap: 16px; align-items: start; }
+        .radix-tool .workspace { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.4fr); gap: 16px; align-items: stretch; }
         .radix-tool .panel { min-width: 0; padding: 16px; border: 1px solid #d0d7de; border-radius: 8px; background: white; box-shadow: 0 1px 3px #1b1f240a; }
         .radix-tool .panel-header { margin-bottom: 12px; }
         .radix-tool button, .radix-tool input, .radix-tool select { font: inherit; font-size: 14px; }
@@ -40,9 +40,10 @@
         .radix-tool textarea { display: block; width: 100%; padding: 12px; border: 1px solid #d0d7de; border-radius: 6px; resize: vertical; font: 14px/1.6 Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
         .radix-tool :is(button, textarea, input, select):focus-visible { outline: 2px solid #0969da; outline-offset: 2px; }
         #radix-input { min-height: 290px; }
-        .radix-tool .results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-        .radix-tool .result-card { min-width: 0; background: #f6f8fa; border: 1px solid #d0d7de; padding: 12px; border-radius: 7px; }
-        .radix-tool .result-card textarea { min-height: 110px; height: 120px; background: white; }
+        .radix-tool .output-panel { display: flex; flex-direction: column; }
+        .radix-tool .results { flex: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(180px, 1fr); gap: 12px; }
+        .radix-tool .result-card { display: flex; flex-direction: column; min-width: 0; background: #f6f8fa; border: 1px solid #d0d7de; padding: 12px; border-radius: 7px; }
+        .radix-tool .result-card textarea { flex: 1; min-height: 110px; height: 0; background: white; }
         .radix-tool .result-card .panel-header { margin-bottom: 8px; }
         .radix-tool .result-card h3 { font-size: 14px; margin: 0; color: #0969da; }
         .radix-tool .result-card button { font-size: 12px; padding: 4px 8px; }
@@ -61,7 +62,7 @@
 <main class="radix-tool">
     <div class="title-row">
         <h1>进制转换</h1>
-        <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.02</span> <span>ℹ️</span></div>
+        <div class="version-info" onclick="showChangelog()" title="查看版本更新说明"><span>V1.03</span> <span>ℹ️</span></div>
     </div>
     <p class="intro">二、八、十、十六进制与任意 2–36 进制互转。使用 BigInt 精确计算大整数，所有数据仅在当前浏览器处理。</p>
     <div class="workspace">
@@ -91,7 +92,7 @@
             </div>
             <div class="status" id="status" role="status" aria-live="polite">输入整数后自动转换，切换进制或选项时同步更新结果。</div>
         </section>
-        <section class="panel">
+        <section class="panel output-panel">
             <div class="panel-header"><h2>转换结果</h2><button type="button" id="copy-all" disabled>复制全部结果</button></div>
             <div class="results" id="results"></div>
             <p class="hint">每个结果框一行对应一条非空输入；无效项保留位置并标明原始行号，不会静默跳过。</p>
@@ -108,6 +109,7 @@
         <div class="modal-header changelog-header"><h3>🚀 版本更新说明</h3><button type="button" class="close-modal changelog-close" onclick="closeChangelog()" aria-label="关闭版本更新说明">&times;</button></div>
         <div class="modal-body changelog-body">
             <div class="changelog-date">2026年10月30日</div>
+            <div class="changelog-entry"><div class="changelog-version">V1.03</div><div>桌面端输入和输出面板等高、底部对齐，右侧四个输出框随可用高度均匀伸展；窄屏继续上下排列。</div></div>
             <div class="changelog-entry"><div class="changelog-version">V1.02</div><div>输入后自动转换，切换进制、前缀或大小写选项时同步更新；连续输入使用短延迟合并计算，清空或输入法组合输入时取消旧任务。</div></div>
             <div class="changelog-entry"><div class="changelog-version">V1.01</div><div>移除自定义进制结果卡片及输出进制设置，结果区仅展示二、八、十、十六进制，保留自定义输入进制。</div></div>
             <div class="changelog-entry"><div class="changelog-version">V1.00</div><div>新增进制转换：支持 2–36 进制、大整数精确计算、批量转换、前缀与大小写设置、逐行错误提示、复制和粘贴并转换。</div></div>

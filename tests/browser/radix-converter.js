@@ -45,7 +45,7 @@ async (page) => {
     await page.getByRole('button', { name: '复制十进制 DEC', exact: true }).click();
     await page.waitForFunction(async () => (await navigator.clipboard.readText()).replace(/\r\n/g, '\n') === '255\n16');
     expect((await page.evaluate(() => navigator.clipboard.readText())).replace(/\r\n/g, '\n'), '255\n16');
-    await page.getByRole('button', { name: 'V1.02 ℹ️', exact: true }).click();
+    await page.getByRole('button', { name: 'V1.03 ℹ️', exact: true }).click();
     if (!(await page.getByRole('heading', { name: '🚀 版本更新说明' }).isVisible())) throw Error('Changelog not visible');
     await page.getByRole('button', { name: '关闭版本更新说明', exact: true }).click();
     await page.getByLabel('输入进制', { exact: true }).selectOption('10');
@@ -61,6 +61,11 @@ async (page) => {
         await page.setViewportSize({ width, height: 900 });
         await page.evaluate(() => {
             if (document.documentElement.scrollWidth > innerWidth + 1) throw Error('Page horizontal overflow');
+            if (innerWidth > 900) {
+                const panels = [...document.querySelectorAll('.workspace > .panel')].map(el => el.getBoundingClientRect());
+                if (Math.abs(panels[0].bottom - panels[1].bottom) > 1) throw Error('Panel bottoms not aligned');
+                if (document.querySelector('#result-0').getBoundingClientRect().height <= 120) throw Error('Output did not stretch');
+            }
             for (const el of document.querySelectorAll('.radix-tool button, .radix-tool textarea')) {
                 const rect = el.getBoundingClientRect();
                 if (rect.left < 0 || rect.right > innerWidth + 1) throw Error('Control clipped');
@@ -68,6 +73,12 @@ async (page) => {
         });
     }
     await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.locator('#radix-input').evaluate(el => { el.style.height = '450px'; });
+    await page.evaluate(() => {
+        const panels = document.querySelectorAll('.workspace > .panel');
+        if (Math.abs(panels[0].getBoundingClientRect().bottom - panels[1].getBoundingClientRect().bottom) > 1) throw Error('Resize broke bottom alignment');
+    });
+    await page.locator('#radix-input').evaluate(el => { el.style.height = ''; });
     await page.getByRole('button', { name: '加载示例', exact: true }).click();
     await page.goto('http://127.0.0.1:5219/index.html');
     await page.locator('.tool-card[href="radix-converter.html"]').click();
