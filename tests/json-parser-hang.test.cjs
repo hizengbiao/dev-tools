@@ -9,7 +9,7 @@ const script = [...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>
     .map((match) => match[1])
     .join('\n');
 
-assert.match(page, /<span>V2\.09<\/span>/);
+assert.match(page, /<span>V2\.10<\/span>/);
 assert.match(page, /\.json-row\s*\{[^}]*align-items:\s*flex-start;/);
 assert.match(page, /<div class="changelog-date">2026年9月7日<\/div>[\s\S]*?<div class="changelog-version">V1\.99<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年8月31日<\/div>[\s\S]*?<div class="changelog-version">V1\.98<\/div>[\s\S]*?<div class="changelog-version">V1\.97<\/div>/);
@@ -37,7 +37,7 @@ assert.match(page, /<div class="changelog-version">V1\.80<\/div>/);
 assert.match(page, /<script src="json-repair-guards\.js"><\/script>/);
 assert.match(page, /<script src="json-assignment-extractor\.js\?v=2\.07"><\/script>/);
 assert.match(page, /<script src="json-repair-normalizer\.js\?v=2\.01"><\/script>/);
-assert.match(page, /<script src="json-java-style-normalizer\.js\?v=2\.06"><\/script>/);
+assert.match(page, /<script src="json-java-style-normalizer\.js\?v=2\.10"><\/script>/);
 assert.match(page, /!JsonJavaStyleNormalizer\.looksLikeJavaStyleObject\(raw\)/);
 assert.match(page, /<script src="json-path-query\.js"><\/script>/);
 assert.doesNotMatch(page, /<script src="json-key-paths\.js"><\/script>/);
@@ -334,6 +334,26 @@ for (const sample of [require('./fixtures/fault-chain.cjs'), require('./fixtures
     assert.equal(parsed.abnormalDistribution.type, null);
     assert.equal(parsed.abnormalDistribution.description, 'null');
     assert.deepStrictEqual(parsed.abnormalDistribution.objects, []);
+}
+const faultChainList = require('./fixtures/fault-chain-list.json');
+for (const sample of [faultChainList.sample, 'json格式化错误：' + faultChainList.sample]) {
+    const harness = createHarness();
+    harness.elements.get('json-input').value = sample;
+    harness.context.handleFormat();
+    const parsed = JSON.parse(harness.elements.get('json-input').value);
+    assert.equal(parsed.length, 1);
+    const [chain] = parsed;
+    assert.equal(chain.faultPoints.length, 7);
+    assert.equal(chain.faultPoints[0].additionalInfo.dbAdditionalInfoKeyServerEventSignals, faultChainList.signal);
+    assert.equal(chain.faultPoints[1].additionalInfo.ip, '::ffff:192.0.2.130');
+    assert.deepStrictEqual(chain.faultPoints[1].additionalInfo.events, ['POLLIN']);
+    assert.equal(chain.faultPoints[1].source, '[APP, PROCESS_TRACE]');
+    assert.equal(chain.faultPoints[1].apis, '[/example/query]');
+    assert.equal(chain.faultPoints[1].affectedCount, '276');
+    assert.equal(chain.faultPoints[1].pushOperatorScore, 0.5);
+    assert.equal(chain.faultPoints[1].maskable, false);
+    assert.equal(chain.faultPoints[6].name, 'root');
+    assert.deepStrictEqual(chain.abnormalDistribution, { type: null, objects: [], description: 'null' });
 }
 const brokenCandidate = '{"a":"\\q"';
 assert.throws(() => context.parseRepairedJson(brokenCandidate), (error) => {

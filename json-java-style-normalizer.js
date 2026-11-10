@@ -13,8 +13,9 @@
         result = normalizeJavaObjectParentheses(result);
         result = normalizeJavaBareEscapesOutsideStrings(result);
         result = stripJavaClassPrefixes(result);
-        result = quoteJavaListValuesOutsideStrings(result);
+        // Protect bare map text (e.g. 节点[主]异常) before visiting real arrays.
         result = quoteJavaMapValuesOutsideStrings(result);
+        result = quoteJavaListValuesOutsideStrings(result);
         result = replaceEqualsOutsideStrings(result);
         return result;
     }
@@ -183,6 +184,7 @@
     function quoteJavaMapValuesOutsideStrings(raw) {
         let result = '';
         let i = 0;
+        const containers = [];
         let inString = false;
         let stringChar = '';
         let escaped = false;
@@ -211,7 +213,11 @@
                 continue;
             }
 
-            if (char !== '=') {
+            if (char === '{' || char === '[') containers.push(char);
+            else if (char === '}' || char === ']') containers.pop();
+
+            // An equals sign in a bare list item is text, not a map assignment.
+            if (char !== '=' || containers[containers.length - 1] === '[') {
                 result += char;
                 i++;
                 continue;

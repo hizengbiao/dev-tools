@@ -5,7 +5,7 @@ const path = require('node:path');
 const normalizer = require('../json-java-style-normalizer.js');
 const page = fs.readFileSync(path.resolve(__dirname, '../json-parser.html'), 'utf8');
 
-assert.match(page, /<script src="json-java-style-normalizer\.js\?v=2\.06"><\/script>/);
+assert.match(page, /<script src="json-java-style-normalizer\.js\?v=2\.10"><\/script>/);
 assert.match(page, /JsonJavaStyleNormalizer\.normalizeJavaStyleObject\(raw\)/);
 assert.doesNotMatch(page, /function normalizeJavaStyleObject\(raw\)/);
 assert.doesNotMatch(page, /function quoteJavaMapValuesOutsideStrings\(raw\)/);
@@ -18,6 +18,11 @@ assert.strictEqual(
 assert.strictEqual(
     normalizer.normalizeJavaStyleObject("[FaultPoint{name='x', info={host=db01, port=3306}}, FaultPoint{name=y}]"),
     "[{name:'x', info:{host:'db01', port:3306}}, {name:'y'}]"
+);
+
+assert.strictEqual(
+    normalizer.normalizeJavaStyleObject('Report{message=节点[主]异常, items=[key=value, [next], {name=demo, flags=[POLLIN]}]}'),
+    "{message:'节点[主]异常', items:['key=value', ['next'], {name:'demo', flags:['POLLIN']}]}"
 );
 
 assert.strictEqual(

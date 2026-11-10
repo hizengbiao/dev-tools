@@ -791,7 +791,7 @@
             <button class="icon-btn tree-only" onclick="sortJson(false)" title="按Key降序">⬆️ 降序</button>
         </div>
         <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-            <span>V2.09</span>
+            <span>V2.10</span>
             <span>ℹ️</span>
         </div>
     </div>
@@ -831,6 +831,13 @@
                 <button class="close-modal changelog-close" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body changelog-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年11月11日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V2.10</div>
+                        <div class="changelog-desc">修复 FaultChain 等 Java 日志中描述文字的方括号被误当数组的问题，保留原始描述、IPv6 地址和真正的列表字段。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年10月16日</div>
                     <div class="changelog-entry">
@@ -1377,7 +1384,7 @@
     <script src="json-repair-guards.js"></script>
     <script src="json-assignment-extractor.js?v=2.07"></script>
     <script src="json-repair-normalizer.js?v=2.01"></script>
-    <script src="json-java-style-normalizer.js?v=2.06"></script>
+    <script src="json-java-style-normalizer.js?v=2.10"></script>
     <script src="json-sorter.js?v=2.00"></script>
     <script src="json-path-editor.js?v=2.00"></script>
     <script src="json-path-query.js"></script>
