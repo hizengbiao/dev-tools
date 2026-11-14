@@ -6,7 +6,14 @@ const vm = require('node:vm');
 const pagePath = path.resolve(__dirname, '../timestamp-converter.html');
 const page = fs.readFileSync(pagePath, 'utf8');
 
-assert.match(page, /<span>V1\.07<\/span>/);
+assert.match(page, /<span>V1\.08<\/span>/);
+assert.match(page, /<div class="changelog-version">V1\.08<\/div>/);
+const timestampUnitIds = ['ts-unit', 'date-unit', 'relative-unit', 'timezone-compare-unit', 'batch-unit'];
+for (const id of timestampUnitIds) {
+    assert.match(page, new RegExp(`<select id="${id}"[^>]*>\\s*<option value="s">[^<]*</option>\\s*<option value="ms" selected>`));
+}
+assert.match(page, /id="live-unit-label">毫秒</);
+assert.match(page, /id="batch-input"[^>]*1710000000000/);
 assert.match(page, /<div class="changelog-date">2026年7月14日<\/div>[\s\S]*?<div class="changelog-version">V1\.07<\/div>[\s\S]*?<div class="changelog-version">V1\.06<\/div>[\s\S]*?<div class="changelog-version">V1\.05<\/div>[\s\S]*?<div class="changelog-date">2026年7月13日<\/div>[\s\S]*?<div class="changelog-version">V1\.04<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年7月10日<\/div>[\s\S]*?<div class="changelog-version">V1\.03<\/div>[\s\S]*?<div class="changelog-version">V1\.02<\/div>/);
 assert.match(page, /<div class="changelog-date">2026年6月26日<\/div>[\s\S]*?<div class="changelog-version">V1\.01<\/div>/);
@@ -95,11 +102,18 @@ const context = {
     },
 };
 
+for (const id of timestampUnitIds) element(id).value = 'ms';
 vm.createContext(context);
 const scripts = [...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>/g)].map((match) => match[1]);
 for (const script of scripts) {
     vm.runInContext(script, context);
 }
+
+for (const id of ['live-timestamp', 'ts-input', 'ts-output', 'relative-ts-output', 'timezone-compare-input']) {
+    const field = element(id);
+    assert.match(String(field.value || field.textContent), /^\d{13}$/);
+}
+assert.equal(element('ts-input').value, element('timezone-compare-input').value);
 
 const tsToDate = context.convertBatchTimestampsToDates('1710000000\nabc\n1710000001000', 's', 'UTC');
 assert.equal(tsToDate.successCount, 1);

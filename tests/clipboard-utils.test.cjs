@@ -114,6 +114,7 @@ const pasteTargets = [
     ['base64-encoder.html', 'input-text', 'textEncodeBtn', '粘贴并编码'],
     ['hash-generator.html', 'text-input', 'hash-text-btn', '粘贴并计算'],
     ['jwt-decoder.html', 'jwt-input', 'decode-btn', '粘贴并解析'],
+    ['timestamp-converter.html', 'ts-input', 'ts-convert-btn', '粘贴并转换'],
 ];
 
 for (const file of [

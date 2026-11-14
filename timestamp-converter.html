@@ -291,6 +291,20 @@
             margin-bottom: 4px;
         }
 
+        .timestamp-input-header {
+            grid-column: 1 / -1;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        #panel-single .timestamp-input-header label {
+            width: auto;
+            margin-bottom: 0;
+        }
+
         /* Conversion Rows */
         .io-group {
             display: flex;
@@ -522,7 +536,6 @@
                 grid-template-columns: minmax(0, 1.05fr) 135px auto minmax(0, 0.95fr) 88px;
             }
 
-            .timestamp-conversion-section label,
             .date-conversion-section label {
                 grid-column: 1 / -1;
             }
@@ -759,7 +772,7 @@
         <div class="tool-title">
             <h1>时间戳转换</h1>
             <div class="version-info" onclick="showChangelog()" title="查看版本更新记录">
-                <span>V1.07</span>
+                <span>V1.08</span>
                 <span>ℹ️</span>
             </div>
         </div>
@@ -769,7 +782,7 @@
             <h2>当前时间戳</h2>
             <div class="current-time-display">
                 <span id="live-timestamp">0</span>
-                <span class="unit-label" id="live-unit-label">秒</span>
+                <span class="unit-label" id="live-unit-label">毫秒</span>
             </div>
             <div class="controls">
                 <button class="btn" onclick="toggleLiveUnit()">🔄 切换单位</button>
@@ -789,17 +802,21 @@
 
                 <!-- Timestamp to Date -->
                 <div class="io-group timestamp-conversion-section">
-                    <label>🕓 时间戳转日期时间</label>
+                    <div class="timestamp-input-header">
+                        <label for="ts-input">🕓 时间戳转日期时间</label>
+                        <button class="btn" type="button" data-clipboard-paste-target="ts-input"
+                            data-clipboard-paste-action="ts-convert-btn">📋 粘贴并转换</button>
+                    </div>
                     <div class="input-wrapper">
                         <input type="text" id="ts-input" placeholder="输入时间戳">
                     </div>
                     <div class="select-wrapper" style="width: 100px;">
                         <select id="ts-unit">
                             <option value="s">秒(s)</option>
-                            <option value="ms">毫秒(ms)</option>
+                            <option value="ms" selected>毫秒(ms)</option>
                         </select>
                     </div>
-                    <button class="action-btn" onclick="convertTsToDate()">转换</button>
+                    <button id="ts-convert-btn" class="action-btn" onclick="convertTsToDate()">转换</button>
                     <div class="input-wrapper" style="flex: 2;">
                         <input type="text" id="date-output" placeholder="转换结果" readonly
                             style="background-color: #f6f8fa;">
@@ -832,7 +849,7 @@
                     <div class="select-wrapper" style="width: 100px;">
                         <select id="date-unit">
                             <option value="s">秒(s)</option>
-                            <option value="ms">毫秒(ms)</option>
+                            <option value="ms" selected>毫秒(ms)</option>
                         </select>
                     </div>
                 </div>
@@ -879,7 +896,7 @@
                         <div class="select-wrapper">
                             <select id="relative-unit" title="选择输出时间戳单位">
                                 <option value="s">秒时间戳</option>
-                                <option value="ms">毫秒时间戳</option>
+                                <option value="ms" selected>毫秒时间戳</option>
                             </select>
                         </div>
                     </div>
@@ -897,7 +914,7 @@
                         <div class="select-wrapper">
                             <select id="timezone-compare-unit">
                                 <option value="s">秒(s)</option>
-                                <option value="ms">毫秒(ms)</option>
+                                <option value="ms" selected>毫秒(ms)</option>
                             </select>
                         </div>
                         <button class="action-btn" onclick="renderTimezoneComparison()">对比</button>
@@ -925,7 +942,7 @@
                     <div class="select-wrapper" style="width: 120px;">
                         <select id="batch-unit" title="输入或输出的时间戳单位">
                             <option value="s">秒(s)</option>
-                            <option value="ms">毫秒(ms)</option>
+                            <option value="ms" selected>毫秒(ms)</option>
                         </select>
                     </div>
                     <div class="select-wrapper">
@@ -942,7 +959,7 @@
                             <span>批量输入</span>
                             <span class="batch-summary">每行一条，空行会跳过</span>
                         </div>
-                        <textarea id="batch-input" placeholder="示例：&#10;1710000000&#10;1710000060&#10;或：&#10;2024-03-10 00:00:00"></textarea>
+                        <textarea id="batch-input" placeholder="示例：&#10;1710000000000&#10;1710000060000&#10;或：&#10;2024-03-10 00:00:00"></textarea>
                     </div>
                     <div>
                         <div class="batch-field-header">
@@ -965,6 +982,13 @@
                 <button class="close-modal changelog-close" onclick="closeChangelog()">&times;</button>
             </div>
             <div class="modal-body changelog-body">
+                <div class="changelog-date-group">
+                    <div class="changelog-date">2026年11月15日</div>
+                    <div class="changelog-entry">
+                        <div class="changelog-version">V1.08</div>
+                        <div class="changelog-desc">时间戳单位默认使用毫秒；时间戳输入区新增“粘贴并转换”，读取剪贴板后按当前单位和时区转换。</div>
+                    </div>
+                </div>
                 <div class="changelog-date-group">
                     <div class="changelog-date">2026年7月14日</div>
                     <div class="changelog-entry">
@@ -1043,7 +1067,7 @@
         // --- State ---
         let timerId = null;
         let isLiveRunning = true;
-        let isLiveSeconds = true;
+        let isLiveSeconds = false;
 
         // --- DOM Elements ---
         const elLiveTs = document.getElementById('live-timestamp');
@@ -1091,20 +1115,16 @@
 
             // Start Clock
             updateClock();
-            timerId = setInterval(updateClock, 1000);
+            timerId = setInterval(updateClock, isLiveSeconds ? 1000 : 50);
 
             // Init Inputs
             const now = new Date();
-            elTsUnit.value ||= 's';
-            elDateUnit.value ||= 's';
             elRelativeOperation.value ||= '-';
             elRelativeAmount.value ||= '7';
             elRelativeOffsetUnit.value ||= 'd';
-            elRelativeUnit.value ||= 's';
-            elTimezoneCompareUnit.value ||= 's';
-            elTsInput.value = String(Math.floor(now.getTime() / 1000));
+            elTsInput.value = String(now.getTime());
             elDateInput.value = formatDate(now, elTz2.value);
-            elTimezoneCompareInput.value = String(Math.floor(now.getTime() / 1000));
+            elTimezoneCompareInput.value = String(now.getTime());
             convertTsToDate();
             convertDateToTs();
             convertRelativeTime();
